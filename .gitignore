@@ -1,0 +1,96 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+.env
+
+### Logs ###
+logs/
+*.log
+*.log.*
+*.out
+*.err
+
+### JVM / Crash dumps ###
+hs_err_pid*
+replay_pid*.log
+*.hprof
+
+### Maven additional ###
+# Release plugin and backup files
+release.properties
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# Flatten plugin
+.flattened-pom.xml
+
+# Maven Wrapper (already ignores jar). Add properties cache
+## keep wrapper properties tracked
+
+### Build outputs (extra) ###
+# Sometimes created by plugins inside module dirs
+out/
+bin/
+
+### Test reports / Coverage ###
+jacoco.exec
+jacoco-ut.exec
+jacoco-it.exec
+
+### Spring / Application ###
+# Local override configs and env
+application-local.properties
+application-local.yml
+application-dev.properties
+application-dev.yml
+.env.local
+.env.*.local
+
+### Docker / Container ###
+docker-compose.override.yml
+*.pid
+
+### Security / Keys ###
+*.keystore
+*.jks
+*.p12
+*.pem
+*.crt
+*.key
+
+### Editor backups ###
+*~
+*.swp
+*.swo
+*.orig
+*.bak
