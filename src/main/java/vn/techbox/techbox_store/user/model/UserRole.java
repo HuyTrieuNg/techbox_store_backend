@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.model;
+package vn.techbox.techbox_store.user.model;
 
 public enum UserRole {
     admin,
