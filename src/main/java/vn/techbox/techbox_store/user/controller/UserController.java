@@ -1,10 +1,12 @@
-package vn.techbox.techbox_store.controller;
+package vn.techbox.techbox_store.user.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.model.User;
-import vn.techbox.techbox_store.model.UserRole;
-import vn.techbox.techbox_store.service.UserService;
+import vn.techbox.techbox_store.user.dto.UserCreateRequest;
+import vn.techbox.techbox_store.user.dto.UserResponse;
+import vn.techbox.techbox_store.user.dto.UserUpdateRequest;
+import vn.techbox.techbox_store.user.model.User;
+import vn.techbox.techbox_store.user.service.UserService;
 
 import java.net.URI;
 import java.util.List;
@@ -35,13 +37,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest req) {
-        User u = new User();
-        u.setUsername(req.username());
-        u.setEmail(req.email());
-        u.setRole(req.role());
-        // For demo only; normally hash the password
-        u.setPasswordHash(req.password() != null ? req.password() : "default_password");
-        User saved = userService.createUser(u);
+        User saved = userService.createUser(req);
         return ResponseEntity.created(URI.create("/api/users/" + saved.getId()))
                 .body(UserResponse.from(saved));
     }
@@ -63,17 +59,5 @@ public class UserController {
         }
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
-    }
-
-    public record UserCreateRequest(String username, String email, String password, UserRole role) {
-    }
-
-    public record UserUpdateRequest(String username, String email, UserRole role) {
-    }
-
-    public record UserResponse(Integer id, String username, String email, UserRole role) {
-        public static UserResponse from(User u) {
-            return new UserResponse(u.getId(), u.getUsername(), u.getEmail(), u.getRole());
-        }
     }
 }
