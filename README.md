@@ -41,6 +41,43 @@ docker compose up -d --build
 - PostgreSQL: cổng `localhost:5432` (theo `.env`)
 - pgAdmin: `http://localhost:5050` (user/pass mặc định trong compose)
 
+## 🔗 API Endpoints
+
+### Categories API
+- `GET /api/categories` - Lấy tất cả danh mục
+- `GET /api/categories/{id}` - Lấy danh mục theo ID
+- `GET /api/categories/root` - Lấy danh mục gốc
+- `GET /api/categories/{parentId}/children` - Lấy danh mục con
+- `POST /api/categories` - Tạo danh mục mới
+- `PUT /api/categories/{id}` - Cập nhật danh mục
+- `DELETE /api/categories/{id}` - Xóa danh mục
+- `GET /api/categories/exists?name=...` - Kiểm tra tên tồn tại
+
+### Brands API
+- `GET /api/brands` - Lấy tất cả thương hiệu
+- `GET /api/brands/{id}` - Lấy thương hiệu theo ID
+- `POST /api/brands` - Tạo thương hiệu mới
+- `PUT /api/brands/{id}` - Cập nhật thương hiệu
+- `DELETE /api/brands/{id}` - Xóa thương hiệu
+- `GET /api/brands/exists?name=...` - Kiểm tra tên tồn tại
+
+## 🧪 Quick Test
+
+```bash
+# Test tạo danh mục
+curl -X POST http://localhost:8080/api/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Electronics"}'
+
+# Test tạo thương hiệu
+curl -X POST http://localhost:8080/api/brands \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Apple"}'
+
+# Test lấy tất cả danh mục
+curl -X GET http://localhost:8080/api/categories
+```
+
 ## 4) Sử dụng pgAdmin (tuỳ chọn)
 
 - Truy cập: `http://localhost:5050`
