@@ -1,0 +1,801 @@
+{
+  "info": {
+    "name": "TechBox Store API - Fixed Logic",
+    "description": "API Collection with proper execution order - CREATE before DELETE",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "techbox-store-fixed-logic-collection"
+  },
+  "item": [
+    {
+      "name": "A. CREATE Operations (In Dependency Order)",
+      "item": [
+        {
+          "name": "A1. CREATE Root Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            }
+          }
+        },
+        {
+          "name": "A2. CREATE Child Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Smartphones\",\n  \"parentCategoryId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            }
+          }
+        },
+        {
+          "name": "A3. CREATE Brand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Apple\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"]
+            }
+          }
+        },
+        {
+          "name": "A4. CREATE Attribute - Color",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Color\",\n  \"dataType\": \"STRING\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "A5. CREATE Attribute - Storage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Storage\",\n  \"dataType\": \"INTEGER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "A6. CREATE Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"description\": \"Latest iPhone with Pro features\",\n  \"basePrice\": 999.99,\n  \"categoryId\": 2,\n  \"brandId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            }
+          }
+        },
+        {
+          "name": "A7. CREATE Product Variation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"IPHONE15PRO-256-BLK\",\n  \"price\": 1099.99,\n  \"stockQuantity\": 50,\n  \"imageUrls\": [\"https://example.com/iphone15pro-black-1.jpg\", \"https://example.com/iphone15pro-black-2.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/product-variations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations"]
+            }
+          }
+        },
+        {
+          "name": "A8. CREATE Product Attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"attributeId\": 1,\n  \"value\": \"Smartphone Device\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes"]
+            }
+          }
+        },
+        {
+          "name": "A9. CREATE Variation Attribute",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variationId\": 1,\n  \"attributeId\": 1,\n  \"value\": \"Space Black\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "B. READ Operations (GET)",
+      "item": [
+        {
+          "name": "B1. GET All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            }
+          }
+        },
+        {
+          "name": "B2. GET Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "1"]
+            }
+          }
+        },
+        {
+          "name": "B3. GET All Brands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"]
+            }
+          }
+        },
+        {
+          "name": "B4. GET Brand by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/brands/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "1"]
+            }
+          }
+        },
+        {
+          "name": "B5. GET All Attributes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes"]
+            }
+          }
+        },
+        {
+          "name": "B6. GET Attribute by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attributes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes", "1"]
+            }
+          }
+        },
+        {
+          "name": "B7. GET All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            }
+          }
+        },
+        {
+          "name": "B8. GET Active Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "active"]
+            }
+          }
+        },
+        {
+          "name": "B9. GET Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1"]
+            }
+          }
+        },
+        {
+          "name": "B10. SEARCH Products by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/search?name=iPhone",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "iPhone"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "B11. GET Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/category/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "category", "2"]
+            }
+          }
+        },
+        {
+          "name": "B12. GET Products by Brand",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/brand/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "brand", "1"]
+            }
+          }
+        },
+        {
+          "name": "B13. GET All Product Variations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations"]
+            }
+          }
+        },
+        {
+          "name": "B14. GET Active Product Variations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/active",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "active"]
+            }
+          }
+        },
+        {
+          "name": "B15. GET Product Variation by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "1"]
+            }
+          }
+        },
+        {
+          "name": "B16. GET Variations by Product ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/product/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "product", "1"]
+            }
+          }
+        },
+        {
+          "name": "B17. GET In-Stock Variations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/in-stock",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "in-stock"]
+            }
+          }
+        },
+        {
+          "name": "B18. GET All Product Attributes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes"]
+            }
+          }
+        },
+        {
+          "name": "B19. GET Product Attributes by Product ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes/product/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes", "product", "1"]
+            }
+          }
+        },
+        {
+          "name": "B20. GET Product Attribute by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes", "1", "1"]
+            }
+          }
+        },
+        {
+          "name": "B21. GET All Variation Attributes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes"]
+            }
+          }
+        },
+        {
+          "name": "B22. GET Variation Attributes by Variation ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes/variation/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes", "variation", "1"]
+            }
+          }
+        },
+        {
+          "name": "B23. GET Variation Attribute by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes", "1", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "C. UPDATE Operations (PUT/PATCH)",
+      "item": [
+        {
+          "name": "C1. UPDATE Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Consumer Electronics\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "1"]
+            }
+          }
+        },
+        {
+          "name": "C2. UPDATE Brand",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Apple Inc.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "1"]
+            }
+          }
+        },
+        {
+          "name": "C3. UPDATE Attribute",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Device Color\",\n  \"dataType\": \"STRING\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/attributes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes", "1"]
+            }
+          }
+        },
+        {
+          "name": "C4. UPDATE Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"iPhone 15 Pro Max\",\n  \"description\": \"Latest iPhone with Pro Max features\",\n  \"basePrice\": 1199.99,\n  \"categoryId\": 2,\n  \"brandId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1"]
+            }
+          }
+        },
+        {
+          "name": "C5. UPDATE Product Variation",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": 1,\n  \"sku\": \"IPHONE15PRO-256-BLK-V2\",\n  \"price\": 1199.99,\n  \"stockQuantity\": 30,\n  \"imageUrls\": [\"https://example.com/iphone15pro-black-updated.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "1"]
+            }
+          }
+        },
+        {
+          "name": "C6. UPDATE Stock Quantity Only",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stockQuantity\": 25\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/1/stock",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "1", "stock"]
+            }
+          }
+        },
+        {
+          "name": "C7. UPDATE Product Attribute",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"Premium Smartphone Device\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes", "1", "1"]
+            }
+          }
+        },
+        {
+          "name": "C8. UPDATE Variation Attribute",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"Midnight Black\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes", "1", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "D. RESTORE Operations (PATCH - For Soft Delete)",
+      "item": [
+        {
+          "name": "D1. RESTORE Product",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1/restore",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1", "restore"]
+            }
+          }
+        },
+        {
+          "name": "D2. RESTORE Product Variation",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/1/restore",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "1", "restore"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Z. DELETE Operations (Run LAST - After all other tests)",
+      "item": [
+        {
+          "name": "Z1. DELETE Variation Attribute (Relationship)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/variation-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "variation-attributes", "1", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z2. DELETE Product Attribute (Relationship)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-attributes/1/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-attributes", "1", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z3. DELETE Product Variation (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/product-variations/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "product-variations", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z4. DELETE Product (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/products/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z5. DELETE Attribute",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/attributes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "attributes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z6. DELETE Brand",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/brands/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "1"]
+            }
+          }
+        },
+        {
+          "name": "Z7. DELETE Category (Child first)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "2"]
+            }
+          }
+        },
+        {
+          "name": "Z8. DELETE Category (Parent last)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}
