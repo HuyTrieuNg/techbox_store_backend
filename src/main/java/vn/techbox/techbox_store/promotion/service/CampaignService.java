@@ -159,6 +159,23 @@ public class CampaignService {
         log.info("Campaign soft deleted successfully with ID: {}", id);
     }
     
+    public void restoreCampaign(Integer id) {
+        log.info("Restoring campaign with ID: {}", id);
+        
+        Campaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Campaign not found with ID: " + id));
+        
+        if (campaign.getDeletedAt() == null) {
+            throw new IllegalArgumentException("Campaign is not deleted, cannot restore");
+        }
+        
+        campaign.setDeletedAt(null);
+        campaign.setUpdatedAt(LocalDateTime.now());
+        campaignRepository.save(campaign);
+        
+        log.info("Campaign restored successfully with ID: {}", id);
+    }
+    
     private CampaignResponse mapToResponse(Campaign campaign) {
         return CampaignResponse.builder()
                 .id(campaign.getId())

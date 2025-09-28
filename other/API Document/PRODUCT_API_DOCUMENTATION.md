@@ -1,11 +1,13 @@
 # Product API Documentation
 
 ## Overview
-The Product API manages product catalog with integrated Cloudinary image upload functionality. Handles product CRUD operations, brand and category management, and image management.
+The Product API manages product catalog with integrated Cloudinary image upload functionality. Includes product CRUD operations, brand and category management.
 
 ## Base URL
 ```
 http://localhost:8080/api/products
+http://localhost:8080/api/brands  
+http://localhost:8080/api/categories
 ```
 
 ## Authentication
@@ -19,29 +21,13 @@ All endpoints require authentication (implementation depends on your auth system
   "id": 1,
   "name": "iPhone 15 Pro",
   "description": "Latest iPhone with Pro features and A17 Pro chip",
-  "price": 999.99,
-  "stock": 50,
-  "sku": "IP15P-256-BLU",
-  "image": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/iphone_15_pro.jpg",
-  "imageID": "product_images/iphone_15_pro",
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/iphone_15_pro.jpg",
+  "imagePublicId": "product_images/iphone_15_pro",
   "brandId": 1,
-  "brandName": "Apple",
   "categoryId": 1,
-  "categoryName": "Smartphones",
-  "isActive": true,
-  "isFeatured": false,
   "createdAt": "2024-01-15T10:30:00",
   "updatedAt": "2024-01-15T10:30:00",
-  "deletedAt": null,
-  "rating": 4.5,
-  "reviewCount": 128,
-  "tags": ["smartphone", "apple", "premium", "5g"],
-  "specifications": {
-    "screen": "6.1-inch Super Retina XDR",
-    "storage": "256GB",
-    "camera": "48MP main camera",
-    "battery": "Up to 23 hours video playback"
-  }
+  "deletedAt": null
 }
 ```
 
@@ -51,12 +37,9 @@ All endpoints require authentication (implementation depends on your auth system
   "id": 1,
   "name": "Apple",
   "description": "Premium technology brand",
-  "logo": "https://res.cloudinary.com/demo/image/upload/brand_logos/apple_logo.png",
-  "logoID": "brand_logos/apple_logo",
-  "isActive": true,
-  "productCount": 25,
   "createdAt": "2024-01-01T00:00:00",
-  "updatedAt": "2024-01-01T00:00:00"
+  "updatedAt": "2024-01-01T00:00:00",
+  "deletedAt": null
 }
 ```
 
@@ -67,18 +50,9 @@ All endpoints require authentication (implementation depends on your auth system
   "name": "Smartphones",
   "description": "Mobile phones and accessories",
   "parentId": null,
-  "parentName": null,
-  "isActive": true,
-  "productCount": 45,
-  "subcategories": [
-    {
-      "id": 11,
-      "name": "iPhone",
-      "description": "Apple iPhone series"
-    }
-  ],
   "createdAt": "2024-01-01T00:00:00",
-  "updatedAt": "2024-01-01T00:00:00"
+  "updatedAt": "2024-01-01T00:00:00",
+  "deletedAt": null
 }
 ```
 
@@ -86,144 +60,51 @@ All endpoints require authentication (implementation depends on your auth system
 
 ## Product Endpoints
 
-### 1. Create Product with Image Upload
+### 1. Get All Products
 
-**POST** `/api/products`
+**GET** `/api/products`
 
-Creates a new product with optional image upload to Cloudinary.
+Retrieves all products with optional inclusion of soft-deleted products.
 
-**Content-Type:** `multipart/form-data`
-
-**Parameters:**
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| name | String | Yes | Product name (3-255 chars) |
-| description | String | No | Product description |
-| price | Decimal | Yes | Product price (positive) |
-| stock | Integer | Yes | Stock quantity (non-negative) |
-| sku | String | Yes | Stock Keeping Unit (unique) |
-| brandId | Long | Yes | Brand ID (must exist) |
-| categoryId | Long | Yes | Category ID (must exist) |
-| image | File | No | Product image file |
-| isFeatured | Boolean | No | Featured product flag |
-| tags | String | No | Comma-separated tags |
-| specifications | String | No | JSON string of specifications |
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| includeDeleted | Boolean | false | Include soft-deleted products |
 
 **Sample Request:**
 ```bash
-curl -X POST "http://localhost:8080/api/products" \
-  -F "name=Samsung Galaxy S24 Ultra" \
-  -F "description=Flagship Samsung smartphone with S Pen" \
-  -F "price=1199.99" \
-  -F "stock=30" \
-  -F "sku=SGS24U-512-TIT" \
-  -F "brandId=2" \
-  -F "categoryId=1" \
-  -F "isFeatured=true" \
-  -F "tags=smartphone,samsung,flagship,s-pen" \
-  -F "specifications={\"screen\":\"6.8-inch Dynamic AMOLED\",\"storage\":\"512GB\",\"ram\":\"12GB\"}" \
-  -F "image=@/path/to/galaxy-s24-ultra.jpg"
-```
-
-**Success Response (201 Created):**
-```json
-{
-  "id": 25,
-  "name": "Samsung Galaxy S24 Ultra",
-  "description": "Flagship Samsung smartphone with S Pen",
-  "price": 1199.99,
-  "stock": 30,
-  "sku": "SGS24U-512-TIT",
-  "image": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/galaxy_s24_ultra.jpg",
-  "imageID": "product_images/galaxy_s24_ultra",
-  "brandId": 2,
-  "brandName": "Samsung",
-  "categoryId": 1,
-  "categoryName": "Smartphones",
-  "isActive": true,
-  "isFeatured": true,
-  "createdAt": "2024-12-15T14:30:00",
-  "updatedAt": "2024-12-15T14:30:00",
-  "deletedAt": null,
-  "rating": 0.0,
-  "reviewCount": 0,
-  "tags": ["smartphone", "samsung", "flagship", "s-pen"],
-  "specifications": {
-    "screen": "6.8-inch Dynamic AMOLED",
-    "storage": "512GB",
-    "ram": "12GB"
-  }
-}
-```
-
-**Error Responses:**
-```json
-// 400 Bad Request - Validation Error
-{
-  "error": "Product with SKU 'SGS24U-512-TIT' already exists"
-}
-
-// 404 Not Found - Brand not found
-{
-  "error": "Brand not found with ID: 999"
-}
-
-// 500 Internal Server Error - Image upload failed
-{
-  "error": "Failed to upload product image"
-}
-```
-
----
-
-### 2. Update Product with Image Replacement
-
-**PUT** `/api/products/{id}`
-
-Updates an existing product. If a new image is provided, the old image is replaced.
-
-**Content-Type:** `multipart/form-data`
-
-**Sample Request:**
-```bash
-curl -X PUT "http://localhost:8080/api/products/25" \
-  -F "name=Samsung Galaxy S24 Ultra 5G" \
-  -F "description=Enhanced flagship Samsung smartphone with 5G" \
-  -F "price=1099.99" \
-  -F "stock=45" \
-  -F "isFeatured=false" \
-  -F "image=@/path/to/updated-galaxy-s24-ultra.jpg"
+curl -X GET "http://localhost:8080/api/products?includeDeleted=true"
 ```
 
 **Success Response (200 OK):**
 ```json
-{
-  "id": 25,
-  "name": "Samsung Galaxy S24 Ultra 5G",
-  "description": "Enhanced flagship Samsung smartphone with 5G",
-  "price": 1099.99,
-  "stock": 45,
-  "sku": "SGS24U-512-TIT",
-  "image": "https://res.cloudinary.com/demo/image/upload/v1234567891/product_images/updated_galaxy_s24_ultra.jpg",
-  "imageID": "product_images/updated_galaxy_s24_ultra",
-  "brandId": 2,
-  "brandName": "Samsung",
-  "categoryId": 1,
-  "categoryName": "Smartphones",
-  "isActive": true,
-  "isFeatured": false,
-  "createdAt": "2024-12-15T14:30:00",
-  "updatedAt": "2024-12-20T09:15:00",
-  "deletedAt": null,
-  "rating": 4.2,
-  "reviewCount": 8,
-  "tags": ["smartphone", "samsung", "flagship", "s-pen"],
-  "specifications": {
-    "screen": "6.8-inch Dynamic AMOLED",
-    "storage": "512GB",
-    "ram": "12GB"
+[
+  {
+    "id": 1,
+    "name": "iPhone 15 Pro",
+    "description": "Latest iPhone with Pro features",
+    "imageUrl": "https://res.cloudinary.com/demo/image/upload/product_images/iphone_15_pro.jpg",
+    "imagePublicId": "product_images/iphone_15_pro",
+    "brandId": 1,
+    "categoryId": 1,
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00",
+    "deletedAt": null
   }
-}
+]
+```
+
+---
+
+### 2. Get Active Products
+
+**GET** `/api/products/active`
+
+Retrieves only active (non-deleted) products.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/products/active"
 ```
 
 ---
@@ -234,129 +115,197 @@ curl -X PUT "http://localhost:8080/api/products/25" \
 
 Retrieves a specific product by its ID.
 
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| includeDeleted | Boolean | false | Include soft-deleted product |
+
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/products/25"
+curl -X GET "http://localhost:8080/api/products/1?includeDeleted=false"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 1,
+  "name": "iPhone 15 Pro",
+  "description": "Latest iPhone with Pro features",
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/product_images/iphone_15_pro.jpg",
+  "imagePublicId": "product_images/iphone_15_pro",
+  "brandId": 1,
+  "categoryId": 1,
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": "2024-01-15T10:30:00",
+  "deletedAt": null
+}
+```
+
+**Error Response:**
+```json
+// 404 Not Found
+{
+  "error": "Product not found"
+}
+```
+
+---
+
+### 4. Create Product with Image Upload
+
+**POST** `/api/products`
+
+Creates a new product with optional image upload to Cloudinary.
+
+**Content-Type:** `multipart/form-data`
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | String | Yes | Product name |
+| description | String | No | Product description |
+| categoryId | Integer | No | Category ID |
+| brandId | Integer | No | Brand ID |
+| image | File | No | Image file |
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/products" \
+  -F "name=Samsung Galaxy S24 Ultra" \
+  -F "description=Flagship Samsung smartphone" \
+  -F "categoryId=1" \
+  -F "brandId=2" \
+  -F "image=@/path/to/galaxy-s24-ultra.jpg"
+```
+
+**Success Response (201 Created):**
+```json
+{
+  "id": 25,
+  "name": "Samsung Galaxy S24 Ultra",
+  "description": "Flagship Samsung smartphone",
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/galaxy_s24_ultra.jpg",
+  "imagePublicId": "product_images/galaxy_s24_ultra",
+  "brandId": 2,
+  "categoryId": 1,
+  "createdAt": "2024-12-15T14:30:00",
+  "updatedAt": "2024-12-15T14:30:00",
+  "deletedAt": null
+}
+```
+
+**Error Responses:**
+```json
+// 500 Internal Server Error - Image upload failed
+{
+  "error": "Failed to upload image: Connection timeout"
+}
+
+// 400 Bad Request - Product creation failed
+{
+  "error": "Failed to create product: Name already exists"
+}
+```
+
+---
+
+### 5. Update Product with Image Replacement
+
+**PUT** `/api/products/{id}`
+
+Updates an existing product. If a new image is provided, the old image is automatically deleted and replaced.
+
+**Content-Type:** `multipart/form-data`
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | String | No | Updated product name |
+| description | String | No | Updated description |
+| categoryId | Integer | No | Updated category ID |
+| brandId | Integer | No | Updated brand ID |
+| image | File | No | New image (replaces existing) |
+| deleteImage | Boolean | No | Delete existing image (default: false) |
+
+**Sample Request:**
+```bash
+curl -X PUT "http://localhost:8080/api/products/25" \
+  -F "name=Samsung Galaxy S24 Ultra 5G" \
+  -F "description=Enhanced flagship smartphone" \
+  -F "image=@/path/to/updated-galaxy.jpg"
 ```
 
 **Success Response (200 OK):**
 ```json
 {
   "id": 25,
-  "name": "Samsung Galaxy S24 Ultra",
-  "description": "Flagship Samsung smartphone with S Pen",
-  "price": 1199.99,
-  "stock": 30,
-  "sku": "SGS24U-512-TIT",
-  "image": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/galaxy_s24_ultra.jpg",
-  "imageID": "product_images/galaxy_s24_ultra",
+  "name": "Samsung Galaxy S24 Ultra 5G",
+  "description": "Enhanced flagship smartphone",
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1234567891/product_images/updated_galaxy.jpg",
+  "imagePublicId": "product_images/updated_galaxy",
   "brandId": 2,
-  "brandName": "Samsung",
   "categoryId": 1,
-  "categoryName": "Smartphones",
-  "isActive": true,
-  "isFeatured": true,
   "createdAt": "2024-12-15T14:30:00",
-  "updatedAt": "2024-12-15T14:30:00",
-  "deletedAt": null,
-  "rating": 4.2,
-  "reviewCount": 8,
-  "tags": ["smartphone", "samsung", "flagship", "s-pen"],
-  "specifications": {
-    "screen": "6.8-inch Dynamic AMOLED",
-    "storage": "512GB",
-    "ram": "12GB"
-  }
+  "updatedAt": "2024-12-20T09:15:00",
+  "deletedAt": null
 }
 ```
 
 ---
 
-### 4. Get All Products (Paginated & Filtered)
+### 6. Delete Product (Soft Delete)
 
-**GET** `/api/products`
+**DELETE** `/api/products/{id}`
 
-Retrieves products with pagination, sorting, and filtering.
-
-**Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| page | Integer | 0 | Page number (0-based) |
-| size | Integer | 10 | Page size (1-100) |
-| sortBy | String | createdAt | Sort field |
-| sortDir | String | DESC | Sort direction |
-| brandId | Long | - | Filter by brand |
-| categoryId | Long | - | Filter by category |
-| minPrice | Decimal | - | Minimum price filter |
-| maxPrice | Decimal | - | Maximum price filter |
-| isFeatured | Boolean | - | Filter featured products |
-| isActive | Boolean | true | Filter active products |
-| search | String | - | Search in name/description |
+Soft deletes a product. The product image remains on Cloudinary.
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/products?page=0&size=20&brandId=2&minPrice=500&maxPrice=1500&search=galaxy"
+curl -X DELETE "http://localhost:8080/api/products/25"
+```
+
+**Success Response (204 No Content):**
+```
+(Empty response body)
+```
+
+**Error Response:**
+```json
+// 400 Bad Request
+{
+  "error": "Failed to delete product: Product not found"
+}
+```
+
+---
+
+### 7. Restore Product
+
+**PATCH** `/api/products/{id}/restore`
+
+Restores a soft-deleted product.
+
+**Sample Request:**
+```bash
+curl -X PATCH "http://localhost:8080/api/products/25/restore"
 ```
 
 **Success Response (200 OK):**
-```json
-{
-  "content": [
-    {
-      "id": 25,
-      "name": "Samsung Galaxy S24 Ultra",
-      "description": "Flagship Samsung smartphone with S Pen",
-      "price": 1199.99,
-      "stock": 30,
-      "sku": "SGS24U-512-TIT",
-      "image": "https://res.cloudinary.com/demo/image/upload/product_images/galaxy_s24_ultra.jpg",
-      "imageID": "product_images/galaxy_s24_ultra",
-      "brandId": 2,
-      "brandName": "Samsung",
-      "categoryId": 1,
-      "categoryName": "Smartphones",
-      "isActive": true,
-      "isFeatured": true,
-      "createdAt": "2024-12-15T14:30:00",
-      "updatedAt": "2024-12-15T14:30:00",
-      "deletedAt": null,
-      "rating": 4.2,
-      "reviewCount": 8,
-      "tags": ["smartphone", "samsung", "flagship", "s-pen"]
-    }
-  ],
-  "pageable": {
-    "sort": {
-      "empty": false,
-      "sorted": true,
-      "unsorted": false
-    },
-    "offset": 0,
-    "pageSize": 20,
-    "pageNumber": 0
-  },
-  "last": true,
-  "totalPages": 1,
-  "totalElements": 1,
-  "size": 20,
-  "number": 0,
-  "first": true,
-  "numberOfElements": 1,
-  "empty": false
-}
+```
+(Empty response body)
 ```
 
 ---
 
-### 5. Get Featured Products
+### 8. Get Products by Category
 
-**GET** `/api/products/featured`
+**GET** `/api/products/category/{categoryId}`
 
-Retrieves all featured products.
+Retrieves all products for a specific category.
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/products/featured"
+curl -X GET "http://localhost:8080/api/products/category/1"
 ```
 
 **Success Response (200 OK):**
@@ -365,28 +314,21 @@ curl -X GET "http://localhost:8080/api/products/featured"
   {
     "id": 1,
     "name": "iPhone 15 Pro",
-    "description": "Latest iPhone with Pro features",
-    "price": 999.99,
-    "stock": 50,
-    "sku": "IP15P-256-BLU",
-    "image": "https://res.cloudinary.com/demo/image/upload/product_images/iphone_15_pro.jpg",
-    "imageID": "product_images/iphone_15_pro",
+    "description": "Latest iPhone",
+    "imageUrl": "https://res.cloudinary.com/demo/image/upload/product_images/iphone.jpg",
+    "imagePublicId": "product_images/iphone",
     "brandId": 1,
-    "brandName": "Apple",
     "categoryId": 1,
-    "categoryName": "Smartphones",
-    "isActive": true,
-    "isFeatured": true,
-    "rating": 4.5,
-    "reviewCount": 128,
-    "tags": ["smartphone", "apple", "premium"]
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00",
+    "deletedAt": null
   }
 ]
 ```
 
 ---
 
-### 6. Get Products by Brand
+### 9. Get Products by Brand
 
 **GET** `/api/products/brand/{brandId}`
 
@@ -399,155 +341,247 @@ curl -X GET "http://localhost:8080/api/products/brand/1"
 
 ---
 
-### 7. Get Products by Category
-
-**GET** `/api/products/category/{categoryId}`
-
-Retrieves all products for a specific category.
-
-**Sample Request:**
-```bash
-curl -X GET "http://localhost:8080/api/products/category/1"
-```
-
----
-
-### 8. Search Products
+### 10. Search Products
 
 **GET** `/api/products/search`
 
-Advanced product search with multiple criteria.
+Searches products by name keyword.
 
 **Query Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| q | String | Search query (name, description, tags) |
-| brands | String | Comma-separated brand IDs |
-| categories | String | Comma-separated category IDs |
-| minPrice | Decimal | Minimum price |
-| maxPrice | Decimal | Maximum price |
-| minRating | Decimal | Minimum rating |
-| inStock | Boolean | Only in-stock products |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| keyword | String | Yes | Search keyword |
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/products/search?q=smartphone&brands=1,2&minPrice=800&maxPrice=1200&minRating=4.0&inStock=true"
+curl -X GET "http://localhost:8080/api/products/search?keyword=iphone"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "name": "iPhone 15 Pro",
+    "description": "Latest iPhone with Pro features",
+    "imageUrl": "https://res.cloudinary.com/demo/image/upload/product_images/iphone.jpg",
+    "imagePublicId": "product_images/iphone",
+    "brandId": 1,
+    "categoryId": 1,
+    "createdAt": "2024-01-15T10:30:00",
+    "updatedAt": "2024-01-15T10:30:00",
+    "deletedAt": null
+  }
+]
 ```
 
 ---
 
-### 9. Toggle Product Status
+### 11. Check Product Name Exists
 
-**PATCH** `/api/products/{id}/toggle-status`
+**GET** `/api/products/exists`
 
-Toggles the active status of a product.
+Checks if a product name already exists.
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | String | Yes | Product name to check |
+| excludeId | Integer | No | Exclude this product ID from check |
 
 **Sample Request:**
 ```bash
-curl -X PATCH "http://localhost:8080/api/products/25/toggle-status"
+curl -X GET "http://localhost:8080/api/products/exists?name=iPhone%2015%20Pro&excludeId=1"
+```
+
+**Success Response (200 OK):**
+```json
+true
 ```
 
 ---
 
-### 10. Delete Product (Soft Delete)
+### 12. Delete Product Image Only
 
-**DELETE** `/api/products/{id}`
+**DELETE** `/api/products/{id}/image`
 
-Soft deletes a product. The product image remains on Cloudinary.
+Deletes only the image from a product, keeping the product data.
 
 **Sample Request:**
 ```bash
-curl -X DELETE "http://localhost:8080/api/products/25"
+curl -X DELETE "http://localhost:8080/api/products/25/image"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 25,
+  "name": "Samsung Galaxy S24 Ultra",
+  "description": "Flagship smartphone",
+  "imageUrl": null,
+  "imagePublicId": null,
+  "brandId": 2,
+  "categoryId": 1,
+  "createdAt": "2024-12-15T14:30:00",
+  "updatedAt": "2024-12-20T10:00:00",
+  "deletedAt": null
+}
+```
+
+**Error Responses:**
+```json
+// No image to delete
+{
+  "message": "Product has no image to delete"
+}
+
+// Cloudinary deletion failed
+{
+  "error": "Failed to delete image from Cloudinary: Network error"
+}
+```
+
+---
+
+### 13. Upload Product Image
+
+**POST** `/api/products/upload-image`
+
+Uploads an image to Cloudinary (independent of product creation).
+
+**Content-Type:** `multipart/form-data`
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| file | File | Yes | Image file |
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/products/upload-image" \
+  -F "file=@/path/to/product-image.jpg"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "imageUrl": "https://res.cloudinary.com/demo/image/upload/v1234567890/product_images/uploaded_image.jpg",
+  "publicId": "product_images/uploaded_image",
+  "message": "Image uploaded successfully"
+}
+```
+
+**Error Responses:**
+```json
+// Empty file
+{
+  "error": "File is empty"
+}
+
+// Invalid file type
+{
+  "error": "File must be an image"
+}
+
+// Upload failed
+{
+  "error": "Failed to upload image: Upload timeout"
+}
+```
+
+---
+
+### 14. Create Product with Pre-uploaded Image
+
+**POST** `/api/products/create-with-image`
+
+Creates a product with a new image upload in one request.
+
+**Content-Type:** `multipart/form-data`
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/products/create-with-image" \
+  -F "name=New Product" \
+  -F "description=Product description" \
+  -F "categoryId=1" \
+  -F "brandId=2" \
+  -F "file=@/path/to/image.jpg"
+```
+
+---
+
+### 15. Update Product with New Image
+
+**PUT** `/api/products/{id}/update-with-image`
+
+Updates a product with optional new image upload.
+
+**Content-Type:** `multipart/form-data`
+
+**Sample Request:**
+```bash
+curl -X PUT "http://localhost:8080/api/products/1/update-with-image" \
+  -F "name=Updated Product Name" \
+  -F "file=@/path/to/new-image.jpg"
+```
+
+---
+
+### 16. Delete Image by Public ID
+
+**DELETE** `/api/products/delete-image`
+
+Deletes an image from Cloudinary using its public ID.
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| publicId | String | Yes | Cloudinary public ID |
+
+**Sample Request:**
+```bash
+curl -X DELETE "http://localhost:8080/api/products/delete-image?publicId=product_images/image_to_delete"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "result": "ok",
+  "message": "Image deleted successfully"
+}
 ```
 
 ---
 
 ## Brand Endpoints
 
-### 1. Create Brand with Logo Upload
-
-**POST** `/api/brands`
-
-**Content-Type:** `multipart/form-data`
-
-**Sample Request:**
-```bash
-curl -X POST "http://localhost:8080/api/brands" \
-  -F "name=Xiaomi" \
-  -F "description=Chinese technology company" \
-  -F "logo=@/path/to/xiaomi-logo.png"
-```
-
-**Success Response (201 Created):**
-```json
-{
-  "id": 5,
-  "name": "Xiaomi",
-  "description": "Chinese technology company",
-  "logo": "https://res.cloudinary.com/demo/image/upload/v1234567890/brand_logos/xiaomi_logo.png",
-  "logoID": "brand_logos/xiaomi_logo",
-  "isActive": true,
-  "productCount": 0,
-  "createdAt": "2024-12-15T16:00:00",
-  "updatedAt": "2024-12-15T16:00:00"
-}
-```
-
----
-
-### 2. Update Brand
-
-**PUT** `/api/brands/{id}`
-
-**Content-Type:** `multipart/form-data`
-
-**Sample Request:**
-```bash
-curl -X PUT "http://localhost:8080/api/brands/5" \
-  -F "name=Xiaomi Corporation" \
-  -F "description=Leading Chinese technology company" \
-  -F "logo=@/path/to/updated-xiaomi-logo.png"
-```
-
----
-
-### 3. Get All Brands
+### 1. Get All Brands
 
 **GET** `/api/brands`
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/brands?page=0&size=20"
+curl -X GET "http://localhost:8080/api/brands"
 ```
 
 **Success Response (200 OK):**
 ```json
-{
-  "content": [
-    {
-      "id": 1,
-      "name": "Apple",
-      "description": "Premium technology brand",
-      "logo": "https://res.cloudinary.com/demo/image/upload/brand_logos/apple_logo.png",
-      "logoID": "brand_logos/apple_logo",
-      "isActive": true,
-      "productCount": 25,
-      "createdAt": "2024-01-01T00:00:00",
-      "updatedAt": "2024-01-01T00:00:00"
-    }
-  ],
-  "pageable": {
-    "pageNumber": 0,
-    "pageSize": 20
-  },
-  "totalElements": 1,
-  "totalPages": 1
-}
+[
+  {
+    "id": 1,
+    "name": "Apple",
+    "description": "Premium technology brand",
+    "createdAt": "2024-01-01T00:00:00",
+    "updatedAt": "2024-01-01T00:00:00",
+    "deletedAt": null
+  }
+]
 ```
 
 ---
 
-### 4. Get Brand by ID
+### 2. Get Brand by ID
 
 **GET** `/api/brands/{id}`
 
@@ -558,82 +592,102 @@ curl -X GET "http://localhost:8080/api/brands/1"
 
 ---
 
-### 5. Delete Brand
+### 3. Create Brand
 
-**DELETE** `/api/brands/{id}`
-
-**Sample Request:**
-```bash
-curl -X DELETE "http://localhost:8080/api/brands/5"
-```
-
----
-
-## Category Endpoints
-
-### 1. Create Category
-
-**POST** `/api/categories`
+**POST** `/api/brands`
 
 **Content-Type:** `application/json`
 
 **Request Body:**
 ```json
 {
-  "name": "Tablets",
-  "description": "Tablet computers and accessories",
-  "parentId": null
+  "name": "Samsung",
+  "description": "South Korean electronics company"
 }
 ```
 
 **Sample Request:**
 ```bash
-curl -X POST "http://localhost:8080/api/categories" \
+curl -X POST "http://localhost:8080/api/brands" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Tablets",
-    "description": "Tablet computers and accessories",
-    "parentId": null
+    "name": "Samsung",
+    "description": "South Korean electronics company"
   }'
 ```
 
 **Success Response (201 Created):**
 ```json
 {
-  "id": 5,
-  "name": "Tablets",
-  "description": "Tablet computers and accessories",
-  "parentId": null,
-  "parentName": null,
-  "isActive": true,
-  "productCount": 0,
-  "subcategories": [],
-  "createdAt": "2024-12-15T17:00:00",
-  "updatedAt": "2024-12-15T17:00:00"
+  "id": 2,
+  "name": "Samsung",
+  "description": "South Korean electronics company",
+  "createdAt": "2024-12-15T10:00:00",
+  "updatedAt": "2024-12-15T10:00:00",
+  "deletedAt": null
 }
 ```
 
 ---
 
-### 2. Update Category
+### 4. Update Brand
 
-**PUT** `/api/categories/{id}`
+**PUT** `/api/brands/{id}`
 
 **Content-Type:** `application/json`
 
 **Sample Request:**
 ```bash
-curl -X PUT "http://localhost:8080/api/categories/5" \
+curl -X PUT "http://localhost:8080/api/brands/2" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Tablet Devices",
-    "description": "All types of tablet computers"
+    "name": "Samsung Electronics",
+    "description": "Leading South Korean electronics company"
   }'
 ```
 
 ---
 
-### 3. Get All Categories (Tree Structure)
+### 5. Delete Brand
+
+**DELETE** `/api/brands/{id}`
+
+**Sample Request:**
+```bash
+curl -X DELETE "http://localhost:8080/api/brands/2"
+```
+
+**Success Response (204 No Content):**
+```
+(Empty response body)
+```
+
+---
+
+### 6. Check Brand Name Exists
+
+**GET** `/api/brands/exists`
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | String | Yes | Brand name to check |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/brands/exists?name=Apple"
+```
+
+**Success Response (200 OK):**
+```json
+true
+```
+
+---
+
+## Category Endpoints
+
+### 1. Get All Categories
 
 **GET** `/api/categories`
 
@@ -648,42 +702,18 @@ curl -X GET "http://localhost:8080/api/categories"
   {
     "id": 1,
     "name": "Electronics",
-    "description": "All electronic products",
+    "description": "Electronic devices and accessories",
     "parentId": null,
-    "parentName": null,
-    "isActive": true,
-    "productCount": 125,
-    "subcategories": [
-      {
-        "id": 11,
-        "name": "Smartphones",
-        "description": "Mobile phones",
-        "parentId": 1,
-        "parentName": "Electronics",
-        "isActive": true,
-        "productCount": 45,
-        "subcategories": []
-      },
-      {
-        "id": 12,
-        "name": "Laptops",
-        "description": "Portable computers",
-        "parentId": 1,
-        "parentName": "Electronics",
-        "isActive": true,
-        "productCount": 30,
-        "subcategories": []
-      }
-    ],
     "createdAt": "2024-01-01T00:00:00",
-    "updatedAt": "2024-01-01T00:00:00"
+    "updatedAt": "2024-01-01T00:00:00",
+    "deletedAt": null
   }
 ]
 ```
 
 ---
 
-### 4. Get Category by ID
+### 2. Get Category by ID
 
 **GET** `/api/categories/{id}`
 
@@ -694,9 +724,11 @@ curl -X GET "http://localhost:8080/api/categories/1"
 
 ---
 
-### 5. Get Root Categories
+### 3. Get Root Categories
 
 **GET** `/api/categories/root`
+
+Gets categories that have no parent (parentId is null).
 
 **Sample Request:**
 ```bash
@@ -705,13 +737,126 @@ curl -X GET "http://localhost:8080/api/categories/root"
 
 ---
 
-### 6. Delete Category
+### 4. Get Child Categories
+
+**GET** `/api/categories/{parentId}/children`
+
+Gets all subcategories of a parent category.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/categories/1/children"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 11,
+    "name": "Smartphones",
+    "description": "Mobile phones",
+    "parentId": 1,
+    "createdAt": "2024-01-01T00:00:00",
+    "updatedAt": "2024-01-01T00:00:00",
+    "deletedAt": null
+  }
+]
+```
+
+---
+
+### 5. Create Category
+
+**POST** `/api/categories`
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "name": "Tablets",
+  "description": "Tablet computers",
+  "parentId": 1
+}
+```
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/categories" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Tablets",
+    "description": "Tablet computers",
+    "parentId": 1
+  }'
+```
+
+**Success Response (201 Created):**
+```json
+{
+  "id": 12,
+  "name": "Tablets",
+  "description": "Tablet computers",
+  "parentId": 1,
+  "createdAt": "2024-12-15T11:00:00",
+  "updatedAt": "2024-12-15T11:00:00",
+  "deletedAt": null
+}
+```
+
+---
+
+### 6. Update Category
+
+**PUT** `/api/categories/{id}`
+
+**Content-Type:** `application/json`
+
+**Sample Request:**
+```bash
+curl -X PUT "http://localhost:8080/api/categories/12" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Tablet Devices",
+    "description": "All types of tablet computers"
+  }'
+```
+
+---
+
+### 7. Delete Category
 
 **DELETE** `/api/categories/{id}`
 
 **Sample Request:**
 ```bash
-curl -X DELETE "http://localhost:8080/api/categories/5"
+curl -X DELETE "http://localhost:8080/api/categories/12"
+```
+
+**Success Response (204 No Content):**
+```
+(Empty response body)
+```
+
+---
+
+### 8. Check Category Name Exists
+
+**GET** `/api/categories/exists`
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| name | String | Yes | Category name to check |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/categories/exists?name=Electronics"
+```
+
+**Success Response (200 OK):**
+```json
+true
 ```
 
 ---
@@ -724,16 +869,13 @@ curl -X DELETE "http://localhost:8080/api/categories/5"
 - `204 No Content` - Successful DELETE request
 - `400 Bad Request` - Validation errors
 - `404 Not Found` - Resource not found
-- `409 Conflict` - Duplicate resource (SKU, name)
 - `500 Internal Server Error` - Server errors, image upload failures
 
 ### Validation Rules
-- **Product name**: 3-255 characters, required
-- **SKU**: Unique, alphanumeric with hyphens, required
-- **Price**: Positive decimal, required
-- **Stock**: Non-negative integer, required
-- **Brand/Category**: Must reference existing entities
-- **Image**: JPG, PNG, GIF, WebP, max 10MB
+- **Product name**: Required for creation, must be unique
+- **Brand/Category**: Must reference existing entities when provided
+- **Image files**: Must be valid image formats, reasonable size limits
+- **Names**: Cannot be empty or null when provided
 
 ---
 
@@ -741,41 +883,57 @@ curl -X DELETE "http://localhost:8080/api/categories/5"
 
 ### Cloudinary Integration
 - **Product images**: Stored in `product_images/` folder
-- **Brand logos**: Stored in `brand_logos/` folder
 - **Automatic optimization**: Cloudinary handles compression and format conversion
 - **CDN delivery**: Fast global delivery via Cloudinary CDN
+- **Old image cleanup**: Previous images automatically deleted when replaced
 
 ### Image Requirements
-- **Formats**: JPG, PNG, GIF, WebP
-- **Size limit**: 10MB per file
-- **Product images**: Recommended 800x800px (1:1 aspect ratio)
-- **Brand logos**: Recommended 200x200px (transparent background preferred)
+- **Formats**: JPG, PNG, GIF, WebP (validated by content type)
+- **Upload folder**: `product_images/` (automatically created)
+- **Response**: Returns both secure URL and public ID for management
 
-### Image Management
-- **Create**: Upload image with entity creation
-- **Update**: Replace existing image (old image deleted automatically)
-- **Delete**: Image preserved on Cloudinary (soft delete only affects database)
+### Image Management Flow
+1. **Upload**: Use multipart/form-data with `image` parameter
+2. **Replace**: New image upload automatically deletes old image
+3. **Delete**: Separate endpoint to remove image while keeping product
+4. **Validation**: Server-side validation of file type and content
 
 ---
 
 ## Business Rules
 
-### Product Lifecycle
-1. **Creation**: Requires valid brand and category
-2. **Stock Management**: Automatic stock tracking
-3. **Featured Products**: Manual promotion flag
-4. **Status Management**: Active/inactive toggle
-5. **Soft Delete**: Preserves historical data
+### Product Management
+- **Soft Delete**: Products are soft deleted (deletedAt timestamp)
+- **Image Persistence**: Images remain on Cloudinary after product deletion
+- **Restoration**: Soft deleted products can be restored
+- **Search**: Search only active products by default
 
-### Search and Filtering
-- **Full-text search**: Searches name, description, and tags
-- **Price range**: Min/max price filtering
-- **Brand filtering**: Single or multiple brands
-- **Category filtering**: Hierarchical category support
-- **Rating filtering**: Based on customer reviews
-- **Stock filtering**: In-stock only option
+### Category Hierarchy
+- **Parent-Child**: Categories can have parent categories
+- **Root Categories**: Categories with parentId = null
+- **Nested Structure**: Support for unlimited category depth
 
-### Hierarchical Categories
-- **Parent-Child relationship**: Categories can have subcategories
-- **Tree structure**: Unlimited nesting depth
-- **Product inheritance**: Products can belong to leaf categories only
+### Brand Management
+- **Unique Names**: Brand names must be unique
+- **Simple Structure**: No hierarchy, flat brand structure
+- **Product Association**: Brands can be associated with multiple products
+
+---
+
+## Performance Considerations
+
+### Database Queries
+- Soft delete filtering applied by default
+- Indexes on frequently queried fields (name, brand, category)
+- Efficient category hierarchy queries
+
+### Image Handling
+- Asynchronous Cloudinary uploads where possible
+- Automatic image optimization by Cloudinary
+- CDN caching for fast image delivery
+- Cleanup of unused images during updates
+
+### API Response
+- Lightweight responses with essential data
+- Batch operations for multiple products
+- Efficient search with keyword matching

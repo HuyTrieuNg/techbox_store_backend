@@ -279,4 +279,9 @@ public class VoucherService {
     public Long getVoucherUsageCount(Integer voucherId) {
         return userVoucherRepository.countByVoucherId(voucherId);
     }
+    
+    @Transactional(readOnly = true)
+    public boolean existsByCode(String code) {
+        return voucherRepository.existsByCodeAndNotDeleted(code, null);
+    }
 }

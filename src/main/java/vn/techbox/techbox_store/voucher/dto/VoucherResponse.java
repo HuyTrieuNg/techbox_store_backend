@@ -69,16 +69,20 @@ public class VoucherResponse {
         // Set validity period
         builder.displayValidityPeriod(voucher.getValidFrom() + " - " + voucher.getValidUntil());
         
-        // Set status
+        // Set status with proper logic
         String status;
+        LocalDateTime now = LocalDateTime.now();
+        
         if (voucher.isDeleted()) {
             status = "DELETED";
-        } else if (!voucher.isValid()) {
-            status = "EXPIRED";
+        } else if (voucher.getValidFrom().isAfter(now)) {
+            status = "PENDING";  // Chưa tới thời gian hiệu lực
+        } else if (voucher.getValidUntil().isBefore(now)) {
+            status = "EXPIRED";  // Đã hết hạn
         } else if (!voucher.hasUsageLeft()) {
-            status = "EXHAUSTED";
+            status = "USED_UP";  // Hết lượt sử dụng
         } else {
-            status = "ACTIVE";
+            status = "ACTIVE";   // Đang hoạt động
         }
         builder.status(status);
         

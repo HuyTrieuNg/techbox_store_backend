@@ -20,8 +20,4 @@ public enum PromotionType {
         return symbol;
     }
 
-    @Override
-    public String toString() {
-        return this.value;
-    }
 }

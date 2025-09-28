@@ -79,6 +79,14 @@ public class VoucherController {
         }
     }
     
+    @GetMapping("/code/exists")
+    @Operation(summary = "Check if voucher code exists", description = "Check if a voucher code already exists in the system")
+    public ResponseEntity<Boolean> checkVoucherCodeExists(
+            @Parameter(description = "Voucher code to check") @RequestParam String code) {
+        boolean exists = voucherService.existsByCode(code);
+        return ResponseEntity.ok(exists);
+    }
+    
     @GetMapping
     @Operation(summary = "Get all vouchers", description = "Retrieve all vouchers with pagination")
     public ResponseEntity<Page<VoucherResponse>> getAllVouchers(

@@ -1,7 +1,7 @@
 # Promotion API Documentation
 
 ## Overview
-The Promotion API manages discount promotions tied to campaigns. Promotions define specific discount rules, applicable products, and conditions.
+The Promotion API manages promotional rules and discounts that can be applied to products. Promotions are linked to campaigns and define discount calculation logic.
 
 ## Base URL
 ```
@@ -17,66 +17,73 @@ All endpoints require authentication (implementation depends on your auth system
 ```json
 {
   "id": 1,
-  "name": "Summer Electronics Discount",
-  "description": "25% off all electronics during summer sale",
+  "ruleName": "Electronics 25% Off",
   "discountType": "PERCENTAGE",
   "discountValue": 25.00,
   "minOrderAmount": 100.00,
-  "maxDiscountAmount": 500.00,
-  "usageLimit": 1000,
-  "usedCount": 45,
-  "isActive": true,
-  "startDate": "2024-06-01T00:00:00",
-  "endDate": "2024-08-31T23:59:59",
-  "createdAt": "2024-05-15T10:00:00",
-  "updatedAt": "2024-05-15T10:00:00",
-  "deletedAt": null,
+  "maxDiscountAmount": 200.00,
   "campaignId": 1,
   "campaignName": "Summer Sale 2024",
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    }
-  ],
-  "remainingUsage": 955,
-  "isExpired": false,
-  "isUsageLimitReached": false
+  "productVariationId": null,
+  "isActive": true,
+  "createdAt": "2024-06-01T10:00:00",
+  "updatedAt": "2024-06-01T10:00:00"
 }
 ```
 
-### Discount Types
-- `PERCENTAGE` - Percentage discount (e.g., 25% off)
-- `FIXED_AMOUNT` - Fixed amount discount (e.g., $50 off)
-- `FREE_SHIPPING` - Free shipping promotion
+### Promotion Calculation Request
+```json
+{
+  "productVariationId": 123,
+  "originalPrice": 150.00,
+  "quantity": 2,
+  "orderAmount": 500.00
+}
+```
+
+### Promotion Calculation Response
+```json
+{
+  "productVariationId": 123,
+  "originalPrice": 150.00,
+  "finalPrice": 112.50,
+  "totalDiscount": 75.00,
+  "applicablePromotions": [
+    {
+      "id": 1,
+      "ruleName": "Electronics 25% Off",
+      "discountType": "PERCENTAGE",
+      "discountValue": 25.00,
+      "discountAmount": 37.50
+    }
+  ],
+  "quantity": 2,
+  "orderAmount": 500.00
+}
+```
 
 ---
 
-## API Endpoints
+## Promotion Management Endpoints
 
 ### 1. Create Promotion
 
 **POST** `/api/promotions`
 
-Creates a new promotion linked to a campaign.
+Creates a new promotion rule.
 
 **Content-Type:** `application/json`
 
 **Request Body:**
 ```json
 {
-  "name": "Black Friday Electronics Deal",
-  "description": "Huge discounts on electronics for Black Friday",
+  "ruleName": "Fashion Week 30% Off",
   "discountType": "PERCENTAGE",
   "discountValue": 30.00,
-  "minOrderAmount": 200.00,
-  "maxDiscountAmount": 1000.00,
-  "usageLimit": 500,
-  "startDate": "2024-11-29T00:00:00",
-  "endDate": "2024-11-29T23:59:59",
+  "minOrderAmount": 75.00,
+  "maxDiscountAmount": 150.00,
   "campaignId": 2,
-  "productIds": [1, 2, 3, 4, 5]
+  "productVariationId": 456
 }
 ```
 
@@ -85,73 +92,38 @@ Creates a new promotion linked to a campaign.
 curl -X POST "http://localhost:8080/api/promotions" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Black Friday Electronics Deal",
-    "description": "Huge discounts on electronics for Black Friday",
+    "ruleName": "Fashion Week 30% Off",
     "discountType": "PERCENTAGE",
     "discountValue": 30.00,
-    "minOrderAmount": 200.00,
-    "maxDiscountAmount": 1000.00,
-    "usageLimit": 500,
-    "startDate": "2024-11-29T00:00:00",
-    "endDate": "2024-11-29T23:59:59",
+    "minOrderAmount": 75.00,
+    "maxDiscountAmount": 150.00,
     "campaignId": 2,
-    "productIds": [1, 2, 3, 4, 5]
+    "productVariationId": 456
   }'
 ```
 
 **Success Response (201 Created):**
 ```json
 {
-  "id": 5,
-  "name": "Black Friday Electronics Deal",
-  "description": "Huge discounts on electronics for Black Friday",
+  "id": 25,
+  "ruleName": "Fashion Week 30% Off",
   "discountType": "PERCENTAGE",
   "discountValue": 30.00,
-  "minOrderAmount": 200.00,
-  "maxDiscountAmount": 1000.00,
-  "usageLimit": 500,
-  "usedCount": 0,
-  "isActive": true,
-  "startDate": "2024-11-29T00:00:00",
-  "endDate": "2024-11-29T23:59:59",
-  "createdAt": "2024-11-20T14:30:00",
-  "updatedAt": "2024-11-20T14:30:00",
-  "deletedAt": null,
+  "minOrderAmount": 75.00,
+  "maxDiscountAmount": 150.00,
   "campaignId": 2,
-  "campaignName": "Black Friday 2024",
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    },
-    {
-      "productId": 2,
-      "productName": "Samsung Galaxy S24",
-      "sku": "SGS24-512-BLK"
-    }
-  ],
-  "remainingUsage": 500,
-  "isExpired": false,
-  "isUsageLimitReached": false
+  "campaignName": "Fashion Week 2024",
+  "productVariationId": 456,
+  "isActive": true,
+  "createdAt": "2024-09-15T10:30:00",
+  "updatedAt": "2024-09-15T10:30:00"
 }
 ```
 
-**Error Responses:**
+**Error Response (400 Bad Request):**
 ```json
-// 400 Bad Request - Validation Error
 {
-  "error": "Promotion name must be unique within the campaign"
-}
-
-// 404 Not Found - Campaign not found
-{
-  "error": "Campaign not found with ID: 999"
-}
-
-// 400 Bad Request - Date validation
-{
-  "error": "Promotion dates must be within campaign period"
+  "error": "Invalid promotion rule: Campaign not found"
 }
 ```
 
@@ -161,86 +133,52 @@ curl -X POST "http://localhost:8080/api/promotions" \
 
 **PUT** `/api/promotions/{id}`
 
-Updates an existing promotion.
+Updates an existing promotion rule.
 
 **Content-Type:** `application/json`
 
 **Request Body:**
 ```json
 {
-  "name": "Extended Black Friday Electronics Deal",
-  "description": "Extended huge discounts on electronics",
+  "ruleName": "Enhanced Fashion Week 35% Off",
   "discountValue": 35.00,
-  "maxDiscountAmount": 1500.00,
-  "usageLimit": 1000,
-  "endDate": "2024-12-01T23:59:59",
-  "productIds": [1, 2, 3, 4, 5, 6, 7]
+  "maxDiscountAmount": 200.00
 }
 ```
 
 **Sample Request:**
 ```bash
-curl -X PUT "http://localhost:8080/api/promotions/5" \
+curl -X PUT "http://localhost:8080/api/promotions/25" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Extended Black Friday Electronics Deal",
-    "description": "Extended huge discounts on electronics",
+    "ruleName": "Enhanced Fashion Week 35% Off",
     "discountValue": 35.00,
-    "maxDiscountAmount": 1500.00,
-    "usageLimit": 1000,
-    "endDate": "2024-12-01T23:59:59",
-    "productIds": [1, 2, 3, 4, 5, 6, 7]
+    "maxDiscountAmount": 200.00
   }'
 ```
 
 **Success Response (200 OK):**
 ```json
 {
-  "id": 5,
-  "name": "Extended Black Friday Electronics Deal",
-  "description": "Extended huge discounts on electronics",
+  "id": 25,
+  "ruleName": "Enhanced Fashion Week 35% Off",
   "discountType": "PERCENTAGE",
   "discountValue": 35.00,
-  "minOrderAmount": 200.00,
-  "maxDiscountAmount": 1500.00,
-  "usageLimit": 1000,
-  "usedCount": 0,
-  "isActive": true,
-  "startDate": "2024-11-29T00:00:00",
-  "endDate": "2024-12-01T23:59:59",
-  "createdAt": "2024-11-20T14:30:00",
-  "updatedAt": "2024-11-25T09:15:00",
-  "deletedAt": null,
+  "minOrderAmount": 75.00,
+  "maxDiscountAmount": 200.00,
   "campaignId": 2,
-  "campaignName": "Black Friday 2024",
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    },
-    {
-      "productId": 2,
-      "productName": "Samsung Galaxy S24",
-      "sku": "SGS24-512-BLK"
-    }
-  ],
-  "remainingUsage": 1000,
-  "isExpired": false,
-  "isUsageLimitReached": false
+  "campaignName": "Fashion Week 2024",
+  "productVariationId": 456,
+  "isActive": true,
+  "createdAt": "2024-09-15T10:30:00",
+  "updatedAt": "2024-09-20T14:15:00"
 }
 ```
 
-**Error Responses:**
+**Error Response (400 Bad Request):**
 ```json
-// 404 Not Found
 {
-  "error": "Promotion not found with ID: 999"
-}
-
-// 400 Bad Request
-{
-  "error": "Cannot update expired promotion"
+  "error": "Invalid promotion update: Discount value must be positive"
 }
 ```
 
@@ -254,47 +192,31 @@ Retrieves a specific promotion by its ID.
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/promotions/5"
+curl -X GET "http://localhost:8080/api/promotions/25"
 ```
 
 **Success Response (200 OK):**
 ```json
 {
-  "id": 5,
-  "name": "Black Friday Electronics Deal",
-  "description": "Huge discounts on electronics for Black Friday",
+  "id": 25,
+  "ruleName": "Enhanced Fashion Week 35% Off",
   "discountType": "PERCENTAGE",
-  "discountValue": 30.00,
-  "minOrderAmount": 200.00,
-  "maxDiscountAmount": 1000.00,
-  "usageLimit": 500,
-  "usedCount": 45,
-  "isActive": true,
-  "startDate": "2024-11-29T00:00:00",
-  "endDate": "2024-11-29T23:59:59",
-  "createdAt": "2024-11-20T14:30:00",
-  "updatedAt": "2024-11-20T14:30:00",
-  "deletedAt": null,
+  "discountValue": 35.00,
+  "minOrderAmount": 75.00,
+  "maxDiscountAmount": 200.00,
   "campaignId": 2,
-  "campaignName": "Black Friday 2024",
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    }
-  ],
-  "remainingUsage": 455,
-  "isExpired": false,
-  "isUsageLimitReached": false
+  "campaignName": "Fashion Week 2024",
+  "productVariationId": 456,
+  "isActive": true,
+  "createdAt": "2024-09-15T10:30:00",
+  "updatedAt": "2024-09-20T14:15:00"
 }
 ```
 
-**Error Response:**
+**Error Response (404 Not Found):**
 ```json
-// 404 Not Found
 {
-  "error": "Promotion not found with ID: 999"
+  "error": "Promotion not found"
 }
 ```
 
@@ -304,22 +226,19 @@ curl -X GET "http://localhost:8080/api/promotions/5"
 
 **GET** `/api/promotions`
 
-Retrieves all promotions with pagination and optional filtering.
+Retrieves all promotions with pagination and sorting.
 
 **Query Parameters:**
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | page | Integer | 0 | Page number (0-based) |
-| size | Integer | 10 | Page size (1-100) |
+| size | Integer | 10 | Page size |
 | sortBy | String | createdAt | Sort field |
 | sortDir | String | DESC | Sort direction (ASC/DESC) |
-| campaignId | Long | - | Filter by campaign ID |
-| discountType | String | - | Filter by discount type |
-| isActive | Boolean | - | Filter by active status |
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/promotions?page=0&size=20&campaignId=2&isActive=true"
+curl -X GET "http://localhost:8080/api/promotions?page=0&size=20&sortBy=discountValue&sortDir=DESC"
 ```
 
 **Success Response (200 OK):**
@@ -327,57 +246,34 @@ curl -X GET "http://localhost:8080/api/promotions?page=0&size=20&campaignId=2&is
 {
   "content": [
     {
-      "id": 5,
-      "name": "Black Friday Electronics Deal",
-      "description": "Huge discounts on electronics",
+      "id": 25,
+      "ruleName": "Enhanced Fashion Week 35% Off",
       "discountType": "PERCENTAGE",
-      "discountValue": 30.00,
-      "minOrderAmount": 200.00,
-      "maxDiscountAmount": 1000.00,
-      "usageLimit": 500,
-      "usedCount": 45,
-      "isActive": true,
-      "startDate": "2024-11-29T00:00:00",
-      "endDate": "2024-11-29T23:59:59",
-      "createdAt": "2024-11-20T14:30:00",
-      "updatedAt": "2024-11-20T14:30:00",
-      "deletedAt": null,
+      "discountValue": 35.00,
+      "minOrderAmount": 75.00,
+      "maxDiscountAmount": 200.00,
       "campaignId": 2,
-      "campaignName": "Black Friday 2024",
-      "applicableProducts": [
-        {
-          "productId": 1,
-          "productName": "iPhone 15 Pro",
-          "sku": "IP15P-256-BLU"
-        }
-      ],
-      "remainingUsage": 455,
-      "isExpired": false,
-      "isUsageLimitReached": false
+      "campaignName": "Fashion Week 2024",
+      "productVariationId": 456,
+      "isActive": true,
+      "createdAt": "2024-09-15T10:30:00",
+      "updatedAt": "2024-09-20T14:15:00"
     }
   ],
   "pageable": {
     "sort": {
-      "empty": false,
       "sorted": true,
       "unsorted": false
     },
-    "offset": 0,
-    "pageSize": 20,
     "pageNumber": 0,
-    "paged": true,
-    "unpaged": false
+    "pageSize": 20,
+    "offset": 0
   },
-  "last": true,
-  "totalPages": 1,
   "totalElements": 1,
+  "totalPages": 1,
+  "last": true,
   "size": 20,
   "number": 0,
-  "sort": {
-    "empty": false,
-    "sorted": true,
-    "unsorted": false
-  },
   "first": true,
   "numberOfElements": 1,
   "empty": false
@@ -390,7 +286,7 @@ curl -X GET "http://localhost:8080/api/promotions?page=0&size=20&campaignId=2&is
 
 **GET** `/api/promotions/campaign/{campaignId}`
 
-Retrieves all promotions for a specific campaign.
+Retrieves all promotions associated with a specific campaign.
 
 **Sample Request:**
 ```bash
@@ -401,287 +297,66 @@ curl -X GET "http://localhost:8080/api/promotions/campaign/2"
 ```json
 [
   {
-    "id": 5,
-    "name": "Black Friday Electronics Deal",
-    "description": "Huge discounts on electronics",
+    "id": 25,
+    "ruleName": "Enhanced Fashion Week 35% Off",
     "discountType": "PERCENTAGE",
-    "discountValue": 30.00,
-    "minOrderAmount": 200.00,
-    "maxDiscountAmount": 1000.00,
-    "usageLimit": 500,
-    "usedCount": 45,
-    "isActive": true,
-    "startDate": "2024-11-29T00:00:00",
-    "endDate": "2024-11-29T23:59:59",
-    "createdAt": "2024-11-20T14:30:00",
-    "updatedAt": "2024-11-20T14:30:00",
-    "deletedAt": null,
+    "discountValue": 35.00,
+    "minOrderAmount": 75.00,
+    "maxDiscountAmount": 200.00,
     "campaignId": 2,
-    "campaignName": "Black Friday 2024",
-    "applicableProducts": [
-      {
-        "productId": 1,
-        "productName": "iPhone 15 Pro",
-        "sku": "IP15P-256-BLU"
-      }
-    ],
-    "remainingUsage": 455,
-    "isExpired": false,
-    "isUsageLimitReached": false
-  },
-  {
-    "id": 6,
-    "name": "Black Friday Accessories Deal",
-    "description": "Fixed discount on accessories",
-    "discountType": "FIXED_AMOUNT",
-    "discountValue": 50.00,
-    "minOrderAmount": 100.00,
-    "maxDiscountAmount": 50.00,
-    "usageLimit": 200,
-    "usedCount": 12,
+    "campaignName": "Fashion Week 2024",
+    "productVariationId": 456,
     "isActive": true,
-    "startDate": "2024-11-29T00:00:00",
-    "endDate": "2024-11-29T23:59:59",
-    "createdAt": "2024-11-21T10:00:00",
-    "updatedAt": "2024-11-21T10:00:00",
-    "deletedAt": null,
-    "campaignId": 2,
-    "campaignName": "Black Friday 2024",
-    "applicableProducts": [
-      {
-        "productId": 10,
-        "productName": "AirPods Pro",
-        "sku": "APP-2ND-WHT"
-      }
-    ],
-    "remainingUsage": 188,
-    "isExpired": false,
-    "isUsageLimitReached": false
+    "createdAt": "2024-09-15T10:30:00",
+    "updatedAt": "2024-09-20T14:15:00"
   }
 ]
 ```
 
 ---
 
-### 6. Get Active Promotions
+### 6. Get Promotions by Product Variation
 
-**GET** `/api/promotions/active`
+**GET** `/api/promotions/product-variation/{productVariationId}`
 
-Retrieves all currently active promotions.
+Retrieves all promotions applicable to a specific product variation.
 
 **Sample Request:**
 ```bash
-curl -X GET "http://localhost:8080/api/promotions/active"
+curl -X GET "http://localhost:8080/api/promotions/product-variation/456"
 ```
 
 **Success Response (200 OK):**
 ```json
 [
   {
-    "id": 7,
-    "name": "Current Winter Promo",
-    "description": "Winter season discounts",
+    "id": 25,
+    "ruleName": "Enhanced Fashion Week 35% Off",
     "discountType": "PERCENTAGE",
-    "discountValue": 20.00,
-    "minOrderAmount": 150.00,
-    "maxDiscountAmount": 300.00,
-    "usageLimit": 300,
-    "usedCount": 78,
-    "isActive": true,
-    "startDate": "2024-12-01T00:00:00",
-    "endDate": "2024-12-31T23:59:59",
-    "createdAt": "2024-11-25T09:00:00",
-    "updatedAt": "2024-11-25T09:00:00",
-    "deletedAt": null,
-    "campaignId": 3,
-    "campaignName": "Winter Sale 2024",
-    "applicableProducts": [
-      {
-        "productId": 15,
-        "productName": "Winter Jacket",
-        "sku": "WJ-L-BLK"
-      }
-    ],
-    "remainingUsage": 222,
-    "isExpired": false,
-    "isUsageLimitReached": false
-  }
-]
-```
-
----
-
-### 7. Get Applicable Promotions for Product
-
-**GET** `/api/promotions/product/{productId}`
-
-Retrieves all promotions applicable to a specific product.
-
-**Sample Request:**
-```bash
-curl -X GET "http://localhost:8080/api/promotions/product/1"
-```
-
-**Success Response (200 OK):**
-```json
-[
-  {
-    "id": 5,
-    "name": "Black Friday Electronics Deal",
-    "description": "Huge discounts on electronics",
-    "discountType": "PERCENTAGE",
-    "discountValue": 30.00,
-    "minOrderAmount": 200.00,
-    "maxDiscountAmount": 1000.00,
-    "usageLimit": 500,
-    "usedCount": 45,
-    "isActive": true,
-    "startDate": "2024-11-29T00:00:00",
-    "endDate": "2024-11-29T23:59:59",
-    "createdAt": "2024-11-20T14:30:00",
-    "updatedAt": "2024-11-20T14:30:00",
-    "deletedAt": null,
+    "discountValue": 35.00,
+    "minOrderAmount": 75.00,
+    "maxDiscountAmount": 200.00,
     "campaignId": 2,
-    "campaignName": "Black Friday 2024",
-    "applicableProducts": [
-      {
-        "productId": 1,
-        "productName": "iPhone 15 Pro",
-        "sku": "IP15P-256-BLU"
-      }
-    ],
-    "remainingUsage": 455,
-    "isExpired": false,
-    "isUsageLimitReached": false
+    "campaignName": "Fashion Week 2024",
+    "productVariationId": 456,
+    "isActive": true,
+    "createdAt": "2024-09-15T10:30:00",
+    "updatedAt": "2024-09-20T14:15:00"
   }
 ]
 ```
 
 ---
 
-### 8. Activate/Deactivate Promotion
-
-**PATCH** `/api/promotions/{id}/toggle-status`
-
-Toggles the active status of a promotion.
-
-**Sample Request (Deactivate):**
-```bash
-curl -X PATCH "http://localhost:8080/api/promotions/5/toggle-status"
-```
-
-**Success Response (200 OK):**
-```json
-{
-  "id": 5,
-  "name": "Black Friday Electronics Deal",
-  "description": "Huge discounts on electronics",
-  "discountType": "PERCENTAGE",
-  "discountValue": 30.00,
-  "minOrderAmount": 200.00,
-  "maxDiscountAmount": 1000.00,
-  "usageLimit": 500,
-  "usedCount": 45,
-  "isActive": false,
-  "startDate": "2024-11-29T00:00:00",
-  "endDate": "2024-11-29T23:59:59",
-  "createdAt": "2024-11-20T14:30:00",
-  "updatedAt": "2024-11-25T16:30:00",
-  "deletedAt": null,
-  "campaignId": 2,
-  "campaignName": "Black Friday 2024",
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    }
-  ],
-  "remainingUsage": 455,
-  "isExpired": false,
-  "isUsageLimitReached": false
-}
-```
-
----
-
-### 9. Calculate Promotion Discount
-
-**POST** `/api/promotions/{id}/calculate-discount`
-
-Calculates the discount amount for a given order total.
-
-**Content-Type:** `application/json`
-
-**Request Body:**
-```json
-{
-  "orderAmount": 500.00,
-  "productIds": [1, 2]
-}
-```
-
-**Sample Request:**
-```bash
-curl -X POST "http://localhost:8080/api/promotions/5/calculate-discount" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "orderAmount": 500.00,
-    "productIds": [1, 2]
-  }'
-```
-
-**Success Response (200 OK):**
-```json
-{
-  "promotionId": 5,
-  "promotionName": "Black Friday Electronics Deal",
-  "orderAmount": 500.00,
-  "discountType": "PERCENTAGE",
-  "discountValue": 30.00,
-  "calculatedDiscount": 150.00,
-  "finalAmount": 350.00,
-  "applicableProducts": [
-    {
-      "productId": 1,
-      "productName": "iPhone 15 Pro",
-      "sku": "IP15P-256-BLU"
-    },
-    {
-      "productId": 2,
-      "productName": "Samsung Galaxy S24",
-      "sku": "SGS24-512-BLK"
-    }
-  ],
-  "meetsMinimumAmount": true,
-  "isEligible": true
-}
-```
-
-**Error Responses:**
-```json
-// 400 Bad Request - Not eligible
-{
-  "error": "Order amount does not meet minimum requirement of 200.00"
-}
-
-// 400 Bad Request - No applicable products
-{
-  "error": "No applicable products in the order"
-}
-```
-
----
-
-### 10. Delete Promotion (Soft Delete)
+### 7. Delete Promotion
 
 **DELETE** `/api/promotions/{id}`
 
-Soft deletes a promotion.
+Deletes a promotion by ID.
 
 **Sample Request:**
 ```bash
-curl -X DELETE "http://localhost:8080/api/promotions/5"
+curl -X DELETE "http://localhost:8080/api/promotions/25"
 ```
 
 **Success Response (204 No Content):**
@@ -689,11 +364,106 @@ curl -X DELETE "http://localhost:8080/api/promotions/5"
 (Empty response body)
 ```
 
-**Error Response:**
+**Error Response (404 Not Found):**
 ```json
-// 404 Not Found
 {
-  "error": "Promotion not found with ID: 999"
+  "error": "Promotion not found"
+}
+```
+
+---
+
+## Promotion Calculation Endpoints
+
+### 8. Calculate Promotions (POST)
+
+**POST** `/api/promotions/calculate`
+
+Calculates applicable promotions for a product with detailed parameters.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "productVariationId": 456,
+  "originalPrice": 120.00,
+  "quantity": 3,
+  "orderAmount": 600.00
+}
+```
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/promotions/calculate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productVariationId": 456,
+    "originalPrice": 120.00,
+    "quantity": 3,
+    "orderAmount": 600.00
+  }'
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "productVariationId": 456,
+  "originalPrice": 120.00,
+  "finalPrice": 78.00,
+  "totalDiscount": 126.00,
+  "applicablePromotions": [
+    {
+      "id": 25,
+      "ruleName": "Enhanced Fashion Week 35% Off",
+      "discountType": "PERCENTAGE",
+      "discountValue": 35.00,
+      "discountAmount": 42.00
+    }
+  ],
+  "quantity": 3,
+  "orderAmount": 600.00
+}
+```
+
+---
+
+### 9. Calculate Promotions (GET)
+
+**GET** `/api/promotions/product-variation/{productVariationId}/calculate`
+
+Calculates applicable promotions using query parameters.
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| originalPrice | Decimal | Yes | Original product price |
+| quantity | Integer | No | Quantity (default: 1) |
+| orderAmount | Decimal | Yes | Total order amount |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/promotions/product-variation/456/calculate?originalPrice=120.00&quantity=2&orderAmount=400.00"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "productVariationId": 456,
+  "originalPrice": 120.00,
+  "finalPrice": 78.00,
+  "totalDiscount": 84.00,
+  "applicablePromotions": [
+    {
+      "id": 25,
+      "ruleName": "Enhanced Fashion Week 35% Off",
+      "discountType": "PERCENTAGE",
+      "discountValue": 35.00,
+      "discountAmount": 42.00
+    }
+  ],
+  "quantity": 2,
+  "orderAmount": 400.00
 }
 ```
 
@@ -702,58 +472,77 @@ curl -X DELETE "http://localhost:8080/api/promotions/5"
 ## Error Handling
 
 ### Common HTTP Status Codes
-- `200 OK` - Successful GET/PUT/PATCH request
-- `201 Created` - Successful POST request
+- `200 OK` - Successful GET/POST request
+- `201 Created` - Successful promotion creation
 - `204 No Content` - Successful DELETE request
-- `400 Bad Request` - Validation errors, business logic errors
-- `404 Not Found` - Resource not found
+- `400 Bad Request` - Validation errors, invalid promotion rules
+- `404 Not Found` - Promotion not found
 - `500 Internal Server Error` - Server errors
 
 ### Validation Rules
-- `name`: Required, 3-255 characters, unique within campaign
-- `discountValue`: Required, must be positive
-- `discountType`: Required, valid enum value
-- `usageLimit`: Optional, must be positive if provided
-- `minOrderAmount`: Optional, must be positive if provided
-- `maxDiscountAmount`: Required for PERCENTAGE type
-- `startDate/endDate`: Must be within campaign period
-- `campaignId`: Required, must reference existing campaign
-- `productIds`: Optional, must reference existing products
+- **Rule name**: Required, non-empty string
+- **Discount type**: Must be PERCENTAGE or FIXED
+- **Discount value**: Must be positive number
+- **Min order amount**: Must be non-negative
+- **Max discount amount**: Must be positive if provided
+- **Campaign**: Must exist if campaignId provided
+- **Product variation**: Must exist if productVariationId provided
 
 ---
 
 ## Business Rules
 
-### Promotion Lifecycle
-1. **Creation**: Must be linked to an active campaign
-2. **Activation**: Can be toggled active/inactive
-3. **Usage Tracking**: Automatically tracks usage count
-4. **Expiration**: Automatically determined by date range
-5. **Soft Delete**: Preserves historical data
+### Discount Types
+1. **PERCENTAGE**: Applies percentage discount up to maxDiscountAmount
+2. **FIXED**: Applies fixed amount discount
 
-### Discount Calculation
-- **PERCENTAGE**: `min(orderAmount * (discountValue/100), maxDiscountAmount)`
-- **FIXED_AMOUNT**: `min(discountValue, orderAmount)`
-- **FREE_SHIPPING**: Special handling in order processing
+### Promotion Logic
+- **Campaign Association**: Promotions can be linked to campaigns
+- **Product Specific**: Promotions can target specific product variations
+- **Order Minimum**: Promotions can require minimum order amount
+- **Discount Cap**: Maximum discount amount can be set for percentage discounts
 
-### Eligibility Rules
-- Order must meet minimum amount requirement
-- At least one product must be in applicable products list
-- Promotion must be active and not expired
-- Usage limit must not be exceeded
+### Calculation Rules
+1. **Eligibility Check**: Verify product and order amount requirements
+2. **Discount Calculation**: Apply percentage or fixed discount
+3. **Cap Application**: Apply maximum discount limit if set
+4. **Multiple Promotions**: Stack compatible promotions
+5. **Final Price**: Calculate discounted price per item
+
+---
+
+## Performance Considerations
+
+### Database Queries
+- Indexes on frequently queried fields (campaignId, productVariationId, isActive)
+- Efficient filtering for active promotions
+- Optimized joins for campaign and product data
+
+### Calculation Performance
+- In-memory calculation of discount amounts
+- Minimal database queries during calculation
+- Cached promotion rules for frequent calculations
+
+### API Response
+- Lightweight responses for list endpoints
+- Detailed calculation results with breakdown
+- Efficient filtering by campaign and product variation
 
 ---
 
 ## Integration Notes
 
-### Order Processing Integration
-```java
-// Example usage in order service
-List<Promotion> applicablePromotions = promotionService.getApplicablePromotions(productIds);
-DiscountCalculation bestDiscount = promotionService.calculateBestDiscount(applicablePromotions, orderAmount);
-```
+### Campaign Integration
+- Promotions inherit campaign lifecycle
+- Campaign deactivation affects promotion availability
+- Campaign dates may influence promotion applicability
 
-### Campaign Relationship
-- Promotions are tied to campaigns
-- Promotion dates must fall within campaign dates
-- Deleting a campaign soft deletes all associated promotions
+### Product Integration
+- Product variation specific promotions
+- Category-wide promotions via product associations
+- Inventory considerations for promotional pricing
+
+### Order Integration
+- Real-time promotion calculation during checkout
+- Order amount validation for minimum requirements
+- Promotion application tracking for analytics

@@ -1,7 +1,7 @@
 # Voucher API Documentation
 
 ## Overview
-The Voucher API manages discount vouchers with unique codes that customers can apply to their orders. Vouchers are independent from campaigns and promotions, providing flexible discount mechanisms.
+The Voucher API manages discount vouchers system with code-based validation and usage tracking. Supports CRUD operations, validation, usage tracking, and analytics.
 
 ## Base URL
 ```
@@ -17,37 +17,763 @@ All endpoints require authentication (implementation depends on your auth system
 ```json
 {
   "id": 1,
-  "code": "WELCOME20",
-  "voucherType": "PERCENTAGE",
-  "value": 20.00,
-  "minOrderAmount": 100.00,
-  "usageLimit": 1000,
-  "usedCount": 45,
-  "validFrom": "2024-12-01T00:00:00",
-  "validUntil": "2024-12-31T23:59:59",
-  "createdAt": "2024-11-15T10:00:00",
-  "updatedAt": "2024-11-15T10:00:00",
+  "code": "WELCOME10",
+  "discountType": "PERCENTAGE",
+  "discountValue": 10.00,
+  "minOrderAmount": 50.00,
+  "maxDiscountAmount": 20.00,
+  "usageLimit": 100,
+  "usedCount": 25,
   "isActive": true,
-  "isValid": true,
-  "hasUsageLeft": true,
-  "displayValue": "20%",
-  "displayValidityPeriod": "2024-12-01T00:00:00 - 2024-12-31T23:59:59",
-  "status": "ACTIVE"
+  "validFrom": "2024-01-01T00:00:00",
+  "validUntil": "2024-12-31T23:59:59",
+  "description": "Welcome discount for new customers",
+  "createdAt": "2024-01-01T10:00:00",
+  "updatedAt": "2024-01-15T14:30:00",
+  "deletedAt": null
 }
 ```
 
-### Voucher Types
-- `PERCENTAGE` - Percentage discount (e.g., 20% off)
-- `FIXED_AMOUNT` - Fixed amount discount (e.g., $50 off)
-
-### Voucher Status
-- `ACTIVE` - Voucher is active and can be used
-- `EXPIRED` - Voucher has passed its validity period
-- `EXHAUSTED` - Voucher has reached its usage limit
-- `DELETED` - Voucher has been soft deleted
+### Voucher Validation Response
+```json
+{
+  "isValid": true,
+  "voucherId": 1,
+  "code": "WELCOME10",
+  "discountAmount": 15.00,
+  "message": "Voucher is valid",
+  "errorCode": null
+}
+```
 
 ### User Voucher Usage Model
 ```json
+{
+  "id": 1,
+  "userId": 123,
+  "voucherId": 1,
+  "code": "WELCOME10",
+  "orderId": 456,
+  "discountAmount": 15.00,
+  "usedAt": "2024-01-15T14:30:00"
+}
+```
+
+---
+
+## CRUD Operations
+
+### 1. Create Voucher
+
+**POST** `/api/vouchers`
+
+Creates a new voucher with specified discount rules.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "code": "SPRING2024",
+  "discountType": "PERCENTAGE",
+  "discountValue": 15.00,
+  "minOrderAmount": 100.00,
+  "maxDiscountAmount": 50.00,
+  "usageLimit": 500,
+  "validFrom": "2024-03-01T00:00:00",
+  "validUntil": "2024-05-31T23:59:59",
+  "description": "Spring sale discount voucher"
+}
+```
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/vouchers" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "SPRING2024",
+    "discountType": "PERCENTAGE",
+    "discountValue": 15.00,
+    "minOrderAmount": 100.00,
+    "maxDiscountAmount": 50.00,
+    "usageLimit": 500,
+    "validFrom": "2024-03-01T00:00:00",
+    "validUntil": "2024-05-31T23:59:59",
+    "description": "Spring sale discount voucher"
+  }'
+```
+
+**Success Response (201 Created):**
+```json
+{
+  "id": 25,
+  "code": "SPRING2024",
+  "discountType": "PERCENTAGE",
+  "discountValue": 15.00,
+  "minOrderAmount": 100.00,
+  "maxDiscountAmount": 50.00,
+  "usageLimit": 500,
+  "usedCount": 0,
+  "isActive": true,
+  "validFrom": "2024-03-01T00:00:00",
+  "validUntil": "2024-05-31T23:59:59",
+  "description": "Spring sale discount voucher",
+  "createdAt": "2024-02-15T10:30:00",
+  "updatedAt": "2024-02-15T10:30:00",
+  "deletedAt": null
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "error": "Voucher code already exists"
+}
+```
+
+---
+
+### 2. Update Voucher
+
+**PUT** `/api/vouchers/{id}`
+
+Updates an existing voucher by ID.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "discountValue": 20.00,
+  "maxDiscountAmount": 75.00,
+  "usageLimit": 1000,
+  "description": "Enhanced spring sale discount voucher"
+}
+```
+
+**Sample Request:**
+```bash
+curl -X PUT "http://localhost:8080/api/vouchers/25" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "discountValue": 20.00,
+    "maxDiscountAmount": 75.00,
+    "usageLimit": 1000,
+    "description": "Enhanced spring sale discount voucher"
+  }'
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 25,
+  "code": "SPRING2024",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20.00,
+  "minOrderAmount": 100.00,
+  "maxDiscountAmount": 75.00,
+  "usageLimit": 1000,
+  "usedCount": 0,
+  "isActive": true,
+  "validFrom": "2024-03-01T00:00:00",
+  "validUntil": "2024-05-31T23:59:59",
+  "description": "Enhanced spring sale discount voucher",
+  "createdAt": "2024-02-15T10:30:00",
+  "updatedAt": "2024-02-20T14:15:00",
+  "deletedAt": null
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "error": "Voucher not found"
+}
+```
+
+---
+
+### 3. Get Voucher by ID
+
+**GET** `/api/vouchers/{id}`
+
+Retrieves a specific voucher by its ID.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/25"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 25,
+  "code": "SPRING2024",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20.00,
+  "minOrderAmount": 100.00,
+  "maxDiscountAmount": 75.00,
+  "usageLimit": 1000,
+  "usedCount": 45,
+  "isActive": true,
+  "validFrom": "2024-03-01T00:00:00",
+  "validUntil": "2024-05-31T23:59:59",
+  "description": "Enhanced spring sale discount voucher",
+  "createdAt": "2024-02-15T10:30:00",
+  "updatedAt": "2024-02-20T14:15:00",
+  "deletedAt": null
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "error": "Voucher not found"
+}
+```
+
+---
+
+### 4. Get Voucher by Code
+
+**GET** `/api/vouchers/code/{code}`
+
+Retrieves a specific voucher by its code.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/code/SPRING2024"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "id": 25,
+  "code": "SPRING2024",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20.00,
+  "minOrderAmount": 100.00,
+  "maxDiscountAmount": 75.00,
+  "usageLimit": 1000,
+  "usedCount": 45,
+  "isActive": true,
+  "validFrom": "2024-03-01T00:00:00",
+  "validUntil": "2024-05-31T23:59:59",
+  "description": "Enhanced spring sale discount voucher",
+  "createdAt": "2024-02-15T10:30:00",
+  "updatedAt": "2024-02-20T14:15:00",
+  "deletedAt": null
+}
+```
+
+---
+
+### 5. Get All Vouchers (Paginated)
+
+**GET** `/api/vouchers`
+
+Retrieves all vouchers with pagination and sorting.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| page | Integer | 0 | Page number (0-based) |
+| size | Integer | 10 | Page size |
+| sortBy | String | createdAt | Sort field |
+| sortDir | String | DESC | Sort direction (ASC/DESC) |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers?page=0&size=20&sortBy=validUntil&sortDir=ASC"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 25,
+      "code": "SPRING2024",
+      "discountType": "PERCENTAGE",
+      "discountValue": 20.00,
+      "minOrderAmount": 100.00,
+      "maxDiscountAmount": 75.00,
+      "usageLimit": 1000,
+      "usedCount": 45,
+      "isActive": true,
+      "validFrom": "2024-03-01T00:00:00",
+      "validUntil": "2024-05-31T23:59:59",
+      "description": "Enhanced spring sale discount voucher",
+      "createdAt": "2024-02-15T10:30:00",
+      "updatedAt": "2024-02-20T14:15:00",
+      "deletedAt": null
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "sorted": true,
+      "unsorted": false
+    },
+    "pageNumber": 0,
+    "pageSize": 20,
+    "offset": 0
+  },
+  "totalElements": 1,
+  "totalPages": 1,
+  "last": true,
+  "size": 20,
+  "number": 0,
+  "first": true,
+  "numberOfElements": 1,
+  "empty": false
+}
+```
+
+---
+
+### 6. Get Valid Vouchers
+
+**GET** `/api/vouchers/valid`
+
+Retrieves all currently valid (active and within date range) vouchers.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| page | Integer | 0 | Page number (0-based) |
+| size | Integer | 10 | Page size |
+| sortBy | String | validUntil | Sort field |
+| sortDir | String | ASC | Sort direction |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/valid?page=0&size=10"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 25,
+      "code": "SPRING2024",
+      "discountType": "PERCENTAGE",
+      "discountValue": 20.00,
+      "minOrderAmount": 100.00,
+      "maxDiscountAmount": 75.00,
+      "usageLimit": 1000,
+      "usedCount": 45,
+      "isActive": true,
+      "validFrom": "2024-03-01T00:00:00",
+      "validUntil": "2024-05-31T23:59:59",
+      "description": "Enhanced spring sale discount voucher"
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+---
+
+### 7. Search Vouchers
+
+**GET** `/api/vouchers/search`
+
+Searches vouchers by code pattern.
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| searchTerm | String | Yes | Search term for code pattern |
+| page | Integer | No | Page number (default: 0) |
+| size | Integer | No | Page size (default: 10) |
+| sortBy | String | No | Sort field (default: createdAt) |
+| sortDir | String | No | Sort direction (default: DESC) |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/search?searchTerm=SPRING&page=0&size=10"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 25,
+      "code": "SPRING2024",
+      "discountType": "PERCENTAGE",
+      "discountValue": 20.00,
+      "minOrderAmount": 100.00,
+      "maxDiscountAmount": 75.00,
+      "usageLimit": 1000,
+      "usedCount": 45,
+      "isActive": true,
+      "validFrom": "2024-03-01T00:00:00",
+      "validUntil": "2024-05-31T23:59:59",
+      "description": "Enhanced spring sale discount voucher"
+    }
+  ],
+  "totalElements": 1
+}
+```
+
+---
+
+### 8. Delete Voucher (Soft Delete)
+
+**DELETE** `/api/vouchers/{id}`
+
+Soft deletes a voucher by ID.
+
+**Sample Request:**
+```bash
+curl -X DELETE "http://localhost:8080/api/vouchers/25"
+```
+
+**Success Response (204 No Content):**
+```
+(Empty response body)
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "error": "Voucher not found"
+}
+```
+
+---
+
+### 9. Restore Deleted Voucher
+
+**POST** `/api/vouchers/{id}/restore`
+
+Restores a soft-deleted voucher by ID.
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/vouchers/25/restore"
+```
+
+**Success Response (200 OK):**
+```
+(Empty response body)
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "error": "Voucher not found"
+}
+```
+
+---
+
+## Voucher Validation and Usage
+
+### 10. Validate Voucher
+
+**POST** `/api/vouchers/validate`
+
+Validates if a voucher can be used for an order.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "voucherCode": "SPRING2024",
+  "userId": 123,
+  "orderAmount": 150.00,
+  "productIds": [1, 2, 3]
+}
+```
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/vouchers/validate" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "voucherCode": "SPRING2024",
+    "userId": 123,
+    "orderAmount": 150.00,
+    "productIds": [1, 2, 3]
+  }'
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "isValid": true,
+  "voucherId": 25,
+  "code": "SPRING2024",
+  "discountAmount": 30.00,
+  "message": "Voucher is valid and applicable",
+  "errorCode": null
+}
+```
+
+**Validation Failed Response (200 OK):**
+```json
+{
+  "isValid": false,
+  "voucherId": null,
+  "code": "SPRING2024",
+  "discountAmount": 0.00,
+  "message": "Order amount is below minimum requirement",
+  "errorCode": "MIN_ORDER_NOT_MET"
+}
+```
+
+**Validation Error Codes:**
+- `VOUCHER_NOT_FOUND` - Voucher code does not exist
+- `VOUCHER_EXPIRED` - Voucher is past expiration date
+- `VOUCHER_NOT_ACTIVE` - Voucher is deactivated
+- `VOUCHER_NOT_STARTED` - Voucher valid period hasn't started
+- `USAGE_LIMIT_EXCEEDED` - Voucher usage limit reached
+- `USER_ALREADY_USED` - User has already used this voucher (if single-use)
+- `MIN_ORDER_NOT_MET` - Order amount below minimum requirement
+
+---
+
+### 11. Use Voucher
+
+**POST** `/api/vouchers/use`
+
+Marks a voucher as used for an order.
+
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "voucherCode": "SPRING2024",
+  "userId": 123,
+  "orderId": 456,
+  "orderAmount": 150.00,
+  "discountAmount": 30.00
+}
+```
+
+**Sample Request:**
+```bash
+curl -X POST "http://localhost:8080/api/vouchers/use" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "voucherCode": "SPRING2024",
+    "userId": 123,
+    "orderId": 456,
+    "orderAmount": 150.00,
+    "discountAmount": 30.00
+  }'
+```
+
+**Success Response (200 OK):**
+```json
+"Voucher used successfully"
+```
+
+**Error Response (400 Bad Request):**
+```json
+"Voucher cannot be used: Usage limit exceeded"
+```
+
+---
+
+## Reporting and Analytics
+
+### 12. Get Expired Vouchers
+
+**GET** `/api/vouchers/expired`
+
+Retrieves all expired vouchers.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/expired"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 10,
+    "code": "WINTER2023",
+    "discountType": "FIXED",
+    "discountValue": 25.00,
+    "minOrderAmount": 200.00,
+    "maxDiscountAmount": null,
+    "usageLimit": 200,
+    "usedCount": 150,
+    "isActive": true,
+    "validFrom": "2023-12-01T00:00:00",
+    "validUntil": "2024-02-28T23:59:59",
+    "description": "Winter holiday discount",
+    "createdAt": "2023-11-15T10:00:00",
+    "updatedAt": "2023-11-15T10:00:00",
+    "deletedAt": null
+  }
+]
+```
+
+---
+
+### 13. Get Vouchers Expiring Soon
+
+**GET** `/api/vouchers/expiring-soon`
+
+Retrieves vouchers expiring within specified days.
+
+**Query Parameters:**
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| days | Integer | 7 | Number of days to check |
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/expiring-soon?days=30"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 25,
+    "code": "SPRING2024",
+    "discountType": "PERCENTAGE",
+    "discountValue": 20.00,
+    "minOrderAmount": 100.00,
+    "maxDiscountAmount": 75.00,
+    "usageLimit": 1000,
+    "usedCount": 45,
+    "isActive": true,
+    "validFrom": "2024-03-01T00:00:00",
+    "validUntil": "2024-05-31T23:59:59",
+    "description": "Enhanced spring sale discount voucher"
+  }
+]
+```
+
+---
+
+### 14. Get User Voucher Usage
+
+**GET** `/api/vouchers/usage/user/{userId}`
+
+Retrieves all vouchers used by a specific user.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/usage/user/123"
+```
+
+**Success Response (200 OK):**
+```json
+[
+  {
+    "id": 1,
+    "userId": 123,
+    "voucherId": 25,
+    "code": "SPRING2024",
+    "orderId": 456,
+    "discountAmount": 30.00,
+    "usedAt": "2024-04-15T14:30:00"
+  },
+  {
+    "id": 2,
+    "userId": 123,
+    "voucherId": 10,
+    "code": "WELCOME10",
+    "orderId": 321,
+    "discountAmount": 15.00,
+    "usedAt": "2024-03-10T11:20:00"
+  }
+]
+```
+
+---
+
+### 15. Get Voucher Usage Count
+
+**GET** `/api/vouchers/{voucherId}/usage-count`
+
+Gets the number of times a voucher has been used.
+
+**Sample Request:**
+```bash
+curl -X GET "http://localhost:8080/api/vouchers/25/usage-count"
+```
+
+**Success Response (200 OK):**
+```json
+45
+```
+
+---
+
+## Error Handling
+
+### Common HTTP Status Codes
+- `200 OK` - Successful GET/POST request
+- `201 Created` - Successful voucher creation
+- `204 No Content` - Successful DELETE request
+- `400 Bad Request` - Validation errors, voucher usage errors
+- `404 Not Found` - Voucher not found
+- `500 Internal Server Error` - Server errors
+
+### Validation Rules
+- **Voucher code**: Must be unique, alphanumeric, 3-50 characters
+- **Discount type**: PERCENTAGE or FIXED
+- **Discount value**: Must be positive
+- **Date range**: validFrom must be before validUntil
+- **Usage limit**: Must be positive integer
+- **Min order amount**: Must be non-negative
+
+---
+
+## Business Rules
+
+### Voucher Types
+1. **Percentage Discount**: Applies percentage discount up to maxDiscountAmount
+2. **Fixed Amount Discount**: Applies fixed discount amount
+
+### Validation Logic
+1. **Date Range**: Current date must be within validFrom and validUntil
+2. **Usage Limit**: Total usage count must not exceed usageLimit
+3. **Minimum Order**: Order amount must meet minOrderAmount requirement
+4. **User Restrictions**: Some vouchers may have per-user usage limits
+5. **Active Status**: Voucher must be active (isActive = true)
+
+### Usage Tracking
+- Each voucher usage is recorded with user, order, and discount details
+- Usage count is automatically incremented when voucher is used
+- Historical usage data preserved for analytics and auditing
+
+### Soft Delete
+- Deleted vouchers are marked with deletedAt timestamp
+- Soft-deleted vouchers can be restored
+- Usage history preserved even after voucher deletion
+
+---
+
+## Performance Considerations
+
+### Database Optimization
+- Indexes on frequently queried fields (code, validUntil, isActive)
+- Efficient pagination for large voucher datasets
+- Optimized validation queries
+
+### Caching Strategies
+- Cache frequently accessed vouchers by code
+- Cache validation results for short periods
+- Cache usage count for performance
+
+### API Response
+- Lightweight responses for list endpoints
+- Detailed responses for single voucher queries
+- Efficient search with code pattern matching
 {
   "id": 1,
   "userId": 123,

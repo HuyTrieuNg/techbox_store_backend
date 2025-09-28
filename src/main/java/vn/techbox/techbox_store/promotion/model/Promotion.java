@@ -37,8 +37,9 @@ public class Promotion {
     
     // Chi tiết giảm giá
     @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type", nullable = false)
+    @Column(name = "promotion_type", nullable = false) 
     private PromotionType discountType;
+
     
     @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
@@ -54,12 +55,10 @@ public class Promotion {
     
     @Column(name = "max_discount_amount", precision = 10, scale = 2)
     private BigDecimal maxDiscountAmount;
-    
+
     // Quản lý thời gian
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
+    private LocalDateTime createdAt;    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
     @PrePersist
@@ -104,11 +103,31 @@ public class Promotion {
         return discount;
     }
     
+    @Transient
     public String getDiscountDisplay() {
         return discountValue + discountType.getSymbol();
     }
     
+    @Transient
     public boolean isActive() {
         return campaign != null && campaign.isActive();
+    }
+    
+    // Utility methods để lấy thời gian từ campaign
+    @Transient
+    public LocalDateTime getStartDate() {
+        return campaign != null ? campaign.getStartDate() : null;
+    }
+    
+    @Transient
+    public LocalDateTime getEndDate() {
+        return campaign != null ? campaign.getEndDate() : null;
+    }
+    
+    @Transient
+    public boolean isValid() {
+        if (campaign == null) return false;
+        LocalDateTime now = LocalDateTime.now();
+        return now.isAfter(campaign.getStartDate()) && now.isBefore(campaign.getEndDate());
     }
 }
