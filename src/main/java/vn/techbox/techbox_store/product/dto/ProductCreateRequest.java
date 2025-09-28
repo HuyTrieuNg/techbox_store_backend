@@ -26,4 +26,7 @@ public class ProductCreateRequest {
     
     @Size(max = 255, message = "Image URL must not exceed 255 characters")
     private String imageUrl;
+    
+    @Size(max = 255, message = "Image public ID must not exceed 255 characters")
+    private String imagePublicId;
 }

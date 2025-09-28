@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.product.dto.AttributeCreateRequest;
 import vn.techbox.techbox_store.product.dto.AttributeResponse;
 import vn.techbox.techbox_store.product.dto.AttributeUpdateRequest;
-import vn.techbox.techbox_store.product.model.AttributeDataType;
 import vn.techbox.techbox_store.product.service.AttributeService;
 
 import java.util.List;
@@ -53,12 +52,6 @@ public class AttributeController {
         return ResponseEntity.noContent().build();
     }
     
-    @GetMapping("/data-type/{dataType}")
-    public ResponseEntity<List<AttributeResponse>> getAttributesByDataType(@PathVariable AttributeDataType dataType) {
-        List<AttributeResponse> attributes = attributeService.getAttributesByDataType(dataType);
-        return ResponseEntity.ok(attributes);
-    }
-    
     @GetMapping("/search")
     public ResponseEntity<List<AttributeResponse>> searchAttributes(@RequestParam String keyword) {
         List<AttributeResponse> attributes = attributeService.searchAttributesByName(keyword);
@@ -73,10 +66,5 @@ public class AttributeController {
                 ? attributeService.existsByNameAndIdNot(name, excludeId)
                 : attributeService.existsByName(name);
         return ResponseEntity.ok(exists);
-    }
-    
-    @GetMapping("/data-types")
-    public ResponseEntity<AttributeDataType[]> getAvailableDataTypes() {
-        return ResponseEntity.ok(AttributeDataType.values());
     }
 }

@@ -7,7 +7,6 @@ import vn.techbox.techbox_store.product.dto.AttributeCreateRequest;
 import vn.techbox.techbox_store.product.dto.AttributeResponse;
 import vn.techbox.techbox_store.product.dto.AttributeUpdateRequest;
 import vn.techbox.techbox_store.product.model.Attribute;
-import vn.techbox.techbox_store.product.model.AttributeDataType;
 import vn.techbox.techbox_store.product.repository.AttributeRepository;
 import vn.techbox.techbox_store.product.service.AttributeService;
 
@@ -46,7 +45,6 @@ public class AttributeServiceImpl implements AttributeService {
         
         Attribute attribute = Attribute.builder()
                 .name(request.getName())
-                .dataType(request.getDataType())
                 .build();
         
         Attribute savedAttribute = attributeRepository.save(attribute);
@@ -65,10 +63,6 @@ public class AttributeServiceImpl implements AttributeService {
             attribute.setName(request.getName());
         }
         
-        if (request.getDataType() != null) {
-            attribute.setDataType(request.getDataType());
-        }
-        
         Attribute updatedAttribute = attributeRepository.save(attribute);
         return convertToResponse(updatedAttribute);
     }
@@ -80,15 +74,6 @@ public class AttributeServiceImpl implements AttributeService {
         
         // Hard delete for attributes (no soft delete needed)
         attributeRepository.delete(attribute);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public List<AttributeResponse> getAttributesByDataType(AttributeDataType dataType) {
-        return attributeRepository.findByDataType(dataType)
-                .stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
     }
     
     @Override
@@ -116,7 +101,6 @@ public class AttributeServiceImpl implements AttributeService {
         return AttributeResponse.builder()
                 .id(attribute.getId())
                 .name(attribute.getName())
-                .dataType(attribute.getDataType())
                 .build();
     }
 }

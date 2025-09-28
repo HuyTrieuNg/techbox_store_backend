@@ -5,12 +5,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
 import vn.techbox.techbox_store.product.dto.ProductVariationCreateRequest;
 import vn.techbox.techbox_store.product.dto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/product-variations")
@@ -18,6 +25,7 @@ import java.util.List;
 public class ProductVariationController {
     
     private final ProductVariationService productVariationService;
+    private final CloudinaryService cloudinaryService;
     
     @GetMapping
     public ResponseEntity<List<ProductVariationResponse>> getAllProductVariations(
@@ -39,19 +47,117 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PostMapping
-    public ResponseEntity<ProductVariationResponse> createProductVariation(
-            @Valid @RequestBody ProductVariationCreateRequest request) {
-        ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
+    @PostMapping(consumes = {"multipart/form-data"})
+    public ResponseEntity<?> createProductVariation(
+            @RequestParam(value = "variationName", required = false) String variationName,
+            @RequestParam("productId") Integer productId,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam("quantity") Integer quantity,
+            @RequestParam(value = "images", required = false) MultipartFile[] images) {
+        
+        try {
+            ProductVariationCreateRequest request = ProductVariationCreateRequest.builder()
+                    .variationName(variationName)
+                    .productId(productId)
+                    .price(price)
+                    .sku(sku)
+                    .quantity(quantity)
+                    .build();
+            
+            // Upload images to Cloudinary if provided
+            List<String> imageUrls = new ArrayList<>();
+            List<String> imagePublicIds = new ArrayList<>();
+            
+            if (images != null && images.length > 0) {
+                for (MultipartFile image : images) {
+                    if (!image.isEmpty()) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
+                        imageUrls.add((String) uploadResult.get("secure_url"));
+                        imagePublicIds.add((String) uploadResult.get("public_id"));
+                    }
+                }
+            }
+            
+            request.setImageUrls(imageUrls);
+            request.setImagePublicIds(imagePublicIds);
+            
+            ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
+            
+        } catch (IOException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to upload images: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to create product variation: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
     
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductVariationResponse> updateProductVariation(
-            @PathVariable Integer id, 
-            @Valid @RequestBody ProductVariationUpdateRequest request) {
-        ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
-        return ResponseEntity.ok(updatedVariation);
+    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> updateProductVariation(
+            @PathVariable Integer id,
+            @RequestParam(value = "variationName", required = false) String variationName,
+            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "sku", required = false) String sku,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
+            @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
+            @RequestParam(value = "deleteImageIds", required = false) List<String> deleteImageIds) {
+        
+        try {
+            ProductVariationUpdateRequest request = ProductVariationUpdateRequest.builder()
+                    .variationName(variationName)
+                    .price(price)
+                    .sku(sku)
+                    .quantity(quantity)
+                    .deleteImageIds(deleteImageIds)
+                    .build();
+            
+            // Upload new images to Cloudinary if provided
+            List<String> newImageUrls = new ArrayList<>();
+            List<String> newImagePublicIds = new ArrayList<>();
+            
+            if (newImages != null && newImages.length > 0) {
+                for (MultipartFile image : newImages) {
+                    if (!image.isEmpty()) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
+                        newImageUrls.add((String) uploadResult.get("secure_url"));
+                        newImagePublicIds.add((String) uploadResult.get("public_id"));
+                    }
+                }
+            }
+            
+            request.setImageUrls(newImageUrls);
+            request.setImagePublicIds(newImagePublicIds);
+            
+            // Delete specified images from Cloudinary
+            if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
+                for (String publicId : deleteImageIds) {
+                    try {
+                        cloudinaryService.deleteFile(publicId);
+                    } catch (IOException e) {
+                        // Log error but continue with update
+                        System.err.println("Failed to delete image from Cloudinary: " + publicId);
+                    }
+                }
+            }
+            
+            ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
+            return ResponseEntity.ok(updatedVariation);
+            
+        } catch (IOException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to process images: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Failed to update product variation: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
     }
     
     @DeleteMapping("/{id}")

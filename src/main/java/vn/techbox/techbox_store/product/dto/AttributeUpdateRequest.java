@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import vn.techbox.techbox_store.product.model.AttributeDataType;
 
 @Data
 @NoArgsConstructor
@@ -15,6 +14,4 @@ public class AttributeUpdateRequest {
     
     @Size(max = 255, message = "Attribute name must not exceed 255 characters")
     private String name;
-    
-    private AttributeDataType dataType;
 }

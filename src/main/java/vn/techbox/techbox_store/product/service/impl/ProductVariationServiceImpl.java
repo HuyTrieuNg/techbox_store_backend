@@ -7,7 +7,9 @@ import vn.techbox.techbox_store.product.dto.ProductVariationCreateRequest;
 import vn.techbox.techbox_store.product.dto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.model.ProductVariation;
+import vn.techbox.techbox_store.product.model.ProductVariationImage;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.product.repository.ProductVariationImageRepository;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
@@ -22,6 +24,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     
     private final ProductVariationRepository productVariationRepository;
     private final ProductRepository productRepository;
+    private final ProductVariationImageRepository productVariationImageRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -71,11 +74,16 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                 .productId(request.getProductId())
                 .price(request.getPrice())
                 .sku(request.getSku())
-                .imageUrl(request.getImageUrl())
                 .quantity(request.getQuantity())
                 .build();
         
         ProductVariation savedVariation = productVariationRepository.save(productVariation);
+        
+        // Save images if provided
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            saveProductVariationImages(savedVariation.getId(), request.getImageUrls(), request.getImagePublicIds());
+        }
+        
         return convertToResponse(savedVariation);
     }
     
@@ -99,8 +107,17 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setSku(request.getSku());
         }
         
-        if (request.getImageUrl() != null) {
-            variation.setImageUrl(request.getImageUrl());
+        // Handle image operations
+        if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
+            // Delete specified images by public ID
+            for (String publicId : request.getDeleteImageIds()) {
+                productVariationImageRepository.deleteByImagePublicId(publicId);
+            }
+        }
+        
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            // Add new images
+            saveProductVariationImages(id, request.getImageUrls(), request.getImagePublicIds());
         }
         
         if (request.getQuantity() != null) {
@@ -201,7 +218,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                 .productId(variation.getProductId())
                 .price(variation.getPrice())
                 .sku(variation.getSku())
-                .imageUrl(variation.getImageUrl())
+                .imageUrls(getProductVariationImageUrls(variation.getId()))
                 .quantity(variation.getQuantity())
                 .createdAt(variation.getCreatedAt())
                 .updatedAt(variation.getUpdatedAt())
@@ -215,5 +232,26 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         }
         
         return response;
+    }
+    
+    // Helper methods for image handling
+    private void saveProductVariationImages(Integer variationId, List<String> imageUrls, List<String> imagePublicIds) {
+        for (int i = 0; i < imageUrls.size(); i++) {
+            String publicId = (imagePublicIds != null && i < imagePublicIds.size()) ? imagePublicIds.get(i) : null;
+            ProductVariationImage image = ProductVariationImage.builder()
+                    .productVariationId(variationId)
+                    .imageUrl(imageUrls.get(i))
+                    .imagePublicId(publicId)
+                    .build();
+            productVariationImageRepository.save(image);
+        }
+    }
+    
+    private List<String> getProductVariationImageUrls(Integer variationId) {
+        return productVariationImageRepository
+                .findByProductVariationId(variationId)
+                .stream()
+                .map(ProductVariationImage::getImageUrl)
+                .collect(Collectors.toList());
     }
 }

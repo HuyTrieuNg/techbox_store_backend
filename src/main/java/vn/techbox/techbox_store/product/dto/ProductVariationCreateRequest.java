@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -30,7 +31,8 @@ public class ProductVariationCreateRequest {
     @Size(max = 255, message = "SKU must not exceed 255 characters")
     private String sku;
     
-    private String imageUrl; // JSON string for multiple images
+    private List<String> imageUrls; // List of image URLs
+    private List<String> imagePublicIds; // List of Cloudinary public IDs
     
     @NotNull(message = "Quantity is required")
     @Min(value = 0, message = "Quantity must be non-negative")

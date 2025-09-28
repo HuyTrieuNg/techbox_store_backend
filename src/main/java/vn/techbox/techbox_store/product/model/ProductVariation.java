@@ -34,9 +34,6 @@ public class ProductVariation {
     @Column(name = "sku", unique = true)
     private String sku;
     
-    @Column(name = "image_url", columnDefinition = "JSON")
-    private String imageUrl; // JSON stored as String, can be parsed to List<String> in service layer
-    
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
     
@@ -56,6 +53,9 @@ public class ProductVariation {
     
     @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<VariationAttribute> variationAttributes;
+    
+    @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductVariationImage> images;
     
     @PrePersist
     protected void onCreate() {

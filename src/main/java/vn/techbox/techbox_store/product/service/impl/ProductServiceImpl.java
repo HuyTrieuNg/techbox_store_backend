@@ -79,6 +79,7 @@ public class ProductServiceImpl implements ProductService {
                 .categoryId(request.getCategoryId())
                 .brandId(request.getBrandId())
                 .imageUrl(request.getImageUrl())
+                .imagePublicId(request.getImagePublicId())
                 .build();
         
         Product savedProduct = productRepository.save(product);
@@ -115,8 +116,10 @@ public class ProductServiceImpl implements ProductService {
             product.setBrandId(request.getBrandId());
         }
         
-        if (request.getImageUrl() != null) {
+        // Handle image URL and public ID updates (including deletion)
+        if (request.getImageUrl() != null || request.getImagePublicId() != null) {
             product.setImageUrl(request.getImageUrl());
+            product.setImagePublicId(request.getImagePublicId());
         }
         
         Product updatedProduct = productRepository.save(product);
@@ -188,6 +191,7 @@ public class ProductServiceImpl implements ProductService {
                 .categoryId(product.getCategoryId())
                 .brandId(product.getBrandId())
                 .imageUrl(product.getImageUrl())
+                .imagePublicId(product.getImagePublicId())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .deletedAt(product.getDeletedAt())

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -19,7 +20,7 @@ public class ProductVariationResponse {
     private Integer productId;
     private BigDecimal price;
     private String sku;
-    private String imageUrl;
+    private List<String> imageUrls;
     private Integer quantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

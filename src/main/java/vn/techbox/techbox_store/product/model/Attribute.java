@@ -23,10 +23,6 @@ public class Attribute {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "data_type", nullable = false)
-    private AttributeDataType dataType;
-    
     // Relationships
     @OneToMany(mappedBy = "attribute", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<VariationAttribute> variationAttributes;

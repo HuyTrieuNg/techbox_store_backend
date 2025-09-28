@@ -19,6 +19,7 @@ public class ProductResponse {
     private Integer categoryId;
     private Integer brandId;
     private String imageUrl;
+    private String imagePublicId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
