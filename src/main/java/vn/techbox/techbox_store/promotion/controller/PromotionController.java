@@ -52,18 +52,6 @@ public class PromotionController {
         }
     }
     
-    @GetMapping("/{id}")
-    public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable Integer id) {
-        log.info("REST request to get promotion with ID: {}", id);
-        
-        try {
-            PromotionResponse response = promotionService.getPromotionById(id);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            log.error("Promotion not found: {}", e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
     
     @GetMapping
     public ResponseEntity<Page<PromotionResponse>> getAllPromotions(
@@ -135,4 +123,18 @@ public class PromotionController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable Integer id) {
+        log.info("REST request to get promotion with ID: {}", id);
+        
+        try {
+            PromotionResponse response = promotionService.getPromotionById(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Promotion not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
 }

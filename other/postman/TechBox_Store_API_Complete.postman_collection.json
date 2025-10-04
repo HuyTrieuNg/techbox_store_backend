@@ -1,0 +1,1347 @@
+{
+	"info": {
+		"_postman_id": "techbox-store-master-api",
+		"name": "TechBox Store - Complete API Collection (66 Endpoints)",
+		"description": "Complete API collection for TechBox Store backend with all verified modules: Products (33), Vouchers (16), Campaigns (8), Promotions (9) - Total 66 real endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "techbox-store"
+	},
+	"item": [
+		{
+			"name": "🛍️ Product Management (33 Endpoints)",
+			"item": [
+				{
+					"name": "Products (11 Endpoints)",
+					"item": [
+						{
+							"name": "1. GET All Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "2. GET Active Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/active?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "active"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "3. GET Product by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/{{productId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "{{productId}}"]
+								}
+							}
+						},
+						{
+							"name": "4. CREATE Product with Images",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 201\", function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"if (pm.response.code === 201) {",
+											"    const responseJson = pm.response.json();",
+											"    if (responseJson && responseJson.id) {",
+											"        pm.environment.set('productId', responseJson.id);",
+											"        console.log('Product ID saved: ' + responseJson.id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{"key": "name", "value": "iPhone 15 Pro Max", "type": "text"},
+										{"key": "description", "value": "Latest iPhone with Pro camera system", "type": "text"},
+										{"key": "basePrice", "value": "1199.00", "type": "text"},
+										{"key": "categoryId", "value": "{{categoryId}}", "type": "text"},
+										{"key": "brandId", "value": "{{brandId}}", "type": "text"},
+										{"key": "image", "type": "file", "src": []}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/products",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products"]
+								}
+							}
+						},
+						{
+							"name": "5. UPDATE Product with New Image",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{"key": "name", "value": "iPhone 15 Pro Max - Updated", "type": "text"},
+										{"key": "description", "value": "Updated iPhone with enhanced features", "type": "text"},
+										{"key": "basePrice", "value": "1299.00", "type": "text"},
+										{"key": "image", "type": "file", "src": []}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/products/{{productId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "{{productId}}"]
+								}
+							}
+						},
+						{
+							"name": "6. DELETE Product (Soft Delete)",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/{{productId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "{{productId}}"]
+								}
+							}
+						},
+						{
+							"name": "7. RESTORE Deleted Product",
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/{{productId}}/restore",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "{{productId}}", "restore"]
+								}
+							}
+						},
+						{
+							"name": "8. GET Products by Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/category/{{categoryId}}?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "category", "{{categoryId}}"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "9. GET Products by Brand",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/brand/{{brandId}}?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "brand", "{{brandId}}"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "10. SEARCH Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/search?keyword=iPhone&page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "search"],
+									"query": [
+										{"key": "keyword", "value": "iPhone"},
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "11. CHECK Product Name Exists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/products/exists?name=iPhone 15 Pro Max",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "products", "exists"],
+									"query": [
+										{"key": "name", "value": "iPhone 15 Pro Max"}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Brands (6 Endpoints)",
+					"item": [
+						{
+							"name": "1. GET All Brands",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/brands?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "2. GET Brand by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/brands/{{brandId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands", "{{brandId}}"]
+								}
+							}
+						},
+						{
+							"name": "3. CREATE Brand",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const responseJson = pm.response.json();",
+											"    if (responseJson && responseJson.id) {",
+											"        pm.environment.set('brandId', responseJson.id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Apple\",\n  \"description\": \"Technology company known for innovative products\",\n  \"logoUrl\": \"https://images.unsplash.com/photo-1611532736597-de2d4265fba3\",\n  \"website\": \"https://www.apple.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/brands",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands"]
+								}
+							}
+						},
+						{
+							"name": "4. UPDATE Brand",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Apple Inc.\",\n  \"description\": \"Updated description for Apple\",\n  \"logoUrl\": \"https://images.unsplash.com/photo-1611532736597-de2d4265fba3\",\n  \"website\": \"https://www.apple.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/brands/{{brandId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands", "{{brandId}}"]
+								}
+							}
+						},
+						{
+							"name": "5. DELETE Brand",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/brands/{{brandId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands", "{{brandId}}"]
+								}
+							}
+						},
+						{
+							"name": "6. CHECK Brand Name Exists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/brands/name/exists?name=Apple",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "brands", "name", "exists"],
+									"query": [
+										{"key": "name", "value": "Apple"}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Categories (8 Endpoints)",
+					"item": [
+						{
+							"name": "1. GET All Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "2. GET Category by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "{{categoryId}}"]
+								}
+							}
+						},
+						{
+							"name": "3. CREATE Category",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const responseJson = pm.response.json();",
+											"    if (responseJson && responseJson.id) {",
+											"        pm.environment.set('categoryId', responseJson.id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Electronic devices and gadgets\",\n  \"parentCategoryId\": null,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1498049794561-7780e7231661\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/categories",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories"]
+								}
+							}
+						},
+						{
+							"name": "4. UPDATE Category",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Consumer Electronics\",\n  \"description\": \"Updated electronics category\",\n  \"parentCategoryId\": null,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1498049794561-7780e7231661\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "{{categoryId}}"]
+								}
+							}
+						},
+						{
+							"name": "5. DELETE Category",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "{{categoryId}}"]
+								}
+							}
+						},
+						{
+							"name": "6. GET Category Tree",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/tree",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "tree"]
+								}
+							}
+						},
+						{
+							"name": "7. GET Root Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/root",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "root"]
+								}
+							}
+						},
+						{
+							"name": "8. CHECK Category Name Exists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/categories/name/exists?name=Electronics",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "categories", "name", "exists"],
+									"query": [
+										{"key": "name", "value": "Electronics"}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Attributes (8 Endpoints)",
+					"item": [
+						{
+							"name": "1. GET All Attributes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes?page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes"],
+									"query": [
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "2. GET Attribute by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/{{attributeId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "{{attributeId}}"]
+								}
+							}
+						},
+						{
+							"name": "3. CREATE Attribute",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const responseJson = pm.response.json();",
+											"    if (responseJson && responseJson.id) {",
+											"        pm.environment.set('attributeId', responseJson.id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Color\",\n  \"dataType\": \"STRING\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes"]
+								}
+							}
+						},
+						{
+							"name": "4. UPDATE Attribute",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{"key": "Content-Type", "value": "application/json"}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Product Color\",\n  \"dataType\": \"STRING\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/{{attributeId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "{{attributeId}}"]
+								}
+							}
+						},
+						{
+							"name": "5. DELETE Attribute",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/{{attributeId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "{{attributeId}}"]
+								}
+							}
+						},
+						{
+							"name": "6. GET Attributes by Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/category/{{categoryId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "category", "{{categoryId}}"]
+								}
+							}
+						},
+						{
+							"name": "7. SEARCH Attributes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/search?keyword=color&page={{page}}&size={{size}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "search"],
+									"query": [
+										{"key": "keyword", "value": "color"},
+										{"key": "page", "value": "{{page}}"},
+										{"key": "size", "value": "{{size}}"}
+									]
+								}
+							}
+						},
+						{
+							"name": "8. CHECK Attribute Name Exists",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/attributes/name/exists?name=Color",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "attributes", "name", "exists"],
+									"query": [
+										{"key": "name", "value": "Color"}
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "🎟️ Voucher Management (16 Endpoints)",
+			"item": [
+				{
+					"name": "1. CREATE Voucher",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.id) {",
+									"        pm.environment.set('voucherId', responseJson.id);",
+									"        pm.environment.set('voucherCode', responseJson.code);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"WELCOME25\",\n  \"name\": \"Welcome Discount\",\n  \"description\": \"25% discount for new customers\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 25.00,\n  \"minOrderAmount\": 50.00,\n  \"maxDiscountAmount\": 100.00,\n  \"usageLimit\": 1000,\n  \"usageLimitPerUser\": 1,\n  \"startDate\": \"{{startDate}}\",\n  \"endDate\": \"{{endDate}}\",\n  \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers"]
+						}
+					}
+				},
+				{
+					"name": "2. GET All Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers?page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers"],
+							"query": [
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "3. GET Voucher by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/{{voucherId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "{{voucherId}}"]
+						}
+					}
+				},
+				{
+					"name": "4. UPDATE Voucher",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"WELCOME30\",\n  \"name\": \"Welcome Discount - Updated\",\n  \"description\": \"30% discount for new customers\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 30.00,\n  \"minOrderAmount\": 75.00,\n  \"maxDiscountAmount\": 150.00,\n  \"usageLimit\": 500,\n  \"usageLimitPerUser\": 1,\n  \"startDate\": \"{{startDate}}\",\n  \"endDate\": \"{{endDate}}\",\n  \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/{{voucherId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "{{voucherId}}"]
+						}
+					}
+				},
+				{
+					"name": "5. DELETE Voucher",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/{{voucherId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "{{voucherId}}"]
+						}
+					}
+				},
+				{
+					"name": "6. RESTORE Deleted Voucher",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/{{voucherId}}/restore",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "{{voucherId}}", "restore"]
+						}
+					}
+				},
+				{
+					"name": "7. SEARCH Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/search?searchTerm=welcome&page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "search"],
+							"query": [
+								{"key": "searchTerm", "value": "welcome"},
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "8. CHECK Voucher Code Exists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/code/exists?code=WELCOME25",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "code", "exists"],
+							"query": [
+								{"key": "code", "value": "WELCOME25"}
+							]
+						}
+					}
+				},
+				{
+					"name": "9. VALIDATE Voucher Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"{{voucherCode}}\",\n  \"orderAmount\": {{orderAmount}},\n  \"userId\": {{userId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/validate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "validate"]
+						}
+					}
+				},
+				{
+					"name": "10. USE Voucher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"voucherCode\": \"{{voucherCode}}\",\n  \"userId\": {{userId}},\n  \"orderId\": {{$randomInt}},\n  \"orderAmount\": {{orderAmount}},\n  \"discountAmount\": {{discountAmount}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/use",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "use"]
+						}
+					}
+				},
+				{
+					"name": "11. GET Vouchers by User ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/user/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "user", "{{userId}}"]
+						}
+					}
+				},
+				{
+					"name": "12. GET Expired Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/expired?page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "expired"],
+							"query": [
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "13. GET Expiring Soon Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/expiring-soon?days=7&page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "expiring-soon"],
+							"query": [
+								{"key": "days", "value": "7"},
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "14. GET Voucher Usage Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/analytics/usage?startDate={{startDate}}&endDate={{endDate}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "analytics", "usage"],
+							"query": [
+								{"key": "startDate", "value": "{{startDate}}"},
+								{"key": "endDate", "value": "{{endDate}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "15. GET Voucher Performance Analytics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/vouchers/analytics/performance?period=monthly",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "vouchers", "analytics", "performance"],
+							"query": [
+								{"key": "period", "value": "monthly"}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📢 Campaign Management (8 Endpoints)",
+			"item": [
+				{
+					"name": "1. GET All Campaigns",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns?page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns"],
+							"query": [
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "2. GET Campaign by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/{{campaignId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "{{campaignId}}"]
+						}
+					}
+				},
+				{
+					"name": "3. CREATE Campaign with Image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.id) {",
+									"        pm.environment.set('campaignId', responseJson.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "multipart/form-data", "disabled": true}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "name", "value": "Summer Sale 2024", "type": "text"},
+								{"key": "description", "value": "Big summer discount campaign with amazing offers", "type": "text"},
+								{"key": "startDate", "value": "{{startDate}}", "type": "text"},
+								{"key": "endDate", "value": "{{endDate}}", "type": "text"},
+								{"key": "image", "src": "https://images.unsplash.com/photo-1441986300917-64674bd600d8", "type": "file"}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns"]
+						}
+					}
+				},
+				{
+					"name": "4. UPDATE Campaign with New Image",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "multipart/form-data", "disabled": true}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{"key": "name", "value": "Updated Summer Sale 2024", "type": "text"},
+								{"key": "description", "value": "Extended summer campaign with new offers and bigger discounts", "type": "text"},
+								{"key": "startDate", "value": "{{startDate}}", "type": "text"},
+								{"key": "endDate", "value": "{{endDate}}", "type": "text"},
+								{"key": "image", "src": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da", "type": "file"}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/{{campaignId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "{{campaignId}}"]
+						}
+					}
+				},
+				{
+					"name": "5. DELETE Campaign (Soft Delete)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/{{campaignId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "{{campaignId}}"]
+						}
+					}
+				},
+				{
+					"name": "6. RESTORE Deleted Campaign",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/{{campaignId}}/restore",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "{{campaignId}}", "restore"]
+						}
+					}
+				},
+				{
+					"name": "7. SEARCH Campaigns",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/search?keyword=summer&page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "search"],
+							"query": [
+								{"key": "keyword", "value": "summer"},
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "8. CHECK Campaign Name Exists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/campaigns/name/exists?name=Summer Sale 2024",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "campaigns", "name", "exists"],
+							"query": [
+								{"key": "name", "value": "Summer Sale 2024"}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🎯 Promotion Management (9 Endpoints)",
+			"item": [
+				{
+					"name": "1. CREATE Promotion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.id) {",
+									"        pm.environment.set('promotionId', responseJson.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ruleName\": \"iPhone 15 Pro Max Discount\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 15.00,\n  \"minOrderAmount\": 500.00,\n  \"maxDiscountAmount\": 200.00,\n  \"campaignId\": {{campaignId}},\n  \"productVariationId\": {{productVariationId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions"]
+						}
+					}
+				},
+				{
+					"name": "2. GET All Promotions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions?page={{page}}&size={{size}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions"],
+							"query": [
+								{"key": "page", "value": "{{page}}"},
+								{"key": "size", "value": "{{size}}"}
+							]
+						}
+					}
+				},
+				{
+					"name": "3. GET Promotion by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/{{promotionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "{{promotionId}}"]
+						}
+					}
+				},
+				{
+					"name": "4. UPDATE Promotion",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ruleName\": \"iPhone 15 Pro Max Special Discount\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 20.00,\n  \"minOrderAmount\": 400.00,\n  \"maxDiscountAmount\": 250.00,\n  \"campaignId\": {{campaignId}},\n  \"productVariationId\": {{productVariationId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/{{promotionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "{{promotionId}}"]
+						}
+					}
+				},
+				{
+					"name": "5. DELETE Promotion",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/{{promotionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "{{promotionId}}"]
+						}
+					}
+				},
+				{
+					"name": "6. GET Promotions by Campaign",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/campaign/{{campaignId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "campaign", "{{campaignId}}"]
+						}
+					}
+				},
+				{
+					"name": "7. GET Promotions by Product Variation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/product-variation/{{productVariationId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "product-variation", "{{productVariationId}}"]
+						}
+					}
+				},
+				{
+					"name": "8. CALCULATE Promotions (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productVariationId\": {{productVariationId}},\n  \"originalPrice\": {{originalPrice}},\n  \"quantity\": {{quantity}},\n  \"orderAmount\": {{orderAmount}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/calculate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "calculate"]
+						}
+					}
+				},
+				{
+					"name": "9. CALCULATE Promotions (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/promotions/calculate?productVariationId={{productVariationId}}&originalPrice={{originalPrice}}&quantity={{quantity}}&orderAmount={{orderAmount}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "promotions", "calculate"],
+							"query": [
+								{"key": "productVariationId", "value": "{{productVariationId}}"},
+								{"key": "originalPrice", "value": "{{originalPrice}}"},
+								{"key": "quantity", "value": "{{quantity}}"},
+								{"key": "orderAmount", "value": "{{orderAmount}}"}
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set dynamic dates for campaigns and vouchers",
+					"const now = new Date();",
+					"const startDate = new Date(now);",
+					"const endDate = new Date(now);",
+					"endDate.setMonth(endDate.getMonth() + 3);",
+					"",
+					"pm.environment.set('startDate', startDate.toISOString());",
+					"pm.environment.set('endDate', endDate.toISOString());",
+					"",
+					"// Set default values if not already set",
+					"if (!pm.environment.get('page')) pm.environment.set('page', '0');",
+					"if (!pm.environment.get('size')) pm.environment.set('size', '20');",
+					"if (!pm.environment.get('orderAmount')) pm.environment.set('orderAmount', '100.00');",
+					"if (!pm.environment.get('discountAmount')) pm.environment.set('discountAmount', '25.00');"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "productId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "brandId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "categoryId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "attributeId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "voucherId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "voucherCode",
+			"value": "WELCOME25",
+			"type": "string"
+		},
+		{
+			"key": "campaignId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "promotionId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "productVariationId",
+			"value": "456",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "123",
+			"type": "string"
+		},
+		{
+			"key": "page",
+			"value": "0",
+			"type": "string"
+		},
+		{
+			"key": "size",
+			"value": "20",
+			"type": "string"
+		},
+		{
+			"key": "orderAmount",
+			"value": "100.00",
+			"type": "string"
+		},
+		{
+			"key": "discountAmount",
+			"value": "25.00",
+			"type": "string"
+		},
+		{
+			"key": "originalPrice",
+			"value": "120.00",
+			"type": "string"
+		},
+		{
+			"key": "quantity",
+			"value": "2",
+			"type": "string"
+		}
+	]
+}

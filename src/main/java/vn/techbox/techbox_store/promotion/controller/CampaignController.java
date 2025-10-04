@@ -190,4 +190,17 @@ public class CampaignController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    @PostMapping("/{id}/restore")
+    public ResponseEntity<Void> restoreCampaign(@PathVariable Integer id) {
+        log.info("REST request to restore campaign with ID: {}", id);
+        
+        try {
+            campaignService.restoreCampaign(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            log.error("Campaign not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

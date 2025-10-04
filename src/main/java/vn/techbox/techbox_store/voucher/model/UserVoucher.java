@@ -1,5 +1,6 @@
 package vn.techbox.techbox_store.voucher.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_vouchers")
+@JsonIgnoreProperties({"voucher"})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
