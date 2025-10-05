@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.config;
+package vn.techbox.techbox_store.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
