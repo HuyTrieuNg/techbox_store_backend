@@ -4,7 +4,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.user.dto.TokenResponse;
 import vn.techbox.techbox_store.user.dto.UserCreateRequest;
@@ -33,18 +33,20 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final AuthenticationManager authManager;
     private final AuthService authService;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+    private final PasswordEncoder encoder;
 
     public UserServiceImpl(UserRepository userRepository,
                           AccountRepository accountRepository,
                           RoleRepository roleRepository,
                           AuthenticationManager authManager,
-                          AuthService authService) {
+                          AuthService authService,
+                          PasswordEncoder encoder) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.roleRepository = roleRepository;
         this.authManager = authManager;
         this.authService = authService;
+        this.encoder = encoder;
     }
 
     public User createUser(UserCreateRequest req) {

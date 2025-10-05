@@ -12,6 +12,6 @@ public record UserCreateRequest(
     String phone,
     String address,
     LocalDateTime dateOfBirth,
-    Set<String> roleNames // Set of role names like "ROLE_CUSTOMER"
+    Set<String> roleNames
 ) {
 }
