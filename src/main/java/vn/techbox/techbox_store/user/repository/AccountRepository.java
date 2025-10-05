@@ -11,14 +11,8 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Integer> {
 
-    @Query("SELECT COUNT(a) > 0 FROM Account a WHERE a.username = :username AND a.deletedAt IS NULL")
-    boolean existsByUsername(@Param("username") String username);
-
     @Query("SELECT COUNT(a) > 0 FROM Account a WHERE a.email = :email AND a.deletedAt IS NULL")
     boolean existsByEmail(@Param("email") String email);
-
-    @Query("SELECT a FROM Account a WHERE a.username = :username AND a.deletedAt IS NULL")
-    Optional<Account> findByUsername(@Param("username") String username);
 
     @Query("SELECT a FROM Account a WHERE a.email = :email AND a.deletedAt IS NULL")
     Optional<Account> findByEmail(@Param("email") String email);

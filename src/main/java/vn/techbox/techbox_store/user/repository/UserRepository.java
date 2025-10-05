@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.user.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.lang.NonNullApi;
 import org.springframework.stereotype.Repository;
 import vn.techbox.techbox_store.user.model.User;
 
@@ -14,14 +15,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.id = :id AND u.deletedAt IS NULL")
     User findByIdWithRoles(@Param("id") Integer id);
-
-    @Query("SELECT u FROM User u " +
-            "LEFT JOIN FETCH u.account " +
-            "LEFT JOIN FETCH u.roles " +
-            "WHERE u.account.username = :username " +
-            "AND u.deletedAt IS NULL " +
-            "AND u.account.deletedAt IS NULL")
-    User findByAccountUsername(@Param("username") String username);
 
     @Query("SELECT u FROM User u " +
             "LEFT JOIN FETCH u.account " +
@@ -48,9 +41,9 @@ public interface UserRepository extends JpaRepository<User, Integer> {
             "LEFT JOIN FETCH u.account " +
             "LEFT JOIN FETCH u.roles r " +
             "LEFT JOIN FETCH r.permissions " +
-            "WHERE u.account.username = :username " +
+            "WHERE u.account.email = :email " +
             "AND u.deletedAt IS NULL " +
             "AND u.account.deletedAt IS NULL " +
             "AND u.account.isActive = true")
-    User findByUsernameForAuth(@Param("username") String username);
+    User findByEmailForAuth(@Param("email") String email);
 }

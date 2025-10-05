@@ -15,7 +15,7 @@ public interface UserService {
     User createUser(UserCreateRequest req);
     List<User> getAllUsers();
     Optional<User> getUserById(Integer id);
-    Optional<User> getUserByUsername(String username);
+    Optional<User> getUserByEmail(String email); // renamed
     User updateUser(Integer id, UserUpdateRequest req);
     void deleteUser(Integer id);
     void restoreUser(Integer id);

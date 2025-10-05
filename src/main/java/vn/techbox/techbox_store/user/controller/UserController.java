@@ -48,7 +48,7 @@ public class UserController {
                 .body(UserResponse.from(saved));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('USER_WRITE') or @userService.isCurrentUser(#id)")
     public ResponseEntity<UserResponse> update(@PathVariable Integer id, @RequestBody UserUpdateRequest req) {
         User updated = userService.updateUser(id, req);
@@ -66,7 +66,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/restore")
+    @PatchMapping("/{id}/restore")
     @PreAuthorize("hasAuthority('USER_WRITE')")
     public ResponseEntity<UserResponse> restore(@PathVariable Integer id) {
         try {
@@ -89,19 +89,19 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> getCurrentUserProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userService.getUserByUsername(username)
+        String email = authentication.getName();
+        return userService.getUserByEmail(email)
                 .map(UserResponse::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/profile")
+    @PatchMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> updateCurrentUserProfile(@RequestBody UserUpdateRequest req) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User currentUser = userService.getUserByUsername(username)
+        String email = authentication.getName();
+        User currentUser = userService.getUserByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         User updated = userService.updateUser(currentUser.getId(), req);
         return ResponseEntity.ok(UserResponse.from(updated));

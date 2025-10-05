@@ -50,15 +50,14 @@ public class UserServiceImpl implements UserService {
     }
 
     public User createUser(UserCreateRequest req) {
-        if (accountRepository.existsByUsername(req.username())) {
-            throw new RuntimeException("Username already exists: " + req.username());
+        if (req.email() == null || req.email().isBlank()) {
+            throw new RuntimeException("Email is required");
         }
         if (accountRepository.existsByEmail(req.email())) {
             throw new RuntimeException("Email already exists: " + req.email());
         }
 
         Account account = Account.builder()
-                .username(req.username())
                 .email(req.email())
                 .passwordHash(encoder.encode(req.password()))
                 .isActive(true)
@@ -69,12 +68,12 @@ public class UserServiceImpl implements UserService {
         if (req.roleNames() != null && !req.roleNames().isEmpty()) {
             for (String roleName : req.roleNames()) {
                 Role role = roleRepository.findByName(roleName)
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
                 roles.add(role);
             }
         } else {
             Role customerRole = roleRepository.findByName("ROLE_CUSTOMER")
-                .orElseThrow(() -> new RuntimeException("Default CUSTOMER role not found"));
+                    .orElseThrow(() -> new RuntimeException("Default CUSTOMER role not found"));
             roles.add(customerRole);
         }
 
@@ -99,8 +98,8 @@ public class UserServiceImpl implements UserService {
         return Optional.ofNullable(userRepository.findByIdWithRoles(id));
     }
 
-    public Optional<User> getUserByUsername(String username) {
-        return Optional.ofNullable(userRepository.findByAccountUsername(username));
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByAccountEmail(email);
     }
 
     public boolean isCurrentUser(Integer userId) {
@@ -109,8 +108,8 @@ public class UserServiceImpl implements UserService {
             return false;
         }
 
-        String currentUsername = authentication.getName();
-        Optional<User> currentUser = getUserByUsername(currentUsername);
+        String currentEmail = authentication.getName();
+        Optional<User> currentUser = getUserByEmail(currentEmail);
 
         return currentUser.isPresent() && currentUser.get().getId().equals(userId);
     }
@@ -198,12 +197,12 @@ public class UserServiceImpl implements UserService {
     public TokenResponse verify(UserLoginRequest req) {
         try {
             Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.username(), req.password())
+                    new UsernamePasswordAuthenticationToken(req.email(), req.password())
             );
 
             if (authentication.isAuthenticated()) {
-                String accessToken = authService.generateToken(req.username());
-                String refreshToken = authService.generateRefreshToken(req.username());
+                String accessToken = authService.generateToken(req.email());
+                String refreshToken = authService.generateRefreshToken(req.email());
                 return new TokenResponse(accessToken, refreshToken, authService.getAccessTokenExpiry());
             }
             throw new RuntimeException("Authentication failed");

@@ -28,10 +28,10 @@ public class AuthController {
     public ResponseEntity<TokenResponse> login(@RequestBody UserLoginRequest req) {
         try {
             TokenResponse tokenResponse = userService.verify(req);
-            logger.info("User {} logged in successfully", req.username());
+            logger.info("User {} logged in successfully", req.email());
             return ResponseEntity.ok(tokenResponse);
         } catch (Exception e) {
-            logger.error("Login failed for user {}: {}", req.username(), e.getMessage());
+            logger.error("Login failed for user {}: {}", req.email(), e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
@@ -40,11 +40,11 @@ public class AuthController {
     public ResponseEntity<UserResponse> register(@RequestBody UserCreateRequest req) {
         try {
             User savedUser = userService.createUser(req);
-            logger.info("User {} registered successfully", req.username());
+            logger.info("User {} registered successfully", req.email());
             return ResponseEntity.created(URI.create("/api/users/" + savedUser.getId()))
                     .body(UserResponse.from(savedUser));
         } catch (Exception e) {
-            logger.error("Registration failed for user {}: {}", req.username(), e.getMessage());
+            logger.error("Registration failed for user {}: {}", req.email(), e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

@@ -1,59 +1,57 @@
 package vn.techbox.techbox_store.config;
 
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-import vn.techbox.techbox_store.user.model.*;
-import vn.techbox.techbox_store.user.repository.*;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import vn.techbox.techbox_store.user.model.Permission;
+import vn.techbox.techbox_store.user.model.UserPermission;
+import vn.techbox.techbox_store.user.model.UserRole;
+import vn.techbox.techbox_store.user.repository.PermissionRepository;
+import vn.techbox.techbox_store.user.repository.RoleRepository;
 
-import java.util.HashSet;
 import java.util.Set;
 
-@Configuration
-public class UserDataSeeder {
+@Component
+@Order(1)
+public class UserDataSeeder implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(UserDataSeeder.class);
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-    @Bean
-    CommandLineRunner seedUsers(UserRepository userRepository,
-                               AccountRepository accountRepository,
-                               RoleRepository roleRepository,
-                               PermissionRepository permissionRepository) {
-        return args -> {
-            try {
-                if (userRepository.count() == 0) {
-                    logger.info("Seeding initial data...");
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
 
-                    seedData(userRepository, accountRepository, roleRepository, permissionRepository);
+    public UserDataSeeder(RoleRepository roleRepository, PermissionRepository permissionRepository) {
+        this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
+    }
 
-                    logger.info("Data seeding completed successfully!");
-                } else {
-                    logger.info("Data already exists, skipping seeding");
-                }
-            } catch (Exception e) {
-                logger.error("Error seeding data: {}", e.getMessage(), e);
-                throw new RuntimeException("Failed to seed data", e);
+    @Override
+    public void run(String... args) {
+        try {
+            boolean needPermissions = permissionRepository.count() == 0;
+            boolean needRoles = roleRepository.count() == 0;
+            if (needPermissions || needRoles) {
+                logger.info("Seeding permissions & roles...");
+                seedPermissionsAndRoles();
+                logger.info("Permissions & roles seeding finished");
+            } else {
+                logger.info("Permissions & roles already exist, skipping");
             }
-        };
+        } catch (Exception e) {
+            logger.error("Failed seeding permissions/roles: {}", e.getMessage(), e);
+            throw new RuntimeException("Permission/Role seeding failed", e);
+        }
     }
 
     @Transactional
-    public void seedData(UserRepository userRepository,
-                        AccountRepository accountRepository,
-                        RoleRepository roleRepository,
-                        PermissionRepository permissionRepository) {
-        createPermissions(permissionRepository);
-        createRoles(roleRepository, permissionRepository);
-        createUsers(userRepository, accountRepository, roleRepository);
+    public void seedPermissionsAndRoles() {
+        createPermissions();
+        createRoles();
     }
 
-    private void createPermissions(PermissionRepository permissionRepository) {
-        logger.info("Creating permissions...");
-
+    private void createPermissions() {
         for (UserPermission permission : UserPermission.values()) {
             if (!permissionRepository.existsByName(permission.getPermissionName())) {
                 Permission perm = Permission.builder()
@@ -68,181 +66,60 @@ public class UserDataSeeder {
         }
     }
 
-    private void createRoles(RoleRepository roleRepository, PermissionRepository permissionRepository) {
-        logger.info("Creating roles...");
-
-        // Create roles dynamically from enum
+    private void createRoles() {
         for (UserRole userRole : UserRole.values()) {
             if (!roleRepository.existsByName(userRole.getRoleName())) {
-                Set<Permission> rolePermissions = getRolePermissions(userRole, permissionRepository);
-
-                Role role = Role.builder()
+                var role = vn.techbox.techbox_store.user.model.Role.builder()
                         .name(userRole.getRoleName())
                         .description(getRoleDescription(userRole))
                         .build();
-
-                // Save role first without permissions to avoid detached entity issue
-                Role savedRole = roleRepository.save(role);
-
-                // Then add permissions using the managed entity
+                var savedRole = roleRepository.save(role);
+                var rolePermissions = getRolePermissions(userRole);
                 if (!rolePermissions.isEmpty()) {
                     savedRole.setPermissions(rolePermissions);
                     roleRepository.save(savedRole);
                 }
-
-                logger.info("Created role: {} with {} permissions", savedRole.getName(), rolePermissions.size());
+                logger.info("Created role {} with {} permissions", savedRole.getName(), rolePermissions.size());
             }
         }
-    }
-
-    private Set<Permission> getRolePermissions(UserRole userRole, PermissionRepository permissionRepository) {
-        Set<Permission> permissions = new java.util.HashSet<>();
-
-        switch (userRole) {
-            case ROLE_ADMIN:
-                // Admin gets all permissions - reload from repository to ensure managed state
-                permissions.addAll(permissionRepository.findAll());
-                break;
-
-            case ROLE_STAFF:
-                // Staff gets permissions for managing products, orders, promotions, vouchers, campaigns
-                permissions.addAll(getPermissionsByModules(permissionRepository,
-                        Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN")));
-                // Remove delete permissions for staff
-                permissions.removeIf(p -> p.getAction().equals("DELETE"));
-                break;
-
-            case ROLE_CUSTOMER:
-                // Customer gets only read permissions for products and orders
-                permissions.addAll(getPermissionsByModulesAndActions(permissionRepository,
-                        Set.of("PRODUCT", "ORDER"), Set.of("READ")));
-                break;
-        }
-
-        return permissions;
     }
 
     private String getRoleDescription(UserRole userRole) {
         return switch (userRole) {
             case ROLE_ADMIN -> "Administrator with full system access";
-            case ROLE_STAFF -> "Staff member with management permissions";
-            case ROLE_CUSTOMER -> "Customer with basic access permissions";
+            case ROLE_STAFF -> "Staff member with restricted management permissions";
+            case ROLE_CUSTOMER -> "Customer with basic access";
         };
     }
 
-    private Set<Permission> getPermissionsByModules(PermissionRepository permissionRepository, Set<String> modules) {
-        Set<Permission> permissions = new java.util.HashSet<>();
+    private Set<Permission> getRolePermissions(UserRole userRole) {
+        Set<vn.techbox.techbox_store.user.model.Permission> permissions = new java.util.HashSet<>();
+        switch (userRole) {
+            case ROLE_ADMIN -> permissions.addAll(permissionRepository.findAll());
+            case ROLE_STAFF -> {
+                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN")));
+                permissions.removeIf(p -> p.getAction().equals("DELETE"));
+            }
+            case ROLE_CUSTOMER -> permissions.addAll(getPermissionsByModulesAndActions(Set.of("PRODUCT", "ORDER"), Set.of("READ")));
+        }
+        return permissions;
+    }
+
+    private Set<Permission> getPermissionsByModules(Set<String> modules) {
+        Set<vn.techbox.techbox_store.user.model.Permission> permissions = new java.util.HashSet<>();
         for (String module : modules) {
             permissions.addAll(permissionRepository.findByModule(module));
         }
         return permissions;
     }
 
-    private Set<Permission> getPermissionsByModulesAndActions(PermissionRepository permissionRepository,
-                                                            Set<String> modules, Set<String> actions) {
-        Set<Permission> permissions = new java.util.HashSet<>();
+    private Set<Permission> getPermissionsByModulesAndActions(Set<String> modules, Set<String> actions) {
+        Set<vn.techbox.techbox_store.user.model.Permission> permissions = new java.util.HashSet<>();
         for (String module : modules) {
             for (String action : actions) {
-                permissionRepository.findByModuleAndAction(module, action)
-                    .ifPresent(permissions::add);
+                permissionRepository.findByModuleAndAction(module, action).ifPresent(permissions::add);
             }
         }
         return permissions;
-    }
-
-    private void createUsers(UserRepository userRepository,
-                            AccountRepository accountRepository,
-                            RoleRepository roleRepository) {
-        logger.info("Creating users...");
-
-        // Create admin user
-        if (!accountRepository.existsByUsername("admin")) {
-            Account adminAccount = Account.builder()
-                    .username("admin")
-                    .email("admin@techbox.vn")
-                    .passwordHash(encoder.encode("admin123"))
-                    .isActive(true)
-                    .isLocked(false)
-                    .build();
-
-            User admin = User.builder()
-                    .firstName("Admin")
-                    .lastName("System")
-                    .phone("0123456789")
-                    .address("Ho Chi Minh City")
-                    .account(adminAccount)
-                    .roles(new HashSet<>()) // Create empty set first
-                    .build();
-
-            // Save user first
-            User savedAdmin = userRepository.save(admin);
-
-            // Then add roles to the managed entity
-            Role adminRole = roleRepository.findByName(UserRole.ROLE_ADMIN.getRoleName()).orElseThrow();
-            savedAdmin.getRoles().add(adminRole);
-            userRepository.save(savedAdmin);
-
-            logger.info("Created admin user: {}", savedAdmin.getAccount().getUsername());
-        }
-
-        // Create staff user
-        if (!accountRepository.existsByUsername("staff")) {
-            Account staffAccount = Account.builder()
-                    .username("staff")
-                    .email("staff@techbox.vn")
-                    .passwordHash(encoder.encode("staff123"))
-                    .isActive(true)
-                    .isLocked(false)
-                    .build();
-
-            User staff = User.builder()
-                    .firstName("Staff")
-                    .lastName("User")
-                    .phone("0987654321")
-                    .address("Ho Chi Minh City")
-                    .account(staffAccount)
-                    .roles(new HashSet<>()) // Create empty set first
-                    .build();
-
-            // Save user first
-            User savedStaff = userRepository.save(staff);
-
-            // Then add roles to the managed entity
-            Role staffRole = roleRepository.findByName(UserRole.ROLE_STAFF.getRoleName()).orElseThrow();
-            savedStaff.getRoles().add(staffRole);
-            userRepository.save(savedStaff);
-
-            logger.info("Created staff user: {}", savedStaff.getAccount().getUsername());
-        }
-
-        // Create customer user
-        if (!accountRepository.existsByUsername("customer")) {
-            Account customerAccount = Account.builder()
-                    .username("customer")
-                    .email("customer@gmail.com")
-                    .passwordHash(encoder.encode("customer123"))
-                    .isActive(true)
-                    .isLocked(false)
-                    .build();
-
-            User customer = User.builder()
-                    .firstName("John")
-                    .lastName("Doe")
-                    .phone("0123987654")
-                    .address("Ho Chi Minh City")
-                    .account(customerAccount)
-                    .roles(new HashSet<>()) // Create empty set first
-                    .build();
-
-            // Save user first
-            User savedCustomer = userRepository.save(customer);
-
-            // Then add roles to the managed entity
-            Role customerRole = roleRepository.findByName(UserRole.ROLE_CUSTOMER.getRoleName()).orElseThrow();
-            savedCustomer.getRoles().add(customerRole);
-            userRepository.save(savedCustomer);
-
-            logger.info("Created customer user: {}", savedCustomer.getAccount().getUsername());
-        }
     }
 }

@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 public record UserCreateRequest(
-    String username,
     String email,
     String password,
     String firstName,
