@@ -21,17 +21,17 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucher, UserVo
     
     // Find users who used a specific voucher
     @Query("SELECT uv FROM UserVoucher uv JOIN FETCH uv.voucher v " +
-           "WHERE uv.voucherId = :voucherId AND v.deletedAt IS NULL")
-    List<UserVoucher> findByVoucherId(@Param("voucherId") Integer voucherId);
+           "WHERE uv.voucherCode = :voucherCode AND v.deletedAt IS NULL")
+    List<UserVoucher> findByVoucherCode(@Param("voucherCode") String voucherCode);
     
     // Check if user has already used a specific voucher
-    @Query("SELECT uv FROM UserVoucher uv WHERE uv.userId = :userId AND uv.voucherId = :voucherId")
-    Optional<UserVoucher> findByUserIdAndVoucherId(@Param("userId") Integer userId, 
-                                                   @Param("voucherId") Integer voucherId);
+       @Query("SELECT uv FROM UserVoucher uv WHERE uv.userId = :userId AND uv.voucherCode = :voucherCode")
+       Optional<UserVoucher> findByUserIdAndVoucherCode(@Param("userId") Integer userId, 
+                                                                                       @Param("voucherCode") String voucherCode);
     
     // Count usage for a specific voucher
-    @Query("SELECT COUNT(uv) FROM UserVoucher uv WHERE uv.voucherId = :voucherId")
-    Long countByVoucherId(@Param("voucherId") Integer voucherId);
+       @Query("SELECT COUNT(uv) FROM UserVoucher uv WHERE uv.voucherCode = :voucherCode")
+       Long countByVoucherCode(@Param("voucherCode") String voucherCode);
     
     // Count vouchers used by a specific user
     @Query("SELECT COUNT(uv) FROM UserVoucher uv WHERE uv.userId = :userId")

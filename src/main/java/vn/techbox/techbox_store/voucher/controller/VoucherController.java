@@ -40,13 +40,13 @@ public class VoucherController {
         }
     }
     
-    @PutMapping("/{id}")
+    @PutMapping("/{code}")
     @Operation(summary = "Update a voucher", description = "Update an existing voucher by ID")
     public ResponseEntity<VoucherResponse> updateVoucher(
-            @Parameter(description = "Voucher ID") @PathVariable Integer id,
+            @Parameter(description = "Voucher code") @PathVariable String code,
             @Valid @RequestBody VoucherUpdateRequest request) {
         try {
-            VoucherResponse response = voucherService.updateVoucher(id, request);
+            VoucherResponse response = voucherService.updateVoucher(code, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -55,20 +55,8 @@ public class VoucherController {
         }
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("/{code}")
     @Operation(summary = "Get voucher by ID", description = "Retrieve voucher details by ID")
-    public ResponseEntity<VoucherResponse> getVoucherById(
-            @Parameter(description = "Voucher ID") @PathVariable Integer id) {
-        try {
-            VoucherResponse response = voucherService.getVoucherById(id);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-    
-    @GetMapping("/code/{code}")
-    @Operation(summary = "Get voucher by code", description = "Retrieve voucher details by code")
     public ResponseEntity<VoucherResponse> getVoucherByCode(
             @Parameter(description = "Voucher code") @PathVariable String code) {
         try {
@@ -78,6 +66,8 @@ public class VoucherController {
             return ResponseEntity.notFound().build();
         }
     }
+    
+    // NOTE: consolidated GET by code is implemented at @GetMapping("/{code}") above.
     
     @GetMapping("/code/exists")
     @Operation(summary = "Check if voucher code exists", description = "Check if a voucher code already exists in the system")
@@ -133,24 +123,24 @@ public class VoucherController {
         return ResponseEntity.ok(response);
     }
     
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{code}")
     @Operation(summary = "Delete a voucher", description = "Soft delete a voucher by ID")
     public ResponseEntity<Void> deleteVoucher(
-            @Parameter(description = "Voucher ID") @PathVariable Integer id) {
+            @Parameter(description = "Voucher code") @PathVariable String code) {
         try {
-            voucherService.deleteVoucher(id);
+            voucherService.deleteVoucherByCode(code);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
     
-    @PostMapping("/{id}/restore")
+    @PostMapping("/{code}/restore")
     @Operation(summary = "Restore a deleted voucher", description = "Restore a soft-deleted voucher by ID")
     public ResponseEntity<Void> restoreVoucher(
-            @Parameter(description = "Voucher ID") @PathVariable Integer id) {
+            @Parameter(description = "Voucher code") @PathVariable String code) {
         try {
-            voucherService.restoreVoucher(id);
+            voucherService.restoreVoucherByCode(code);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -204,11 +194,11 @@ public class VoucherController {
         return ResponseEntity.ok(response);
     }
     
-    @GetMapping("/{voucherId}/usage-count")
+    @GetMapping("/{voucherCode}/usage-count")
     @Operation(summary = "Get voucher usage count", description = "Get the number of times a voucher has been used")
     public ResponseEntity<Long> getVoucherUsageCount(
-            @Parameter(description = "Voucher ID") @PathVariable Integer voucherId) {
-        Long count = voucherService.getVoucherUsageCount(voucherId);
+            @Parameter(description = "Voucher code") @PathVariable String voucherCode) {
+        Long count = voucherService.getVoucherUsageCount(voucherCode);
         return ResponseEntity.ok(count);
     }
 }

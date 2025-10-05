@@ -26,6 +26,10 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
     // Find by code (active only)
     @Query("SELECT v FROM Voucher v WHERE v.code = :code AND v.deletedAt IS NULL")
     Optional<Voucher> findByCodeAndNotDeleted(@Param("code") String code);
+
+       // Find by code (include deleted) used for restore operation
+       @Query("SELECT v FROM Voucher v WHERE v.code = :code")
+       Optional<Voucher> findByCode(@Param("code") String code);
     
     // Find by ID (active only)
     @Query("SELECT v FROM Voucher v WHERE v.id = :id AND v.deletedAt IS NULL")
