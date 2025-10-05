@@ -1,11 +1,13 @@
-package vn.techbox.techbox_store.user.model;
+package vn.techbox.techbox_store.user.security;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import vn.techbox.techbox_store.user.model.User;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class UserPrincipal implements UserDetails {
     private final User user;
@@ -16,17 +18,26 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        return user.getAccount().getUsername();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("USER"));
+        Set<GrantedAuthority> authorities = new HashSet<>();
+
+        user.getRoles().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+            role.getPermissions().forEach(permission -> {
+                authorities.add(new SimpleGrantedAuthority(permission.getName()));
+            });
+        });
+
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        return user.getAccount().getPasswordHash();
     }
 
     @Override
@@ -36,7 +47,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !user.getAccount().getIsLocked();
     }
 
     @Override
@@ -46,6 +57,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return user.getAccount().getIsActive() && user.getDeletedAt() == null;
     }
 }

@@ -7,23 +7,25 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import vn.techbox.techbox_store.user.service.MyUserDetailService;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final MyUserDetailService userDetailsService;
+    private final UserDetailsService userDetailsService;
     private final JwtFilter jwtFilter;
 
-    public SecurityConfig(MyUserDetailService userDetailsService, JwtFilter jwtFilter) {
+    public SecurityConfig(UserDetailsService userDetailsService, JwtFilter jwtFilter) {
         this.userDetailsService = userDetailsService;
         this.jwtFilter = jwtFilter;
     }
@@ -32,8 +34,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        // .requestMatchers("/register", "/login", "/refresh-token").permitAll()
-                        .requestMatchers("/**").permitAll()
+                         .requestMatchers("/register", "/login", "/refresh-token").permitAll()
+//                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

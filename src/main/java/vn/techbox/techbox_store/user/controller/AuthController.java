@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
+import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +16,11 @@ import java.net.URI;
 @RestController
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private final AuthService authService;
     private final UserService userService;
 
-    public AuthController(UserService userService) {
+    public AuthController(AuthService authService, UserService userService) {
+        this.authService = authService;
         this.userService = userService;
     }
 
@@ -49,7 +52,7 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest req) {
         try {
-            TokenResponse tokenResponse = userService.refreshToken(req.refreshToken());
+            TokenResponse tokenResponse = authService.refreshToken(req.refreshToken());
             logger.info("Token refreshed successfully");
             return ResponseEntity.ok(tokenResponse);
         } catch (Exception e) {

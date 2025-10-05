@@ -3,40 +3,89 @@ package vn.techbox.techbox_store.user.service.impl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.techbox.techbox_store.user.dto.TokenResponse;
 import vn.techbox.techbox_store.user.dto.UserCreateRequest;
 import vn.techbox.techbox_store.user.dto.UserLoginRequest;
-import vn.techbox.techbox_store.user.dto.TokenResponse;
+import vn.techbox.techbox_store.user.dto.UserUpdateRequest;
+import vn.techbox.techbox_store.user.model.Account;
+import vn.techbox.techbox_store.user.model.Role;
 import vn.techbox.techbox_store.user.model.User;
+import vn.techbox.techbox_store.user.repository.AccountRepository;
+import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+    private final AccountRepository accountRepository;
+    private final RoleRepository roleRepository;
     private final AuthenticationManager authManager;
     private final AuthService authService;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-    public UserServiceImpl(UserRepository userRepository, AuthenticationManager authManager, AuthService authService) {
+    public UserServiceImpl(UserRepository userRepository,
+                          AccountRepository accountRepository,
+                          RoleRepository roleRepository,
+                          AuthenticationManager authManager,
+                          AuthService authService) {
         this.userRepository = userRepository;
+        this.accountRepository = accountRepository;
+        this.roleRepository = roleRepository;
         this.authManager = authManager;
         this.authService = authService;
     }
 
     public User createUser(UserCreateRequest req) {
-        User user = User.builder()
+        if (accountRepository.existsByUsername(req.username())) {
+            throw new RuntimeException("Username already exists: " + req.username());
+        }
+        if (accountRepository.existsByEmail(req.email())) {
+            throw new RuntimeException("Email already exists: " + req.email());
+        }
+
+        Account account = Account.builder()
                 .username(req.username())
                 .email(req.email())
-                .password(encoder.encode(req.password()))
-                .role(req.role())
+                .passwordHash(encoder.encode(req.password()))
+                .isActive(true)
+                .isLocked(false)
                 .build();
+
+        Set<Role> roles = new HashSet<>();
+        if (req.roleNames() != null && !req.roleNames().isEmpty()) {
+            for (String roleName : req.roleNames()) {
+                Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                roles.add(role);
+            }
+        } else {
+            Role customerRole = roleRepository.findByName("ROLE_CUSTOMER")
+                .orElseThrow(() -> new RuntimeException("Default CUSTOMER role not found"));
+            roles.add(customerRole);
+        }
+
+        User user = User.builder()
+                .firstName(req.firstName())
+                .lastName(req.lastName())
+                .phone(req.phone())
+                .address(req.address())
+                .dateOfBirth(req.dateOfBirth())
+                .account(account)
+                .roles(roles)
+                .build();
+
         return userRepository.save(user);
     }
 
@@ -45,29 +94,111 @@ public class UserServiceImpl implements UserService {
     }
 
     public Optional<User> getUserById(Integer id) {
-        return userRepository.findById(id);
+        return Optional.ofNullable(userRepository.findByIdWithRoles(id));
     }
 
-    public User updateUser(Integer id, User userDetails) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    public Optional<User> getUserByUsername(String username) {
+        return Optional.ofNullable(userRepository.findByAccountUsername(username));
+    }
 
-        user.setUsername(userDetails.getUsername());
-        user.setEmail(userDetails.getEmail());
-        user.setRole(userDetails.getRole());
+    public boolean isCurrentUser(Integer userId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        String currentUsername = authentication.getName();
+        Optional<User> currentUser = getUserByUsername(currentUsername);
+
+        return currentUser.isPresent() && currentUser.get().getId().equals(userId);
+    }
+
+    public User updateUser(Integer id, UserUpdateRequest req) {
+        User user = userRepository.findByIdWithRoles(id);
+        if (user == null) {
+            throw new RuntimeException("User not found with id: " + id);
+        }
+
+        // Update user info
+        if (req.firstName() != null) {
+            user.setFirstName(req.firstName());
+        }
+        if (req.lastName() != null) {
+            user.setLastName(req.lastName());
+        }
+        if (req.phone() != null) {
+            user.setPhone(req.phone());
+        }
+        if (req.address() != null) {
+            user.setAddress(req.address());
+        }
+        if (req.dateOfBirth() != null) {
+            user.setDateOfBirth(req.dateOfBirth());
+        }
+
+        // Update account info
+        Account account = user.getAccount();
+        if (req.email() != null && !req.email().equals(account.getEmail())) {
+            if (accountRepository.existsByEmail(req.email())) {
+                throw new RuntimeException("Email already exists: " + req.email());
+            }
+            account.setEmail(req.email());
+        }
+
+        if (req.isActive() != null) {
+            account.setIsActive(req.isActive());
+        }
+
+        if (req.isLocked() != null) {
+            account.setIsLocked(req.isLocked());
+        }
+
+        // Update roles if provided
+        if (req.roleNames() != null && !req.roleNames().isEmpty()) {
+            Set<Role> roles = new HashSet<>();
+            for (String roleName : req.roleNames()) {
+                Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                roles.add(role);
+            }
+            user.setRoles(roles);
+        }
+
         return userRepository.save(user);
     }
 
     public void deleteUser(Integer id) {
-        userRepository.deleteById(id);
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        user.setDeletedAt(LocalDateTime.now());
+        user.getAccount().setDeletedAt(LocalDateTime.now());
+        user.getAccount().setIsActive(false);
+
+        userRepository.save(user);
+    }
+
+    public void restoreUser(Integer id) {
+        User user = userRepository.findByIdIncludingDeleted(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        if (user.getDeletedAt() == null) {
+            throw new RuntimeException("User is not deleted");
+        }
+
+        user.setDeletedAt(null);
+        user.getAccount().setDeletedAt(null);
+        user.getAccount().setIsActive(true);
+
+        userRepository.save(user);
     }
 
     public TokenResponse verify(UserLoginRequest req) {
         try {
-            Authentication authentication =
-                    authManager.authenticate(new UsernamePasswordAuthenticationToken(
-                            req.username(), req.password()
-                    ));
+            Authentication authentication = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(req.username(), req.password())
+            );
+
             if (authentication.isAuthenticated()) {
                 String accessToken = authService.generateToken(req.username());
                 String refreshToken = authService.generateRefreshToken(req.username());
@@ -75,23 +206,7 @@ public class UserServiceImpl implements UserService {
             }
             throw new RuntimeException("Authentication failed");
         } catch (Exception e) {
-            System.out.println("Authentication failed: " + e.getMessage());
-            throw new RuntimeException("Authentication failed: " + e.getMessage());
-        }
-    }
-
-    public TokenResponse refreshToken(String refreshToken) {
-        try {
-            if (authService.validateRefreshToken(refreshToken)) {
-                String username = authService.extractUserNameFromRefreshToken(refreshToken);
-                String newAccessToken = authService.generateToken(username);
-                String newRefreshToken = authService.generateRefreshToken(username);
-                return new TokenResponse(newAccessToken, newRefreshToken, authService.getAccessTokenExpiry());
-            }
-            throw new RuntimeException("Invalid refresh token");
-        } catch (Exception e) {
-            System.out.println("Refresh token validation failed: " + e.getMessage());
-            throw new RuntimeException("Invalid refresh token: " + e.getMessage());
+            throw new RuntimeException("Login failed: " + e.getMessage());
         }
     }
 }
