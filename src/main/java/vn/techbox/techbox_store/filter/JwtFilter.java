@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.config;
+package vn.techbox.techbox_store.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,7 +12,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import vn.techbox.techbox_store.user.service.AuthService;
-import vn.techbox.techbox_store.user.service.MyUserDetailService;
+import vn.techbox.techbox_store.user.security.MyUserDetailService;
 import io.jsonwebtoken.security.SignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
