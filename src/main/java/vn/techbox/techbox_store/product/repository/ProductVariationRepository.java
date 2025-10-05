@@ -31,14 +31,14 @@ public interface ProductVariationRepository extends JpaRepository<ProductVariati
     List<ProductVariation> findByProductId(@Param("productId") Integer productId);
     
     // Find in stock variations
-    @Query("SELECT pv FROM ProductVariation pv WHERE pv.quantity > 0 AND pv.deletedAt IS NULL")
+    @Query("SELECT pv FROM ProductVariation pv WHERE pv.stockQuantity - COALESCE(pv.reservedQuantity, 0) > 0 AND pv.deletedAt IS NULL")
     List<ProductVariation> findInStockVariations();
     
     // Find variations by product id and in stock
-    @Query("SELECT pv FROM ProductVariation pv WHERE pv.productId = :productId AND pv.quantity > 0 AND pv.deletedAt IS NULL")
+    @Query("SELECT pv FROM ProductVariation pv WHERE pv.productId = :productId AND pv.stockQuantity - COALESCE(pv.reservedQuantity, 0) > 0 AND pv.deletedAt IS NULL")
     List<ProductVariation> findInStockByProductId(@Param("productId") Integer productId);
     
     // Find variations with low stock (quantity <= threshold)
-    @Query("SELECT pv FROM ProductVariation pv WHERE pv.quantity <= :threshold AND pv.deletedAt IS NULL")
+    @Query("SELECT pv FROM ProductVariation pv WHERE pv.stockQuantity - COALESCE(pv.reservedQuantity, 0) <= :threshold AND pv.deletedAt IS NULL")
     List<ProductVariation> findLowStockVariations(@Param("threshold") Integer threshold);
 }

@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
-
 @Entity
 @Table(name = "product_attributes")
 @Data
@@ -36,13 +34,4 @@ public class ProductAttribute {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "attribute_id", insertable = false, updatable = false)
     private Attribute attribute;
-}
-
-// Composite key class
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-class ProductAttributeId implements Serializable {
-    private Integer productId;
-    private Integer attributeId;
 }
