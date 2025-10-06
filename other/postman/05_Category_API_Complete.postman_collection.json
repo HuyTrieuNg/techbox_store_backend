@@ -1,0 +1,132 @@
+{
+	"info": {
+		"_postman_id": "category-api-complete",
+		"name": "05. Category API (Complete)",
+		"description": "All 8 endpoints for category management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Categories",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"if (pm.response.json().length > 0) {",
+						"    pm.collectionVariables.set(\"category_id\", pm.response.json()[0].id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/categories"
+			}
+		},
+		{
+			"name": "Get Category By ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/categories/{{category_id}}"
+			}
+		},
+		{
+			"name": "Get Root Categories",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/categories/root"
+			}
+		},
+		{
+			"name": "Get Child Categories",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/categories/{{category_id}}/children"
+			}
+		},
+		{
+			"name": "Check Category Name Exists",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/categories/exists?name=Laptop",
+					"host": ["{{base_url}}"],
+					"path": ["api", "categories", "exists"],
+					"query": [{"key": "name", "value": "Laptop"}]
+				}
+			}
+		},
+		{
+			"name": "Create Category",
+			"event": [{
+				"listen": "prerequest",
+				"script": {
+					"exec": [
+						"pm.collectionVariables.set(\"test_category_name\", \"Category \" + Date.now());"
+					]
+				}
+			},
+			{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+						"if (pm.response.code === 201) {",
+						"    pm.collectionVariables.set(\"created_category_id\", pm.response.json().id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{test_category_name}}\",\n  \"description\": \"Test category description\"\n}"
+				},
+				"url": "{{base_url}}/api/categories"
+			}
+		},
+		{
+			"name": "Update Category",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{test_category_name}} Updated\",\n  \"description\": \"Updated description\"\n}"
+				},
+				"url": "{{base_url}}/api/categories/{{created_category_id}}"
+			}
+		},
+		{
+			"name": "Delete Category",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"}
+				],
+				"url": "{{base_url}}/api/categories/{{created_category_id}}"
+			}
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080"},
+		{"key": "access_token", "value": ""},
+		{"key": "category_id", "value": "1"},
+		{"key": "created_category_id", "value": ""},
+		{"key": "test_category_name", "value": ""}
+	]
+}

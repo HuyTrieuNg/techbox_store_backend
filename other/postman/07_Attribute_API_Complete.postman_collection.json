@@ -1,0 +1,129 @@
+{
+	"info": {
+		"_postman_id": "attribute-api-complete",
+		"name": "07. Attribute API (Complete)",
+		"description": "All 7 endpoints for attribute management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Attributes",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"if (pm.response.json().length > 0) {",
+						"    pm.collectionVariables.set(\"attribute_id\", pm.response.json()[0].id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/attributes"
+			}
+		},
+		{
+			"name": "Get Attribute By ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "{{base_url}}/api/attributes/{{attribute_id}}"
+			}
+		},
+		{
+			"name": "Search Attributes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/attributes/search?keyword=color",
+					"host": ["{{base_url}}"],
+					"path": ["api", "attributes", "search"],
+					"query": [{"key": "keyword", "value": "color"}]
+				}
+			}
+		},
+		{
+			"name": "Check Attribute Exists",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/attributes/exists?name=Color",
+					"host": ["{{base_url}}"],
+					"path": ["api", "attributes", "exists"],
+					"query": [{"key": "name", "value": "Color"}]
+				}
+			}
+		},
+		{
+			"name": "Create Attribute",
+			"event": [{
+				"listen": "prerequest",
+				"script": {
+					"exec": [
+						"pm.collectionVariables.set(\"test_attribute_name\", \"Attribute \" + Date.now());"
+					]
+				}
+			},
+			{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+						"if (pm.response.code === 201) {",
+						"    pm.collectionVariables.set(\"created_attribute_id\", pm.response.json().id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{test_attribute_name}}\",\n  \"description\": \"Test attribute\"\n}"
+				},
+				"url": "{{base_url}}/api/attributes"
+			}
+		},
+		{
+			"name": "Update Attribute",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{test_attribute_name}} Updated\",\n  \"description\": \"Updated description\"\n}"
+				},
+				"url": "{{base_url}}/api/attributes/{{created_attribute_id}}"
+			}
+		},
+		{
+			"name": "Delete Attribute",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"}
+				],
+				"url": "{{base_url}}/api/attributes/{{created_attribute_id}}"
+			}
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080"},
+		{"key": "access_token", "value": ""},
+		{"key": "attribute_id", "value": "1"},
+		{"key": "created_attribute_id", "value": ""},
+		{"key": "test_attribute_name", "value": ""}
+	]
+}
