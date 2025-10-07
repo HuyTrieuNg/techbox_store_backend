@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vn.techbox.techbox_store.user.dto.TokenResponse;
 import vn.techbox.techbox_store.user.service.AuthService;
 
 import javax.crypto.KeyGenerator;
@@ -36,8 +37,8 @@ public class AuthServiceImpl implements AuthService {
     @Value("${jwt.refresh-token.expiry}")
     private long refreshTokenExpiry;
 
-    private String secretKey = "";
-    private String refreshSecretKey = "";
+    private final String secretKey;
+    private final String refreshSecretKey;
 
     public AuthServiceImpl() {
         try {
@@ -45,7 +46,6 @@ public class AuthServiceImpl implements AuthService {
             SecretKey sk = keyGen.generateKey();
             secretKey = Base64.getUrlEncoder().withoutPadding().encodeToString(sk.getEncoded());
 
-            // Generate separate key for refresh tokens
             SecretKey refreshSk = keyGen.generateKey();
             refreshSecretKey = Base64.getUrlEncoder().withoutPadding().encodeToString(refreshSk.getEncoded());
 
@@ -238,4 +238,19 @@ public class AuthServiceImpl implements AuthService {
         return extractClaimFromRefreshToken(token, Claims::getExpiration);
     }
 
+
+    public TokenResponse refreshToken(String refreshToken) {
+        try {
+            if (validateRefreshToken(refreshToken)) {
+                String username = extractUserNameFromRefreshToken(refreshToken);
+                String newAccessToken = generateToken(username);
+                String newRefreshToken = generateRefreshToken(username);
+                return new TokenResponse(newAccessToken, newRefreshToken, getAccessTokenExpiry());
+            }
+            throw new RuntimeException("Invalid refresh token");
+        } catch (Exception e) {
+            System.out.println("Refresh token validation failed: " + e.getMessage());
+            throw new RuntimeException("Invalid refresh token: " + e.getMessage());
+        }
+    }
 }

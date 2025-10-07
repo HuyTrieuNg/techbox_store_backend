@@ -54,9 +54,9 @@ public class StockAdjustmentSeeder implements DataSeeder {
         }
         
         User adminUser = users.stream()
-                .filter(u -> u.getEmail() != null && u.getEmail().contains("admin"))
+                .filter(u -> u.getAccount().getEmail() != null && u.getAccount().getEmail().contains("admin"))
                 .findFirst()
-                .orElse(users.get(0));
+                .orElse(users.getFirst());
         
         // Stock Adjustment 1: Kiểm kê định kỳ tháng 9
         StockAdjustment adjustment1 = StockAdjustment.builder()
@@ -68,8 +68,8 @@ public class StockAdjustmentSeeder implements DataSeeder {
                 .build();
         
         // Add items for adjustment 1 (một số sản phẩm có chênh lệch nhỏ)
-        if (variations.size() > 0) {
-            ProductVariation v1 = variations.get(0);
+        if (!variations.isEmpty()) {
+            ProductVariation v1 = variations.getFirst();
             StockAdjustmentItem item1 = StockAdjustmentItem.builder()
                     .productVariation(v1)
                     .systemQty(v1.getStockQuantity() != null ? v1.getStockQuantity() : 100)

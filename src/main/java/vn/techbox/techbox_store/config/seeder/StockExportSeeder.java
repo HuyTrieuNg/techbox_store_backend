@@ -54,9 +54,11 @@ public class StockExportSeeder implements DataSeeder {
         }
         
         User staffUser = users.stream()
-                .filter(u -> u.getEmail() != null && (u.getEmail().contains("staff") || u.getEmail().contains("admin")))
+                .filter(u -> u.getAccount().getEmail() != null
+                        && (u.getAccount().getEmail().contains("staff")
+                        || u.getAccount().getEmail().contains("admin")))
                 .findFirst()
-                .orElse(users.get(0));
+                .orElse(users.getFirst());
         
         // Stock Export 1: Xuất kho cho đơn hàng #1001
         StockExport export1 = StockExport.builder()
@@ -69,8 +71,8 @@ public class StockExportSeeder implements DataSeeder {
                 .build();
         
         // Add items for export 1
-        if (variations.size() > 0) {
-            ProductVariation v1 = variations.get(0);
+        if (!variations.isEmpty()) {
+            ProductVariation v1 = variations.getFirst();
             StockExportItem item1 = StockExportItem.builder()
                     .productVariation(v1)
                     .quantity(2)

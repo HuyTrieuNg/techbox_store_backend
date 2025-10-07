@@ -155,7 +155,7 @@ public class VoucherSeeder implements DataSeeder {
             }
             
             // User 1 cũng đã sử dụng NEWUSER15
-            if (users.size() > 0 && vouchers.size() > 3) {
+            if (!users.isEmpty() && vouchers.size() > 3) {
                 userVouchers.add(UserVoucher.builder()
                         .userId(users.get(0).getId())
                         .voucherCode(vouchers.get(3).getCode())
