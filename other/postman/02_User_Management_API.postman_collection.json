@@ -1,0 +1,139 @@
+{
+	"info": {
+		"_postman_id": "user-management-api",
+		"name": "02. User Management API",
+		"description": "Complete CRUD operations for user management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get All Users",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an('array'));",
+						"if (pm.response.json().length > 0) {",
+						"    pm.collectionVariables.set(\"user_id\", pm.response.json()[0].id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"}
+				],
+				"url": "{{base_url}}/api/users"
+			}
+		},
+		{
+			"name": "Get User By ID",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"pm.test(\"Has required fields\", () => {",
+						"    const user = pm.response.json();",
+						"    pm.expect(user).to.have.property('id');",
+						"    pm.expect(user).to.have.property('username');",
+						"    pm.expect(user).to.have.property('email');",
+						"});"
+					]
+				}
+			}],
+			"request": {
+				"method": "GET",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"}
+				],
+				"url": "{{base_url}}/api/users/{{user_id}}"
+			}
+		},
+		{
+			"name": "Create User",
+			"event": [{
+				"listen": "prerequest",
+				"script": {
+					"exec": [
+						"const username = \"user_\" + Date.now();",
+						"pm.collectionVariables.set(\"test_username\", username);"
+					]
+				}
+			},
+			{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+						"if (pm.response.code === 201) {",
+						"    pm.collectionVariables.set(\"created_user_id\", pm.response.json().id);",
+						"}"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"{{test_username}}\",\n  \"email\": \"{{test_username}}@example.com\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Test User\",\n  \"phone\": \"0987654321\",\n  \"role\": \"USER\"\n}"
+				},
+				"url": "{{base_url}}/api/users"
+			}
+		},
+		{
+			"name": "Update User",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));"
+					]
+				}
+			}],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"},
+					{"key": "Content-Type", "value": "application/json"}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"{{test_username}}_updated\",\n  \"email\": \"{{test_username}}_updated@example.com\",\n  \"role\": \"USER\"\n}"
+				},
+				"url": "{{base_url}}/api/users/{{created_user_id}}"
+			}
+		},
+		{
+			"name": "Delete User",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 204\", () => pm.response.to.have.status(204));"
+					]
+				}
+			}],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{"key": "Authorization", "value": "Bearer {{access_token}}"}
+				],
+				"url": "{{base_url}}/api/users/{{created_user_id}}"
+			}
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080"},
+		{"key": "access_token", "value": ""},
+		{"key": "user_id", "value": "1"},
+		{"key": "created_user_id", "value": ""},
+		{"key": "test_username", "value": ""}
+	]
+}

@@ -35,7 +35,7 @@ public interface ProductVariationService {
     
     Optional<ProductVariationResponse> getVariationBySku(String sku);
     
-    ProductVariationResponse updateStock(Integer id, Integer quantity);
+    ProductVariationResponse updateStock(Integer id, Integer stockQuantity);
     
     boolean existsBySku(String sku);
     

@@ -49,21 +49,19 @@ public class ProductVariationController {
     
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProductVariation(
-            @RequestParam(value = "variationName", required = false) String variationName,
-            @RequestParam("productId") Integer productId,
-            @RequestParam("price") BigDecimal price,
-            @RequestParam(value = "sku", required = false) String sku,
-            @RequestParam("quantity") Integer quantity,
-            @RequestParam(value = "images", required = false) MultipartFile[] images) {
+        @RequestParam(value = "variationName", required = false) String variationName,
+        @RequestParam("productId") Integer productId,
+        @RequestParam("price") BigDecimal price,
+        @RequestParam(value = "sku", required = false) String sku,
+        @RequestParam(value = "images", required = false) MultipartFile[] images) {
         
         try {
-            ProductVariationCreateRequest request = ProductVariationCreateRequest.builder()
-                    .variationName(variationName)
-                    .productId(productId)
-                    .price(price)
-                    .sku(sku)
-                    .quantity(quantity)
-                    .build();
+        ProductVariationCreateRequest request = ProductVariationCreateRequest.builder()
+            .variationName(variationName)
+            .productId(productId)
+            .price(price)
+            .sku(sku)
+            .build();
             
             // Upload images to Cloudinary if provided
             List<String> imageUrls = new ArrayList<>();
@@ -103,16 +101,15 @@ public class ProductVariationController {
             @RequestParam(value = "variationName", required = false) String variationName,
             @RequestParam(value = "price", required = false) BigDecimal price,
             @RequestParam(value = "sku", required = false) String sku,
-            @RequestParam(value = "quantity", required = false) Integer quantity,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
             @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
             @RequestParam(value = "deleteImageIds", required = false) List<String> deleteImageIds) {
         
         try {
-            ProductVariationUpdateRequest request = ProductVariationUpdateRequest.builder()
+        ProductVariationUpdateRequest request = ProductVariationUpdateRequest.builder()
                     .variationName(variationName)
                     .price(price)
                     .sku(sku)
-                    .quantity(quantity)
                     .deleteImageIds(deleteImageIds)
                     .build();
             
@@ -204,8 +201,8 @@ public class ProductVariationController {
     @PatchMapping("/{id}/stock")
     public ResponseEntity<ProductVariationResponse> updateStock(
             @PathVariable Integer id, 
-            @RequestParam Integer quantity) {
-        ProductVariationResponse updatedVariation = productVariationService.updateStock(id, quantity);
+            @RequestParam Integer stockQuantity) {
+        ProductVariationResponse updatedVariation = productVariationService.updateStock(id, stockQuantity);
         return ResponseEntity.ok(updatedVariation);
     }
     

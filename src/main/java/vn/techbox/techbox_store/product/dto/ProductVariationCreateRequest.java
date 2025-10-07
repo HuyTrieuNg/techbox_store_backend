@@ -33,8 +33,9 @@ public class ProductVariationCreateRequest {
     
     private List<String> imageUrls; // List of image URLs
     private List<String> imagePublicIds; // List of Cloudinary public IDs
-    
-    @NotNull(message = "Quantity is required")
-    @Min(value = 0, message = "Quantity must be non-negative")
-    private Integer quantity;
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
+    private BigDecimal avgCostPrice;
+
+    private Integer warrantyMonths;
 }

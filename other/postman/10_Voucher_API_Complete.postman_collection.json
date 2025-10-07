@@ -1,0 +1,341 @@
+{
+	"info": {
+		"_postman_id": "voucher-api-complete",
+		"name": "10. Voucher API (Complete)",
+		"description": "All 16 endpoints for voucher management with date formatting",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CRUD Operations",
+			"item": [
+				{
+					"name": "Get All Vouchers (Paginated)",
+					"event": [{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+								"if (pm.response.json().content && pm.response.json().content.length > 0) {",
+								"    pm.collectionVariables.set(\"voucher_code\", pm.response.json().content[0].code);",
+								"}"
+							]
+						}
+					}],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vouchers?page=0&size=10&sortBy=createdAt&sortDir=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vouchers"],
+							"query": [
+								{"key": "page", "value": "0"},
+								{"key": "size", "value": "10"},
+								{"key": "sortBy", "value": "createdAt"},
+								{"key": "sortDir", "value": "DESC"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Valid Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vouchers/valid?page=0&size=10&sortBy=validUntil&sortDir=ASC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vouchers", "valid"],
+							"query": [
+								{"key": "page", "value": "0"},
+								{"key": "size", "value": "10"},
+								{"key": "sortBy", "value": "validUntil"},
+								{"key": "sortDir", "value": "ASC"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vouchers/search?searchTerm=SAVE&page=0&size=10&sortBy=createdAt&sortDir=DESC",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vouchers", "search"],
+							"query": [
+								{"key": "searchTerm", "value": "SAVE"},
+								{"key": "page", "value": "0"},
+								{"key": "size", "value": "10"},
+								{"key": "sortBy", "value": "createdAt"},
+								{"key": "sortDir", "value": "DESC"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Voucher By Code",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/vouchers/{{voucher_code}}"
+					}
+				},
+				{
+					"name": "Check Voucher Code Exists",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vouchers/code/exists?code={{test_voucher_code}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vouchers", "code", "exists"],
+							"query": [{"key": "code", "value": "{{test_voucher_code}}"}]
+						}
+					}
+				},
+				{
+					"name": "Create Voucher (Percentage)",
+					"event": [{
+						"listen": "prerequest",
+						"script": {
+							"exec": [
+								"const formatDate = (date) => {",
+								"    const pad = (n) => String(n).padStart(2, '0');",
+								"    const padMs = (n) => String(n).padStart(6, '0');",
+								"    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +",
+								"           'T' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()) +",
+								"           '.' + padMs(date.getMilliseconds() * 1000);",
+								"};",
+								"",
+								"const now = new Date();",
+								"const validFrom = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);",
+								"const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);",
+								"",
+								"const voucherCode = 'SAVE' + Date.now().toString().slice(-6);",
+								"pm.collectionVariables.set(\"test_voucher_code\", voucherCode);",
+								"pm.collectionVariables.set(\"voucher_valid_from\", formatDate(validFrom));",
+								"pm.collectionVariables.set(\"voucher_valid_until\", formatDate(validUntil));"
+							]
+						}
+					},
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+								"if (pm.response.code === 201) {",
+								"    pm.collectionVariables.set(\"created_voucher_code\", pm.response.json().code);",
+								"}"
+							]
+						}
+					}],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"{{test_voucher_code}}\",\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 20.0,\n  \"minOrderAmount\": 100.0,\n  \"maxDiscountAmount\": 50.0,\n  \"usageLimit\": 100,\n  \"validFrom\": \"{{voucher_valid_from}}\",\n  \"validUntil\": \"{{voucher_valid_until}}\",\n  \"description\": \"20% off up to $50\"\n}"
+						},
+						"url": "{{base_url}}/api/vouchers"
+					}
+				},
+				{
+					"name": "Create Voucher (Fixed Amount)",
+					"event": [{
+						"listen": "prerequest",
+						"script": {
+							"exec": [
+								"const formatDate = (date) => {",
+								"    const pad = (n) => String(n).padStart(2, '0');",
+								"    const padMs = (n) => String(n).padStart(6, '0');",
+								"    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +",
+								"           'T' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()) +",
+								"           '.' + padMs(date.getMilliseconds() * 1000);",
+								"};",
+								"",
+								"const now = new Date();",
+								"const validFrom = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);",
+								"const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);",
+								"",
+								"const voucherCode = 'FIXED' + Date.now().toString().slice(-6);",
+								"pm.collectionVariables.set(\"test_voucher_code\", voucherCode);",
+								"pm.collectionVariables.set(\"voucher_valid_from\", formatDate(validFrom));",
+								"pm.collectionVariables.set(\"voucher_valid_until\", formatDate(validUntil));"
+							]
+						}
+					},
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+								"if (pm.response.code === 201) {",
+								"    pm.collectionVariables.set(\"created_voucher_code\", pm.response.json().code);",
+								"}"
+							]
+						}
+					}],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"{{test_voucher_code}}\",\n  \"discountType\": \"FIXED_AMOUNT\",\n  \"discountValue\": 30.0,\n  \"minOrderAmount\": 200.0,\n  \"usageLimit\": 50,\n  \"validFrom\": \"{{voucher_valid_from}}\",\n  \"validUntil\": \"{{voucher_valid_until}}\",\n  \"description\": \"$30 off on orders over $200\"\n}"
+						},
+						"url": "{{base_url}}/api/vouchers"
+					}
+				},
+				{
+					"name": "Update Voucher",
+					"event": [{
+						"listen": "prerequest",
+						"script": {
+							"exec": [
+								"const formatDate = (date) => {",
+								"    const pad = (n) => String(n).padStart(2, '0');",
+								"    const padMs = (n) => String(n).padStart(6, '0');",
+								"    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +",
+								"           'T' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()) +",
+								"           '.' + padMs(date.getMilliseconds() * 1000);",
+								"};",
+								"",
+								"const now = new Date();",
+								"const validFrom = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);",
+								"const validUntil = new Date(now.getTime() + 45 * 24 * 60 * 60 * 1000);",
+								"",
+								"pm.collectionVariables.set(\"voucher_valid_from\", formatDate(validFrom));",
+								"pm.collectionVariables.set(\"voucher_valid_until\", formatDate(validUntil));"
+							]
+						}
+					}],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"discountType\": \"PERCENTAGE\",\n  \"discountValue\": 25.0,\n  \"minOrderAmount\": 150.0,\n  \"maxDiscountAmount\": 75.0,\n  \"usageLimit\": 150,\n  \"validFrom\": \"{{voucher_valid_from}}\",\n  \"validUntil\": \"{{voucher_valid_until}}\",\n  \"description\": \"Updated: 25% off up to $75\"\n}"
+						},
+						"url": "{{base_url}}/api/vouchers/{{created_voucher_code}}"
+					}
+				},
+				{
+					"name": "Delete Voucher",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"}
+						],
+						"url": "{{base_url}}/api/vouchers/{{created_voucher_code}}"
+					}
+				},
+				{
+					"name": "Restore Voucher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"}
+						],
+						"url": "{{base_url}}/api/vouchers/{{created_voucher_code}}/restore"
+					}
+				}
+			]
+		},
+		{
+			"name": "Validation & Usage",
+			"item": [
+				{
+					"name": "Validate Voucher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"voucherCode\": \"{{voucher_code}}\",\n  \"userId\": 1,\n  \"orderAmount\": 500.0\n}"
+						},
+						"url": "{{base_url}}/api/vouchers/validate"
+					}
+				},
+				{
+					"name": "Use Voucher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{access_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"voucherCode\": \"{{voucher_code}}\",\n  \"userId\": 1,\n  \"orderId\": 1\n}"
+						},
+						"url": "{{base_url}}/api/vouchers/use"
+					}
+				}
+			]
+		},
+		{
+			"name": "Reports & Analytics",
+			"item": [
+				{
+					"name": "Get Expired Vouchers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/vouchers/expired"
+					}
+				},
+				{
+					"name": "Get Vouchers Expiring Soon",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/vouchers/expiring-soon?days=7",
+							"host": ["{{base_url}}"],
+							"path": ["api", "vouchers", "expiring-soon"],
+							"query": [{"key": "days", "value": "7"}]
+						}
+					}
+				},
+				{
+					"name": "Get User Voucher Usage",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/vouchers/usage/user/1"
+					}
+				},
+				{
+					"name": "Get Voucher Usage Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/vouchers/{{voucher_code}}/usage-count"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080"},
+		{"key": "access_token", "value": ""},
+		{"key": "voucher_code", "value": "SAVE2025"},
+		{"key": "created_voucher_code", "value": ""},
+		{"key": "test_voucher_code", "value": ""},
+		{"key": "voucher_valid_from", "value": ""},
+		{"key": "voucher_valid_until", "value": ""}
+	]
+}

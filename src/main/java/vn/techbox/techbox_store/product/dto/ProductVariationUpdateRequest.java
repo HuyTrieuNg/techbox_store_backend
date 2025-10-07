@@ -30,6 +30,21 @@ public class ProductVariationUpdateRequest {
     private List<String> imagePublicIds; // List of Cloudinary public IDs
     private List<String> deleteImageIds; // List of image IDs to delete
     
-    @Min(value = 0, message = "Quantity must be non-negative")
-    private Integer quantity;
+    @Min(value = 0, message = "Stock quantity must be non-negative")
+    private Integer stockQuantity;
+
+    private Integer reservedQuantity;
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
+    private BigDecimal avgCostPrice;
+
+    private Integer warrantyMonths;
+
+    // Backwards-compatibility: support old builder method `quantity(...)` by mapping it to stockQuantity
+    public static class ProductVariationUpdateRequestBuilder {
+        public ProductVariationUpdateRequestBuilder quantity(Integer quantity) {
+            this.stockQuantity = quantity;
+            return this;
+        }
+    }
 }

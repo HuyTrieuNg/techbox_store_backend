@@ -121,6 +121,7 @@ public class ProductServiceImpl implements ProductService {
             product.setImageUrl(request.getImageUrl());
             product.setImagePublicId(request.getImagePublicId());
         }
+
         
         Product updatedProduct = productRepository.save(product);
         return convertToResponse(updatedProduct);

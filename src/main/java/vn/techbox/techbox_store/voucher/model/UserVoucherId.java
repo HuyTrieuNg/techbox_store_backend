@@ -12,7 +12,7 @@ import java.io.Serializable;
 public class UserVoucherId implements Serializable {
     
     private Integer userId;
-    private Integer voucherId;
+    private String voucherCode;
     
     @Override
     public boolean equals(Object o) {
@@ -21,14 +21,14 @@ public class UserVoucherId implements Serializable {
         
         UserVoucherId that = (UserVoucherId) o;
         
-        if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-        return voucherId != null ? voucherId.equals(that.voucherId) : that.voucherId == null;
+    if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+    return voucherCode != null ? voucherCode.equals(that.voucherCode) : that.voucherCode == null;
     }
     
     @Override
     public int hashCode() {
         int result = userId != null ? userId.hashCode() : 0;
-        result = 31 * result + (voucherId != null ? voucherId.hashCode() : 0);
+    result = 31 * result + (voucherCode != null ? voucherCode.hashCode() : 0);
         return result;
     }
 }

@@ -1,220 +1,25 @@
 package vn.techbox.techbox_store.promotion.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.promotion.dto.*;
-import vn.techbox.techbox_store.promotion.model.Campaign;
-import vn.techbox.techbox_store.promotion.model.Promotion;
-import vn.techbox.techbox_store.promotion.repository.CampaignRepository;
-import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Service
-@RequiredArgsConstructor
-@Slf4j
-@Transactional
-public class PromotionService {
-    
-    private final PromotionRepository promotionRepository;
-    private final CampaignRepository campaignRepository;
-    
-    public PromotionResponse createPromotion(PromotionCreateRequest request) {
-        log.info("Creating new promotion: {}", request.getRuleName());
-        
-        // Validate campaign exists
-        Campaign campaign = campaignRepository.findById(request.getCampaignId())
-                .orElseThrow(() -> new IllegalArgumentException("Campaign not found with ID: " + request.getCampaignId()));
-        
-        // Validate percentage discount value
-        if (request.getDiscountType().name().equals("PERCENTAGE") && 
-            request.getDiscountValue().compareTo(BigDecimal.valueOf(100)) > 0) {
-            throw new IllegalArgumentException("Percentage discount cannot exceed 100%");
-        }
-        
-        Promotion promotion = Promotion.builder()
-                .campaign(campaign)
-                .ruleName(request.getRuleName())
-                .productVariationId(request.getProductVariationId())
-                .discountType(request.getDiscountType())
-                .discountValue(request.getDiscountValue())
-                .minQuantity(request.getMinQuantity())
-                .minOrderAmount(request.getMinOrderAmount())
-                .maxDiscountAmount(request.getMaxDiscountAmount())
-                .build();
-        
-        Promotion savedPromotion = promotionRepository.save(promotion);
-        log.info("Promotion created successfully with ID: {}", savedPromotion.getId());
-        
-        return mapToResponse(savedPromotion);
-    }
-    
-    public PromotionResponse updatePromotion(Integer id, PromotionUpdateRequest request) {
-        log.info("Updating promotion with ID: {}", id);
-        
-        Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Promotion not found with ID: " + id));
-        
-        if (request.getRuleName() != null) {
-            promotion.setRuleName(request.getRuleName());
-        }
-        
-        if (request.getProductVariationId() != null) {
-            promotion.setProductVariationId(request.getProductVariationId());
-        }
-        
-        if (request.getDiscountType() != null) {
-            promotion.setDiscountType(request.getDiscountType());
-        }
-        
-        if (request.getDiscountValue() != null) {
-            // Validate percentage discount value
-            if (promotion.getDiscountType().name().equals("PERCENTAGE") && 
-                request.getDiscountValue().compareTo(BigDecimal.valueOf(100)) > 0) {
-                throw new IllegalArgumentException("Percentage discount cannot exceed 100%");
-            }
-            promotion.setDiscountValue(request.getDiscountValue());
-        }
-        
-        if (request.getMinQuantity() != null) {
-            promotion.setMinQuantity(request.getMinQuantity());
-        }
-        
-        if (request.getMinOrderAmount() != null) {
-            promotion.setMinOrderAmount(request.getMinOrderAmount());
-        }
-        
-        if (request.getMaxDiscountAmount() != null) {
-            promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
-        }
-        
-        Promotion savedPromotion = promotionRepository.save(promotion);
-        log.info("Promotion updated successfully with ID: {}", savedPromotion.getId());
-        
-        return mapToResponse(savedPromotion);
-    }
-    
-    @Transactional(readOnly = true)
-    public PromotionResponse getPromotionById(Integer id) {
-        log.info("Retrieving promotion with ID: {}", id);
-        
-        Promotion promotion = promotionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Promotion not found with ID: " + id));
-        
-        return mapToResponse(promotion);
-    }
-    
-    @Transactional(readOnly = true)
-    public Page<PromotionResponse> getAllPromotions(Pageable pageable) {
-        log.info("Retrieving all promotions with pagination");
-        
-        return promotionRepository.findAll(pageable)
-                .map(this::mapToResponse);
-    }
-    
-    @Transactional(readOnly = true)
-    public List<PromotionResponse> getPromotionsByCampaign(Integer campaignId) {
-        log.info("Retrieving promotions for campaign ID: {}", campaignId);
-        
-        return promotionRepository.findByCampaignId(campaignId).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-    
-    @Transactional(readOnly = true)
-    public List<PromotionResponse> getPromotionsByProductVariation(Integer productVariationId) {
-        log.info("Retrieving promotions for product variation ID: {}", productVariationId);
-        
-        return promotionRepository.findByProductVariationId(productVariationId).stream()
-                .filter(promotion -> promotion.isActive())
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-    
-    @Transactional(readOnly = true)
-    public PromotionCalculationResponse calculatePromotions(PromotionCalculationRequest request) {
-        log.info("Calculating promotions for product variation ID: {}", request.getProductVariationId());
-        
-        List<Promotion> applicablePromotions = promotionRepository.findByProductVariationId(request.getProductVariationId())
-                .stream()
-                .filter(promotion -> promotion.isActive())
-                .collect(Collectors.toList());
-        
-        BigDecimal originalTotal = request.getOriginalPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
-        BigDecimal totalDiscount = BigDecimal.ZERO;
-        List<PromotionCalculationResponse.AppliedPromotion> appliedPromotions = new ArrayList<>();
-        
-        for (Promotion promotion : applicablePromotions) {
-            BigDecimal discount = promotion.calculateDiscount(
-                    request.getOriginalPrice(), 
-                    request.getQuantity(), 
-                    request.getOrderAmount()
-            );
-            
-            if (discount.compareTo(BigDecimal.ZERO) > 0) {
-                totalDiscount = totalDiscount.add(discount);
-                
-                appliedPromotions.add(PromotionCalculationResponse.AppliedPromotion.builder()
-                        .promotionId(promotion.getId())
-                        .ruleName(promotion.getRuleName())
-                        .campaignName(promotion.getCampaign().getName())
-                        .discountType(promotion.getDiscountType().name())
-                        .discountAmount(discount)
-                        .discountDisplay(promotion.getDiscountDisplay())
-                        .build());
-            }
-        }
-        
-        BigDecimal finalTotal = originalTotal.subtract(totalDiscount);
-        BigDecimal finalPrice = finalTotal.divide(BigDecimal.valueOf(request.getQuantity()));
-        
-        return PromotionCalculationResponse.builder()
-                .productVariationId(request.getProductVariationId())
-                .originalPrice(request.getOriginalPrice())
-                .originalTotal(originalTotal)
-                .quantity(request.getQuantity())
-                .orderAmount(request.getOrderAmount())
-                .totalDiscount(totalDiscount)
-                .finalPrice(finalPrice)
-                .finalTotal(finalTotal)
-                .appliedPromotions(appliedPromotions)
-                .build();
-    }
-    
-    public void deletePromotion(Integer id) {
-        log.info("Deleting promotion with ID: {}", id);
-        
-        if (!promotionRepository.existsById(id)) {
-            throw new IllegalArgumentException("Promotion not found with ID: " + id);
-        }
-        
-        promotionRepository.deleteById(id);
-        log.info("Promotion deleted successfully with ID: {}", id);
-    }
-    
-    private PromotionResponse mapToResponse(Promotion promotion) {
-        return PromotionResponse.builder()
-                .id(promotion.getId())
-                .campaignId(promotion.getCampaign().getId())
-                .campaignName(promotion.getCampaign().getName())
-                .ruleName(promotion.getRuleName())
-                .productVariationId(promotion.getProductVariationId())
-                .discountType(promotion.getDiscountType())
-                .discountValue(promotion.getDiscountValue())
-                .minQuantity(promotion.getMinQuantity())
-                .minOrderAmount(promotion.getMinOrderAmount())
-                .maxDiscountAmount(promotion.getMaxDiscountAmount())
-                .createdAt(promotion.getCreatedAt())
-                .updatedAt(promotion.getUpdatedAt())
-                .discountDisplay(promotion.getDiscountDisplay())
-                .isActive(promotion.isActive())
-                .build();
-    }
+public interface PromotionService {
+    PromotionResponse createPromotion(PromotionCreateRequest request);
+
+    PromotionResponse updatePromotion(Integer id, PromotionUpdateRequest request);
+
+    PromotionResponse getPromotionById(Integer id);
+
+    Page<PromotionResponse> getAllPromotions(Pageable pageable);
+
+    List<PromotionResponse> getPromotionsByCampaign(Integer campaignId);
+
+    List<PromotionResponse> getPromotionsByProductVariation(Integer productVariationId);
+
+    PromotionCalculationResponse calculatePromotions(PromotionCalculationRequest request);
+
+    void deletePromotion(Integer id);
 }

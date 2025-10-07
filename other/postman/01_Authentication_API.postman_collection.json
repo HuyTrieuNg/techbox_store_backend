@@ -1,0 +1,99 @@
+{
+	"info": {
+		"_postman_id": "auth-api-collection",
+		"name": "01. Authentication API",
+		"description": "Complete authentication endpoints including login, register, and refresh token",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 201\", () => pm.response.to.have.status(201));",
+						"pm.test(\"Response has user data\", () => {",
+						"    const res = pm.response.json();",
+						"    pm.expect(res).to.have.property('id');",
+						"    pm.expect(res).to.have.property('username');",
+						"    pm.expect(res).to.have.property('email');",
+						"});"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"testuser_{{$timestamp}}\",\n  \"email\": \"test{{$timestamp}}@example.com\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Test User\",\n  \"phone\": \"0123456789\"\n}"
+				},
+				"url": "{{base_url}}/register"
+			}
+		},
+		{
+			"name": "Login",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"pm.test(\"Response has tokens\", () => {",
+						"    const res = pm.response.json();",
+						"    pm.expect(res).to.have.property('accessToken');",
+						"    pm.expect(res).to.have.property('refreshToken');",
+						"    ",
+						"    // Save tokens for subsequent requests",
+						"    pm.collectionVariables.set(\"access_token\", res.accessToken);",
+						"    pm.collectionVariables.set(\"refresh_token\", res.refreshToken);",
+						"});"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+				},
+				"url": "{{base_url}}/login"
+			}
+		},
+		{
+			"name": "Refresh Token",
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+						"pm.test(\"Response has new tokens\", () => {",
+						"    const res = pm.response.json();",
+						"    pm.expect(res).to.have.property('accessToken');",
+						"    pm.expect(res).to.have.property('refreshToken');",
+						"    ",
+						"    // Update tokens",
+						"    pm.collectionVariables.set(\"access_token\", res.accessToken);",
+						"    pm.collectionVariables.set(\"refresh_token\", res.refreshToken);",
+						"});"
+					]
+				}
+			}],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+				},
+				"url": "{{base_url}}/refresh-token"
+			}
+		}
+	],
+	"variable": [
+		{"key": "base_url", "value": "http://localhost:8080"},
+		{"key": "access_token", "value": ""},
+		{"key": "refresh_token", "value": ""}
+	]
+}

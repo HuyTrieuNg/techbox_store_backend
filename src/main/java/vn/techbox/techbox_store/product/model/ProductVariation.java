@@ -34,8 +34,19 @@ public class ProductVariation {
     @Column(name = "sku", unique = true)
     private String sku;
     
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
+    @Column(name = "stock_quantity", nullable = false)
+    @Builder.Default
+    private Integer stockQuantity = 0;
+
+    @Column(name = "reserved_quantity", nullable = false)
+    @Builder.Default
+    private Integer reservedQuantity = 0;
+
+    @Column(name = "avg_cost_price", precision = 10, scale = 2)
+    private BigDecimal avgCostPrice;
+
+    @Column(name = "warranty_months")
+    private Integer warrantyMonths;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -85,20 +96,21 @@ public class ProductVariation {
     
     // Helper method to check if in stock
     public boolean isInStock() {
-        return quantity != null && quantity > 0;
+        return stockQuantity != null && (stockQuantity - (reservedQuantity != null ? reservedQuantity : 0)) > 0;
     }
     
     // Helper method to decrease quantity
     public void decreaseQuantity(int amount) {
-        if (this.quantity >= amount) {
-            this.quantity -= amount;
+        int available = (this.stockQuantity != null ? this.stockQuantity : 0) - (this.reservedQuantity != null ? this.reservedQuantity : 0);
+        if (available >= amount) {
+            this.stockQuantity = (this.stockQuantity != null ? this.stockQuantity : 0) - amount;
         } else {
-            throw new IllegalArgumentException("Insufficient stock. Available: " + this.quantity + ", Requested: " + amount);
+            throw new IllegalArgumentException("Insufficient stock. Available: " + available + ", Requested: " + amount);
         }
     }
     
     // Helper method to increase quantity
     public void increaseQuantity(int amount) {
-        this.quantity += amount;
+        this.stockQuantity = (this.stockQuantity != null ? this.stockQuantity : 0) + amount;
     }
 }
