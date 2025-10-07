@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.review.repository;
+package vn.techbox.techbox_store.review.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import vn.techbox.techbox_store.product.review.model.Review;
+import vn.techbox.techbox_store.review.model.Review;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.review.service.impl;
+package vn.techbox.techbox_store.review.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -7,10 +7,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
-import vn.techbox.techbox_store.product.review.dto.*;
-import vn.techbox.techbox_store.product.review.model.Review;
-import vn.techbox.techbox_store.product.review.repository.ReviewRepository;
-import vn.techbox.techbox_store.product.review.service.ReviewService;
+import vn.techbox.techbox_store.product.dto.*;
+import vn.techbox.techbox_store.review.dto.ReviewCreateRequest;
+import vn.techbox.techbox_store.review.dto.ReviewResponse;
+import vn.techbox.techbox_store.review.dto.ReviewSummaryResponse;
+import vn.techbox.techbox_store.review.dto.ReviewUpdateRequest;
+import vn.techbox.techbox_store.review.model.Review;
+import vn.techbox.techbox_store.review.repository.ReviewRepository;
+import vn.techbox.techbox_store.review.service.ReviewService;
 import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 

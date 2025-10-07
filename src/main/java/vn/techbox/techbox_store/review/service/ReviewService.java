@@ -1,7 +1,10 @@
-package vn.techbox.techbox_store.product.review.service;
+package vn.techbox.techbox_store.review.service;
 
 import org.springframework.data.domain.Page;
-import vn.techbox.techbox_store.product.review.dto.*;
+import vn.techbox.techbox_store.review.dto.ReviewCreateRequest;
+import vn.techbox.techbox_store.review.dto.ReviewResponse;
+import vn.techbox.techbox_store.review.dto.ReviewSummaryResponse;
+import vn.techbox.techbox_store.review.dto.ReviewUpdateRequest;
 
 public interface ReviewService {
     ReviewResponse createReview(Integer productId, ReviewCreateRequest request, String currentUserEmail);

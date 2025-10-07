@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.review.controller;
+package vn.techbox.techbox_store.review.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -7,8 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.review.dto.*;
-import vn.techbox.techbox_store.product.review.service.ReviewService;
+import vn.techbox.techbox_store.review.dto.*;
+import vn.techbox.techbox_store.review.dto.ReviewCreateRequest;
+import vn.techbox.techbox_store.review.dto.ReviewResponse;
+import vn.techbox.techbox_store.review.dto.ReviewSummaryResponse;
+import vn.techbox.techbox_store.review.dto.ReviewUpdateRequest;
+import vn.techbox.techbox_store.review.service.ReviewService;
 
 @RestController
 @RequestMapping("/api/products/{productId}/reviews")

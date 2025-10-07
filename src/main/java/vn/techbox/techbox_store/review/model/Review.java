@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.review.model;
+package vn.techbox.techbox_store.review.model;
 
 import jakarta.persistence.*;
 import lombok.*;

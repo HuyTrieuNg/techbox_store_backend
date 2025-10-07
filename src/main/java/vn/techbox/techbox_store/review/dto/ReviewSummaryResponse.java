@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.review.dto;
+package vn.techbox.techbox_store.review.dto;
 
 import lombok.Builder;
 import lombok.Data;
