@@ -94,3 +94,7 @@ docker-compose.override.yml
 *.swo
 *.orig
 *.bak
+
+
+# doc for dump
+dump/

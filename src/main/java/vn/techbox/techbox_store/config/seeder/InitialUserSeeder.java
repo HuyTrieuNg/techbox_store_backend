@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.config;
+package vn.techbox.techbox_store.config.seeder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +13,6 @@ import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.util.HashSet;
-import java.util.Set;
 
 @Component
 @Order(2)

@@ -21,7 +21,10 @@ public class ProductVariationResponse {
     private BigDecimal price;
     private String sku;
     private List<String> imageUrls;
-    private Integer quantity;
+    private Integer stockQuantity;
+    private Integer reservedQuantity;
+    private BigDecimal avgCostPrice;
+    private Integer warrantyMonths;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
@@ -35,6 +38,7 @@ public class ProductVariationResponse {
     }
     
     public boolean isInStock() {
-        return quantity != null && quantity > 0;
+        int available = (stockQuantity != null ? stockQuantity : 0) - (reservedQuantity != null ? reservedQuantity : 0);
+        return available > 0;
     }
 }

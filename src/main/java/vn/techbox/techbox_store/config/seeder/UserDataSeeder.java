@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.config;
+package vn.techbox.techbox_store.config.seeder;
 
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;

@@ -1,6 +1,8 @@
 spring:
   application:
     name: "techbox store"
+  profiles:
+    active: dev
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
@@ -15,6 +17,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
+        default_schema: public
   security:
     user:
       name: admin

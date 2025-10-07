@@ -24,8 +24,8 @@ public class UserVoucher {
     private Integer userId;
     
     @Id
-    @Column(name = "voucher_id")
-    private Integer voucherId;
+    @Column(name = "voucher_code", length = 50)
+    private String voucherCode;
     
     @Column(name = "used_at", nullable = false)
     private LocalDateTime usedAt;
@@ -35,7 +35,7 @@ public class UserVoucher {
     
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "voucher_id", insertable = false, updatable = false)
+    @JoinColumn(name = "voucher_code", referencedColumnName = "code", insertable = false, updatable = false)
     private Voucher voucher;
     
     @PrePersist
