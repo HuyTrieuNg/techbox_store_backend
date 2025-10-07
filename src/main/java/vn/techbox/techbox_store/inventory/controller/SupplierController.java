@@ -16,7 +16,7 @@ import vn.techbox.techbox_store.inventory.dto.UpdateSupplierRequest;
 import vn.techbox.techbox_store.inventory.service.SupplierService;
 
 @RestController
-@RequestMapping("/api/suppliers")
+@RequestMapping("/suppliers")
 @RequiredArgsConstructor
 @Slf4j
 public class SupplierController {

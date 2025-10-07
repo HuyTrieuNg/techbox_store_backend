@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/campaigns")
+@RequestMapping("/campaigns")
 @RequiredArgsConstructor
 @Slf4j
 public class CampaignController {

@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/promotions")
+@RequestMapping("/promotions")
 @RequiredArgsConstructor
 @Slf4j
 public class PromotionController {
