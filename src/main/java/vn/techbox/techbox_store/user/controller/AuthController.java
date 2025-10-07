@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.user.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 
 @RestController
+@RequestMapping("/api/auth")
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private final AuthService authService;
@@ -58,7 +60,6 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Token refresh failed: {}", e.getMessage());
 
-            // Return detailed error for refresh token issues
             ApiErrorResponse errorResponse = new ApiErrorResponse(
                 "REFRESH_FAILED",
                 "Failed to refresh token: " + e.getMessage(),
