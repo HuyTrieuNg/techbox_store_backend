@@ -24,6 +24,10 @@ spring:
       name: admin
       password: admin123
 
+server:
+  servlet:
+    context-path: /api
+
 jwt:
   access-token:
     expiry: ${JWT_ACCESS_TOKEN_EXPIRY:108000000}

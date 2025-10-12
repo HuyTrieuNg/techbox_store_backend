@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/product-variations")
+@RequestMapping("/product-variations")
 @RequiredArgsConstructor
 public class ProductVariationController {
     

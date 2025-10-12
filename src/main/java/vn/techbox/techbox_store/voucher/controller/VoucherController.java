@@ -19,7 +19,7 @@ import vn.techbox.techbox_store.voucher.service.VoucherService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/vouchers")
+@RequestMapping("/vouchers")
 @RequiredArgsConstructor
 @Tag(name = "Voucher Management", description = "APIs for managing vouchers and voucher usage")
 public class VoucherController {

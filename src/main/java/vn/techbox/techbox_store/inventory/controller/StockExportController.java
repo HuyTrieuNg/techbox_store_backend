@@ -21,7 +21,7 @@ import vn.techbox.techbox_store.inventory.service.StockExportService;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/stock-exports")
+@RequestMapping("/stock-exports")
 @RequiredArgsConstructor
 @Slf4j
 public class StockExportController {

@@ -13,7 +13,7 @@ import vn.techbox.techbox_store.product.service.BrandService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/brands")
+@RequestMapping("/brands")
 @RequiredArgsConstructor
 public class BrandController {
     

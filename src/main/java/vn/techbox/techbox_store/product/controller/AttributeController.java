@@ -13,7 +13,7 @@ import vn.techbox.techbox_store.product.service.AttributeService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/attributes")
+@RequestMapping("/attributes")
 @RequiredArgsConstructor
 public class AttributeController {
     

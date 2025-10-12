@@ -36,8 +36,8 @@ cd techbox_store_backend
 docker compose up -d --build
 ```
 
-- API Base URL (mặc định): `http://localhost:8080`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- API Base URL (mặc định): `http://localhost:8080/api`
+- Swagger UI: `http://localhost:8080/api/swagger-ui.html`
 - PostgreSQL: cổng `localhost:5432` (theo `.env`)
 - pgAdmin: `http://localhost:5050` (user/pass mặc định trong compose)
 

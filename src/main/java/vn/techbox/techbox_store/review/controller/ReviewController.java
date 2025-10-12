@@ -15,7 +15,7 @@ import vn.techbox.techbox_store.review.dto.ReviewUpdateRequest;
 import vn.techbox.techbox_store.review.service.ReviewService;
 
 @RestController
-@RequestMapping("/api/products/{productId}/reviews")
+@RequestMapping("/products/{productId}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
