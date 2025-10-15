@@ -2,6 +2,7 @@ package vn.techbox.techbox_store.payment.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VNPayService {
 
     private final VNPayConfig vnPayConfig;
@@ -32,6 +34,10 @@ public class VNPayService {
         // TODO Kiểm tra tồn tại của orderId
         // Giả sử orderId hợp lệ và lấy thông tin order từ DB
         
+        // Log return URL for debugging
+        log.info("VNPay Return URL from config: {}", vnPayConfig.getReturnUrl());
+        log.info("Environment variable VNPAY_RETURN_URL: {}", System.getenv("VNPAY_RETURN_URL"));
+
         Map<String, String> vnpParams = new HashMap<>();
         vnpParams.put("vnp_Version", vnPayConfig.getVersion());
         vnpParams.put("vnp_Command", vnPayConfig.getCommand());
@@ -47,6 +53,10 @@ public class VNPayService {
         vnpParams.put("vnp_Locale", "vn");
         vnpParams.put("vnp_ReturnUrl", vnPayConfig.getReturnUrl());
         vnpParams.put("vnp_IpAddr", VNPayUtil.getIpAddress(request));
+
+        vnpParams.put("vnp_IpAddr", "https://326f9b6de883.ngrok-free.app/api/payment/vnpay/ipn");
+
+        log.info("ip for vnp_IpAddr: {}", VNPayUtil.getIpAddress(request));
 
         Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -132,6 +142,10 @@ public class VNPayService {
     // Method xử lý IPN callback
     @Transactional
     public Map<String, String> processIpn(Map<String, String> params) {
+
+        log.info("Processing IPN with params: {}", params);
+
+
         String txnRef = params.get("vnp_TxnRef");
         String responseCode = params.get("vnp_ResponseCode");
 

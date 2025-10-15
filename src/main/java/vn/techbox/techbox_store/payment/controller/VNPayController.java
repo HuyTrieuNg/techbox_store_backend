@@ -19,9 +19,10 @@ public class VNPayController {
     public ResponseEntity<?> createPayment(
             @RequestParam Long amount,
             @RequestParam String orderInfo,
+            @RequestParam Long orderId, //phải tự tạo orderId
             HttpServletRequest request) {
 
-        String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, request);
+        String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, orderId ,request);
         return ResponseEntity.ok(Map.of("paymentUrl", paymentUrl));
     }
 
