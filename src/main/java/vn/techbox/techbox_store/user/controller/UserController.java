@@ -1,18 +1,21 @@
 package vn.techbox.techbox_store.user.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.user.dto.UserCreateRequest;
-import vn.techbox.techbox_store.user.dto.UserResponse;
-import vn.techbox.techbox_store.user.dto.UserUpdateRequest;
+import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.service.UserService;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,6 +32,23 @@ public class UserController {
     @PreAuthorize("hasAuthority('USER_READ')")
     public List<UserResponse> getAll() {
         return userService.getAllUsers().stream().map(UserResponse::from).collect(Collectors.toList());
+    }
+
+    @GetMapping("/paginated")
+    @PreAuthorize("hasAuthority('USER_READ')")
+    public ResponseEntity<PagedUserResponse> getAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<User> userPage = userService.getAllUsersWithPagination(pageable);
+        Page<UserResponse> userResponsePage = userPage.map(UserResponse::from);
+
+        return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
     }
 
     @GetMapping("/{id}")
@@ -101,9 +121,18 @@ public class UserController {
     public ResponseEntity<UserResponse> updateCurrentUserProfile(@RequestBody UserUpdateRequest req) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        User currentUser = userService.getUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        User updated = userService.updateUser(currentUser.getId(), req);
-        return ResponseEntity.ok(UserResponse.from(updated));
+        return userService.getUserByEmail(email)
+                .map(user -> {
+                    User updated = userService.updateUser(user.getId(), req);
+                    return ResponseEntity.ok(UserResponse.from(updated));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/debug/{userId}")
+    public ResponseEntity<?> test(@PathVariable Integer userId) {
+        boolean match = userService.isCurrentUser(userId);
+        return ResponseEntity.ok(Map.of("match", match));
     }
 }

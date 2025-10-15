@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @Data
 @NoArgsConstructor
@@ -21,8 +22,8 @@ public class UserVoucherId implements Serializable {
         
         UserVoucherId that = (UserVoucherId) o;
         
-    if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
-    return voucherCode != null ? voucherCode.equals(that.voucherCode) : that.voucherCode == null;
+    if (!Objects.equals(userId, that.userId)) return false;
+    return Objects.equals(voucherCode, that.voucherCode);
     }
     
     @Override

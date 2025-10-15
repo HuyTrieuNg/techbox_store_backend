@@ -1,16 +1,17 @@
 package vn.techbox.techbox_store.user.service.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.techbox.techbox_store.user.dto.TokenResponse;
-import vn.techbox.techbox_store.user.dto.UserCreateRequest;
-import vn.techbox.techbox_store.user.dto.UserLoginRequest;
-import vn.techbox.techbox_store.user.dto.UserUpdateRequest;
+import org.springframework.transaction.annotation.Transactional;
+import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.Account;
+import vn.techbox.techbox_store.user.model.Address;
 import vn.techbox.techbox_store.user.model.Role;
 import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.AccountRepository;
@@ -20,12 +21,15 @@ import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@Service
+import org.springframework.beans.factory.annotation.Value;
+
+@Service("userService")
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -34,6 +38,9 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authManager;
     private final AuthService authService;
     private final PasswordEncoder encoder;
+
+    @Value("${user.address.max-per-user}")
+    private int maxAddressesPerUser;
 
     public UserServiceImpl(UserRepository userRepository,
                           AccountRepository accountRepository,
@@ -49,12 +56,17 @@ public class UserServiceImpl implements UserService {
         this.encoder = encoder;
     }
 
+    @Transactional
     public User createUser(UserCreateRequest req) {
         if (req.email() == null || req.email().isBlank()) {
             throw new RuntimeException("Email is required");
         }
         if (accountRepository.existsByEmail(req.email())) {
             throw new RuntimeException("Email already exists: " + req.email());
+        }
+
+        if (req.addresses() != null && req.addresses().size() > maxAddressesPerUser) {
+            throw new RuntimeException("Address limit exceeded. Max allowed per user: " + maxAddressesPerUser);
         }
 
         Account account = Account.builder()
@@ -81,17 +93,47 @@ public class UserServiceImpl implements UserService {
                 .firstName(req.firstName())
                 .lastName(req.lastName())
                 .phone(req.phone())
-                .address(req.address())
                 .dateOfBirth(req.dateOfBirth())
                 .account(account)
                 .roles(roles)
+                .addresses(new ArrayList<>())
                 .build();
 
-        return userRepository.save(user);
+        // Save user first to get ID
+        User savedUser = userRepository.save(user);
+
+        // Create addresses if provided
+        if (req.addresses() != null && !req.addresses().isEmpty()) {
+            List<Address> addresses = new ArrayList<>();
+            boolean hasDefault = req.addresses().stream().anyMatch(addr -> addr.isDefault() != null && addr.isDefault());
+
+            for (int i = 0; i < req.addresses().size(); i++) {
+                AddressCreateRequest addrReq = req.addresses().get(i);
+                Address address = Address.builder()
+                        .streetAddress(addrReq.streetAddress())
+                        .ward(addrReq.ward())
+                        .district(addrReq.district())
+                        .city(addrReq.city())
+                        .postalCode(addrReq.postalCode())
+                        .isDefault(!hasDefault && i == 0 || (addrReq.isDefault() != null ? addrReq.isDefault() : false))
+                        .addressType(addrReq.addressType() != null ? addrReq.addressType() : "HOME")
+                        .user(savedUser)
+                        .build();
+                addresses.add(address);
+            }
+            savedUser.setAddresses(addresses);
+            savedUser = userRepository.save(savedUser);
+        }
+
+        return savedUser;
     }
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    public Page<User> getAllUsersWithPagination(Pageable pageable) {
+        return userRepository.findAllWithAddresses(pageable);
     }
 
     public Optional<User> getUserById(Integer id) {
@@ -114,6 +156,7 @@ public class UserServiceImpl implements UserService {
         return currentUser.isPresent() && currentUser.get().getId().equals(userId);
     }
 
+    @Transactional
     public User updateUser(Integer id, UserUpdateRequest req) {
         User user = userRepository.findByIdWithRoles(id);
         if (user == null) {
@@ -129,9 +172,6 @@ public class UserServiceImpl implements UserService {
         }
         if (req.phone() != null) {
             user.setPhone(req.phone());
-        }
-        if (req.address() != null) {
-            user.setAddress(req.address());
         }
         if (req.dateOfBirth() != null) {
             user.setDateOfBirth(req.dateOfBirth());
@@ -165,6 +205,35 @@ public class UserServiceImpl implements UserService {
             user.setRoles(roles);
         }
 
+        // Update addresses if provided (this replaces all addresses - for individual address updates, use address endpoints)
+        if (req.addresses() != null) {
+            if (req.addresses().size() > maxAddressesPerUser) {
+                throw new RuntimeException("Address limit exceeded. Max allowed per user: " + maxAddressesPerUser);
+            }
+            // Soft delete existing addresses
+            user.getAddresses().forEach(addr -> addr.setDeletedAt(LocalDateTime.now()));
+
+            // Create new addresses
+            List<Address> newAddresses = new ArrayList<>();
+            boolean hasDefault = req.addresses().stream().anyMatch(addr -> addr.isDefault() != null && addr.isDefault());
+
+            for (int i = 0; i < req.addresses().size(); i++) {
+                AddressUpdateRequest addrReq = req.addresses().get(i);
+                Address address = Address.builder()
+                        .streetAddress(addrReq.streetAddress())
+                        .ward(addrReq.ward())
+                        .district(addrReq.district())
+                        .city(addrReq.city())
+                        .postalCode(addrReq.postalCode())
+                        .isDefault(!hasDefault && i == 0 || (addrReq.isDefault() != null ? addrReq.isDefault() : false))
+                        .addressType(addrReq.addressType() != null ? addrReq.addressType() : "HOME")
+                        .user(user)
+                        .build();
+                newAddresses.add(address);
+            }
+            user.getAddresses().addAll(newAddresses);
+        }
+
         return userRepository.save(user);
     }
 
@@ -175,6 +244,9 @@ public class UserServiceImpl implements UserService {
         user.setDeletedAt(LocalDateTime.now());
         user.getAccount().setDeletedAt(LocalDateTime.now());
         user.getAccount().setIsActive(false);
+
+        // Soft delete all addresses
+        user.getAddresses().forEach(addr -> addr.setDeletedAt(LocalDateTime.now()));
 
         userRepository.save(user);
     }
@@ -190,6 +262,9 @@ public class UserServiceImpl implements UserService {
         user.setDeletedAt(null);
         user.getAccount().setDeletedAt(null);
         user.getAccount().setIsActive(true);
+
+        // Restore addresses
+        user.getAddresses().forEach(addr -> addr.setDeletedAt(null));
 
         userRepository.save(user);
     }

@@ -2,6 +2,7 @@ package vn.techbox.techbox_store.user.dto;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.List;
 
 public record UserCreateRequest(
     String email,
@@ -9,7 +10,7 @@ public record UserCreateRequest(
     String firstName,
     String lastName,
     String phone,
-    String address,
+    List<AddressCreateRequest> addresses,
     LocalDateTime dateOfBirth,
     Set<String> roleNames
 ) {

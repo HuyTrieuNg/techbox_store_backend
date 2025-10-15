@@ -4,6 +4,7 @@ import vn.techbox.techbox_store.user.model.Role;
 import vn.techbox.techbox_store.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -13,7 +14,7 @@ public record UserResponse(
     String firstName,
     String lastName,
     String phone,
-    String address,
+    List<AddressResponse> addresses,
     LocalDateTime dateOfBirth,
     Set<String> roles,
     Boolean isActive,
@@ -27,7 +28,10 @@ public record UserResponse(
             u.getFirstName(),
             u.getLastName(),
             u.getPhone(),
-            u.getAddress(),
+            u.getAddresses().stream()
+                .filter(address -> address.getDeletedAt() == null)
+                .map(AddressResponse::from)
+                .collect(Collectors.toList()),
             u.getDateOfBirth(),
             u.getRoles().stream().map(Role::getName).collect(Collectors.toSet()),
             u.getAccount().getIsActive(),

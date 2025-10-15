@@ -23,6 +23,12 @@ spring:
       name: admin
       password: admin123
 
+logging:
+  level:
+    org:
+        springframework:
+            security: DEBUG
+
 server:
   servlet:
     context-path: /api
@@ -38,3 +44,17 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
 
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://localhost:3000/payment/return}
+  ipn-url: ${VNPAY_IPN_URL:http://localhost:8080/api/orders/payment/confirm}
+
+order:
+  default-shipping-fee: 30000
+  code-prefix: "ORD"
+
+user:
+  address:
+    max-per-user: ${USER_ADDRESS_MAX_PER_USER:3}
