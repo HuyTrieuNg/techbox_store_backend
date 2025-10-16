@@ -36,6 +36,7 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
                          .requestMatchers("/auth/**").permitAll()
+                         .requestMatchers("/payments/vnpay/**").permitAll()
                          .requestMatchers(
                                  "/swagger-ui/**",
                                  "/swagger-ui.html",
