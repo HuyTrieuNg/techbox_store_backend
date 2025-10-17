@@ -13,6 +13,7 @@ import vn.techbox.techbox_store.inventory.repository.StockExportItemRepository;
 import vn.techbox.techbox_store.inventory.repository.StockExportRepository;
 import vn.techbox.techbox_store.inventory.repository.StockImportItemRepository;
 import vn.techbox.techbox_store.inventory.repository.StockImportRepository;
+import vn.techbox.techbox_store.inventory.service.impl.InventoryReportService;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 

@@ -26,13 +26,13 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('USER_READ')")
+    @PreAuthorize("hasAuthority('USER:READ')")
     public List<UserResponse> getAll() {
         return userService.getAllUsers().stream().map(UserResponse::from).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_READ') or @userService.isCurrentUser(#id)")
+    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#id)")
     public ResponseEntity<UserResponse> getOne(@PathVariable Integer id) {
         return userService.getUserById(id)
                 .map(UserResponse::from)
@@ -41,7 +41,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('USER_WRITE')")
+    @PreAuthorize("hasAuthority('USER:WRITE')")
     public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest req) {
         User saved = userService.createUser(req);
         return ResponseEntity.created(URI.create("/api/users/" + saved.getId()))
@@ -49,14 +49,14 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_WRITE') or @userService.isCurrentUser(#id)")
+    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#id)")
     public ResponseEntity<UserResponse> update(@PathVariable Integer id, @RequestBody UserUpdateRequest req) {
         User updated = userService.updateUser(id, req);
         return ResponseEntity.ok(UserResponse.from(updated));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_DELETE')")
+    @PreAuthorize("hasAuthority('USER:DELETE')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         // Check if user exists and is not already soft-deleted
         if (userService.getUserById(id).isEmpty()) {
@@ -67,7 +67,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasAuthority('USER_WRITE')")
+    @PreAuthorize("hasAuthority('USER:WRITE')")
     public ResponseEntity<UserResponse> restore(@PathVariable Integer id) {
         try {
             userService.restoreUser(id);

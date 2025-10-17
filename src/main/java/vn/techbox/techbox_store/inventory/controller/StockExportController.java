@@ -10,13 +10,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.CreateStockExportFromOrderRequest;
 import vn.techbox.techbox_store.inventory.dto.CreateStockExportRequest;
 import vn.techbox.techbox_store.inventory.dto.StockExportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockExportDetailDTO;
 import vn.techbox.techbox_store.inventory.dto.StockExportReportDTO;
-import vn.techbox.techbox_store.inventory.service.StockExportService;
+import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
 
 import java.time.LocalDate;
 
@@ -33,6 +34,7 @@ public class StockExportController {
      * 
      * GET /api/stock-exports?page=0&size=20&fromDate=2025-01-01&toDate=2025-12-31&userId=1&orderId=1&documentCode=EXP
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping
     public ResponseEntity<Page<StockExportDTO>> getAllStockExports(
             @RequestParam(defaultValue = "0") int page,
@@ -58,6 +60,7 @@ public class StockExportController {
      * 
      * GET /api/stock-exports/{id}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/{id}")
     public ResponseEntity<StockExportDetailDTO> getStockExportById(@PathVariable Integer id) {
         log.info("GET /api/stock-exports/{}", id);
@@ -71,6 +74,7 @@ public class StockExportController {
      * 
      * POST /api/stock-exports
      */
+    @PreAuthorize("hasAuthority('INVENTORY:WRITE')")
     @PostMapping
     public ResponseEntity<StockExportDetailDTO> createStockExport(
             @Valid @RequestBody CreateStockExportRequest request) {
@@ -91,6 +95,7 @@ public class StockExportController {
      * 
      * POST /api/stock-exports/from-order/{orderId}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:WRITE')")
     @PostMapping("/from-order/{orderId}")
     public ResponseEntity<StockExportDetailDTO> createStockExportFromOrder(
             @PathVariable Integer orderId,
@@ -112,6 +117,7 @@ public class StockExportController {
      * 
      * GET /api/stock-exports/report?fromDate=2025-01-01&toDate=2025-12-31&groupBy=day
      */
+    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
     @GetMapping("/report")
     public ResponseEntity<StockExportReportDTO> generateReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
