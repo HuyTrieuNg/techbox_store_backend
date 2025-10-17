@@ -120,13 +120,7 @@ public class VoucherServiceImpl implements VoucherService {
         return voucherRepository.findValidVouchers(now, pageable)
                 .map(VoucherResponse::fromEntity);
     }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public Page<VoucherResponse> searchVouchers(String searchTerm, Pageable pageable) {
-        return voucherRepository.searchByCode(searchTerm, pageable)
-                .map(VoucherResponse::fromEntity);
-    }
+
     
     @Override
     public void deleteVoucherByCode(String code) {

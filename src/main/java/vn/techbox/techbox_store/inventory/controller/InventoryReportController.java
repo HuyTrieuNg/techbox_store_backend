@@ -3,9 +3,10 @@ package vn.techbox.techbox_store.inventory.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.*;
-import vn.techbox.techbox_store.inventory.service.InventoryReportService;
+import vn.techbox.techbox_store.inventory.service.impl.InventoryReportService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +22,7 @@ public class InventoryReportController {
      * 1. Get current stock balance
      * GET /api/inventory/stock-balance
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/stock-balance")
     public ResponseEntity<List<StockBalanceDTO>> getStockBalance(
             @RequestParam(required = false) Integer categoryId,
@@ -43,6 +45,7 @@ public class InventoryReportController {
      * 2. Get product history (import/export movements)
      * GET /api/inventory/product-history/{productVariationId}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/product-history/{productVariationId}")
     public ResponseEntity<List<StockMovementDTO>> getProductHistory(
             @PathVariable Integer productVariationId,
@@ -61,6 +64,7 @@ public class InventoryReportController {
      * 3. Get stock value report over time
      * GET /api/inventory/stock-value-report
      */
+    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
     @GetMapping("/stock-value-report")
     public ResponseEntity<List<StockValueReportDTO>> getStockValueReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
@@ -79,6 +83,7 @@ public class InventoryReportController {
      * 4. Get top products by import/export
      * GET /api/inventory/top-products
      */
+    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
     @GetMapping("/top-products")
     public ResponseEntity<List<TopProductDTO>> getTopProducts(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
@@ -99,6 +104,7 @@ public class InventoryReportController {
      * 5. Get inventory alerts (out of stock, low stock, overstock)
      * GET /api/inventory/alerts
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/alerts")
     public ResponseEntity<InventoryAlertsDTO> getInventoryAlerts() {
         InventoryAlertsDTO result = inventoryReportService.getInventoryAlerts();

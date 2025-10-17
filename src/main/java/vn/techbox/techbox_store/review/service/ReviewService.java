@@ -13,5 +13,6 @@ public interface ReviewService {
     Page<ReviewResponse> getReviews(Integer productId, int page, int size);
     ReviewSummaryResponse getSummary(Integer productId);
     ReviewResponse getUserReview(Integer productId, String currentUserEmail);
+    boolean isReviewOwner(Integer reviewId, String email);
 }
 

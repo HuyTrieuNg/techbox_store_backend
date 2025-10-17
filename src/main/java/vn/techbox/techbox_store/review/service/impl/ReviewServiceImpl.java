@@ -204,6 +204,23 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
     }
 
+    @Override
+    public boolean isReviewOwner(Integer reviewId, String email) {
+        User user = userRepository.findByAccountEmail(email)
+                .orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        Review review = reviewRepository.findById(reviewId)
+                .orElse(null);
+        if (review == null) {
+            return false;
+        }
+        
+        return review.getUserId().equals(user.getId());
+    }
+
     private double round(double value) {
         double factor = Math.pow(10, 2);
         return Math.round(value * factor) / factor;

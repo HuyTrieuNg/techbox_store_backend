@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
@@ -47,6 +48,7 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProductVariation(
         @RequestParam(value = "variationName", required = false) String variationName,
@@ -95,6 +97,7 @@ public class ProductVariationController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateProductVariation(
             @PathVariable Integer id,
@@ -157,12 +160,14 @@ public class ProductVariationController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProductVariation(@PathVariable Integer id) {
         productVariationService.deleteProductVariation(id);
         return ResponseEntity.noContent().build();
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
     @PatchMapping("/{id}/restore")
     public ResponseEntity<Void> restoreProductVariation(@PathVariable Integer id) {
         productVariationService.restoreProductVariation(id);
@@ -184,6 +189,8 @@ public class ProductVariationController {
         return ResponseEntity.ok(variations);
     }
     
+
+    @PreAuthorize("hasAuthority('PRODUCT_REPORT')")
     @GetMapping("/low-stock")
     public ResponseEntity<List<ProductVariationResponse>> getLowStockVariations(
             @RequestParam(defaultValue = "10") Integer threshold) {
@@ -198,6 +205,7 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
     @PatchMapping("/{id}/stock")
     public ResponseEntity<ProductVariationResponse> updateStock(
             @PathVariable Integer id, 
@@ -206,6 +214,7 @@ public class ProductVariationController {
         return ResponseEntity.ok(updatedVariation);
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT_READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkSkuExists(
             @RequestParam String sku,

@@ -10,12 +10,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.CreateStockImportRequest;
 import vn.techbox.techbox_store.inventory.dto.StockImportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockImportDetailDTO;
 import vn.techbox.techbox_store.inventory.dto.StockImportReportDTO;
-import vn.techbox.techbox_store.inventory.service.StockImportService;
+import vn.techbox.techbox_store.inventory.service.impl.StockImportService;
 
 import java.time.LocalDate;
 
@@ -32,6 +33,7 @@ public class StockImportController {
      * 
      * GET /api/stock-imports?page=0&size=20&fromDate=2025-01-01&toDate=2025-12-31&supplierId=1&userId=1&documentCode=IMP
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping
     public ResponseEntity<Page<StockImportDTO>> getAllStockImports(
             @RequestParam(defaultValue = "0") int page,
@@ -57,6 +59,7 @@ public class StockImportController {
      * 
      * GET /api/stock-imports/{id}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/{id}")
     public ResponseEntity<StockImportDetailDTO> getStockImportById(@PathVariable Integer id) {
         log.info("GET /api/stock-imports/{}", id);
@@ -70,6 +73,7 @@ public class StockImportController {
      * 
      * POST /api/stock-imports
      */
+    @PreAuthorize("hasAuthority('INVENTORY:WRITE')")
     @PostMapping
     public ResponseEntity<StockImportDetailDTO> createStockImport(
             @Valid @RequestBody CreateStockImportRequest request) {
@@ -90,6 +94,7 @@ public class StockImportController {
      * 
      * GET /api/stock-imports/by-code/{documentCode}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/by-code/{documentCode}")
     public ResponseEntity<StockImportDetailDTO> getStockImportByDocumentCode(
             @PathVariable String documentCode) {
@@ -105,6 +110,7 @@ public class StockImportController {
      * 
      * GET /api/stock-imports/report?fromDate=2025-01-01&toDate=2025-12-31&supplierId=1&groupBy=day
      */
+    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
     @GetMapping("/report")
     public ResponseEntity<StockImportReportDTO> generateReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,

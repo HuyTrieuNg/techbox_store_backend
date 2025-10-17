@@ -12,6 +12,7 @@ import vn.techbox.techbox_store.inventory.dto.UpdateSupplierRequest;
 import vn.techbox.techbox_store.inventory.mapper.SupplierMapper;
 import vn.techbox.techbox_store.inventory.model.Supplier;
 import vn.techbox.techbox_store.inventory.repository.SupplierRepository;
+import vn.techbox.techbox_store.inventory.service.impl.SupplierService;
 
 @Service
 @RequiredArgsConstructor

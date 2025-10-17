@@ -9,11 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.CreateSupplierRequest;
 import vn.techbox.techbox_store.inventory.dto.SupplierDTO;
 import vn.techbox.techbox_store.inventory.dto.UpdateSupplierRequest;
-import vn.techbox.techbox_store.inventory.service.SupplierService;
+import vn.techbox.techbox_store.inventory.service.impl.SupplierService;
 
 @RestController
 @RequestMapping("/suppliers")
@@ -28,6 +29,7 @@ public class SupplierController {
      * 
      * GET /api/suppliers?page=0&size=20&keyword=abc&includeDeleted=false
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping
     public ResponseEntity<Page<SupplierDTO>> getAllSuppliers(
             @RequestParam(defaultValue = "0") int page,
@@ -49,6 +51,7 @@ public class SupplierController {
      * 
      * GET /api/suppliers/{supplierId}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping("/{supplierId}")
     public ResponseEntity<SupplierDTO> getSupplierById(@PathVariable Integer supplierId) {
         log.info("GET /api/suppliers/{}", supplierId);
@@ -62,6 +65,7 @@ public class SupplierController {
      * 
      * POST /api/suppliers
      */
+    @PreAuthorize("hasAuthority('INVENTORY:WRITE')")
     @PostMapping
     public ResponseEntity<SupplierDTO> createSupplier(@Valid @RequestBody CreateSupplierRequest request) {
         log.info("POST /api/suppliers - name: {}", request.getName());
@@ -75,6 +79,7 @@ public class SupplierController {
      * 
      * PUT /api/suppliers/{supplierId}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:UPDATE')")
     @PutMapping("/{supplierId}")
     public ResponseEntity<SupplierDTO> updateSupplier(
             @PathVariable Integer supplierId,
@@ -91,6 +96,7 @@ public class SupplierController {
      * 
      * DELETE /api/suppliers/{supplierId}
      */
+    @PreAuthorize("hasAuthority('INVENTORY:DELETE')")
     @DeleteMapping("/{supplierId}")
     public ResponseEntity<Void> deleteSupplier(@PathVariable Integer supplierId) {
         log.info("DELETE /api/suppliers/{}", supplierId);

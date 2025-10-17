@@ -11,6 +11,7 @@ import vn.techbox.techbox_store.inventory.mapper.StockImportMapper;
 import vn.techbox.techbox_store.inventory.model.StockImport;
 import vn.techbox.techbox_store.inventory.model.StockImportItem;
 import vn.techbox.techbox_store.inventory.repository.StockImportRepository;
+import vn.techbox.techbox_store.inventory.service.impl.StockImportService;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 

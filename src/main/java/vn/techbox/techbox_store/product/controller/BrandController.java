@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.product.dto.BrandCreateRequest;
 import vn.techbox.techbox_store.product.dto.BrandResponse;
@@ -32,6 +33,7 @@ public class BrandController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping
     public ResponseEntity<BrandResponse> createBrand(@Valid @RequestBody BrandCreateRequest request) {
         try {
@@ -42,6 +44,7 @@ public class BrandController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<BrandResponse> updateBrand(
             @PathVariable Integer id,
@@ -54,6 +57,7 @@ public class BrandController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBrand(@PathVariable Integer id) {
         try {
@@ -64,6 +68,7 @@ public class BrandController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkBrandNameExists(@RequestParam String name) {
         boolean exists = brandService.existsByName(name);

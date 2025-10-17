@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
@@ -31,7 +32,8 @@ public class CampaignController {
     
     private final CampaignService campaignService;
     private final CloudinaryService cloudinaryService;
-    
+
+    @PreAuthorize("hasAuthority('CAMPAIGN:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createCampaign(
             @RequestParam("name") String name,
@@ -71,7 +73,8 @@ public class CampaignController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('CAMPAIGN:UPDATE')")
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateCampaign(
             @PathVariable Integer id,
@@ -125,6 +128,8 @@ public class CampaignController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
+
+    // ========== Public APIs - Customer xem campaigns ==========
     
     @GetMapping("/{id}")
     public ResponseEntity<CampaignResponse> getCampaignById(@PathVariable Integer id) {
@@ -138,7 +143,10 @@ public class CampaignController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    // ========== Admin APIs ==========
     
+    @PreAuthorize("hasAuthority('CAMPAIGN:READ_ALL')")
     @GetMapping
     public ResponseEntity<Page<CampaignResponse>> getAllCampaigns(
             @RequestParam(defaultValue = "0") int page,
@@ -153,6 +161,8 @@ public class CampaignController {
         Page<CampaignResponse> campaigns = campaignService.getAllCampaigns(pageable);
         return ResponseEntity.ok(campaigns);
     }
+
+    // ========== Public APIs - Customer xem active campaigns ==========
     
     @GetMapping("/active")
     public ResponseEntity<List<CampaignResponse>> getActiveCampaigns() {
@@ -161,7 +171,10 @@ public class CampaignController {
         List<CampaignResponse> campaigns = campaignService.getActiveCampaigns();
         return ResponseEntity.ok(campaigns);
     }
+
+    // ========== Admin APIs - Quản lý campaigns ==========
     
+    @PreAuthorize("hasAuthority('CAMPAIGN:READ')")
     @GetMapping("/scheduled")
     public ResponseEntity<List<CampaignResponse>> getScheduledCampaigns() {
         log.info("REST request to get scheduled campaigns");
@@ -169,7 +182,8 @@ public class CampaignController {
         List<CampaignResponse> campaigns = campaignService.getScheduledCampaigns();
         return ResponseEntity.ok(campaigns);
     }
-    
+
+    @PreAuthorize("hasAuthority('CAMPAIGN:READ')")
     @GetMapping("/expired")
     public ResponseEntity<List<CampaignResponse>> getExpiredCampaigns() {
         log.info("REST request to get expired campaigns");
@@ -177,7 +191,8 @@ public class CampaignController {
         List<CampaignResponse> campaigns = campaignService.getExpiredCampaigns();
         return ResponseEntity.ok(campaigns);
     }
-    
+
+    @PreAuthorize("hasAuthority('CAMPAIGN:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCampaign(@PathVariable Integer id) {
         log.info("REST request to delete campaign with ID: {}", id);
@@ -190,7 +205,8 @@ public class CampaignController {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('CAMPAIGN:UPDATE')")
     @PostMapping("/{id}/restore")
     public ResponseEntity<Void> restoreCampaign(@PathVariable Integer id) {
         log.info("REST request to restore campaign with ID: {}", id);
