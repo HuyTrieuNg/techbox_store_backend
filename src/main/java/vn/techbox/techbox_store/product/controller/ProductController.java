@@ -77,7 +77,7 @@ public class ProductController {
     /**
      * Public: Get all active products with pagination (no authentication required)
      */
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<Page<ProductListResponse>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
