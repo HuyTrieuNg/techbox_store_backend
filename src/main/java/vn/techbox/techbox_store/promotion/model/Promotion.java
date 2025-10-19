@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.SQLDelete;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,10 +26,6 @@ public class Promotion {
     @JoinColumn(name = "campaign_id", nullable = false)
     private Campaign campaign;
     
-    // Tên quy tắc (ví dụ: Giảm 30% Laptop Dell)
-    @Column(name = "rule_name", nullable = false, length = 255)
-    private String ruleName;
-    
     // Mục tiêu: Áp dụng cho Biến thể sản phẩm cụ thể
     @Column(name = "product_variation_id", nullable = false)
     private Integer productVariationId;
@@ -43,18 +38,6 @@ public class Promotion {
     
     @Column(name = "discount_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
-    
-    // Điều kiện áp dụng (Tùy chọn)
-    @Column(name = "min_quantity")
-    @Builder.Default
-    private Integer minQuantity = 1;
-    
-    @Column(name = "min_order_amount", precision = 10, scale = 2)
-    @Builder.Default
-    private BigDecimal minOrderAmount = BigDecimal.ZERO;
-    
-    @Column(name = "max_discount_amount", precision = 10, scale = 2)
-    private BigDecimal maxDiscountAmount;
 
     // Quản lý thời gian
     @Column(name = "created_at", updatable = false)
@@ -74,12 +57,7 @@ public class Promotion {
     }
     
     // Utility methods
-    public BigDecimal calculateDiscount(BigDecimal originalPrice, Integer quantity, BigDecimal orderAmount) {
-        // Kiểm tra điều kiện tối thiểu
-        if (quantity < minQuantity || orderAmount.compareTo(minOrderAmount) < 0) {
-            return BigDecimal.ZERO;
-        }
-        
+    public BigDecimal calculateDiscount(BigDecimal originalPrice, Integer quantity) {
         BigDecimal discount;
         
         switch (discountType) {
@@ -95,17 +73,7 @@ public class Promotion {
                 discount = BigDecimal.ZERO;
         }
         
-        // Áp dụng giới hạn giảm giá tối đa nếu có
-        if (maxDiscountAmount != null && discount.compareTo(maxDiscountAmount) > 0) {
-            discount = maxDiscountAmount;
-        }
-        
         return discount;
-    }
-    
-    @Transient
-    public String getDiscountDisplay() {
-        return discountValue + discountType.getSymbol();
     }
     
     @Transient

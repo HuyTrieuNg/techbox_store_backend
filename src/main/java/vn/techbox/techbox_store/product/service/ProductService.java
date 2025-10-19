@@ -1,21 +1,24 @@
 package vn.techbox.techbox_store.product.service;
 
-import vn.techbox.techbox_store.product.dto.ProductCreateRequest;
-import vn.techbox.techbox_store.product.dto.ProductResponse;
-import vn.techbox.techbox_store.product.dto.ProductUpdateRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import vn.techbox.techbox_store.product.dto.*;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface ProductService {
     
-    List<ProductResponse> getAllProducts();
+    // Chi tiết sản phẩm với đầy đủ thông tin
+    Optional<ProductDetailResponse> getProductDetailById(Integer id, Integer userId);
     
-    List<ProductResponse> getAllActiveProducts();
+    // Search & Filter với nhiều tiêu chí + phân trang
+    Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest, Integer userId);
     
-    Optional<ProductResponse> getProductById(Integer id);
+    // Public: Xem tất cả sản phẩm active với phân trang (không cần authentication)
+    Page<ProductListResponse> getAllProducts(Pageable pageable);
     
-    Optional<ProductResponse> getActiveProductById(Integer id);
+    // Admin: Xem chỉ sản phẩm đã xóa mềm với phân trang
+    Page<ProductListResponse> getDeletedProductsForAdmin(Pageable pageable);
     
     ProductResponse createProduct(ProductCreateRequest request);
     
@@ -25,13 +28,13 @@ public interface ProductService {
     
     void restoreProduct(Integer id);
     
-    List<ProductResponse> getProductsByCategory(Integer categoryId);
-    
-    List<ProductResponse> getProductsByBrand(Integer brandId);
-    
-    List<ProductResponse> searchProductsByName(String keyword);
-    
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Integer id);
+    
+    // Cập nhật rating của sản phẩm
+    void updateProductRating(Integer productId);
+    
+    // Internal use
+    Optional<ProductResponse> getProductById(Integer id);
 }

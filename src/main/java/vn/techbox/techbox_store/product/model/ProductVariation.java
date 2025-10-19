@@ -94,9 +94,11 @@ public class ProductVariation {
         this.deletedAt = null;
     }
     
-    // Helper method to check if in stock
-    public boolean isInStock() {
-        return stockQuantity != null && (stockQuantity - (reservedQuantity != null ? reservedQuantity : 0)) > 0;
+    // Helper method to get available quantity (stock - reserved)
+    public Integer getAvailableQuantity() {
+        int stock = (stockQuantity != null ? stockQuantity : 0);
+        int reserved = (reservedQuantity != null ? reservedQuantity : 0);
+        return stock - reserved;
     }
     
     // Helper method to decrease quantity
