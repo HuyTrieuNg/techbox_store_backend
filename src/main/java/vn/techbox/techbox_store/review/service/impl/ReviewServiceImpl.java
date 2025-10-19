@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("reviewService")
 @RequiredArgsConstructor
 @Transactional
 public class ReviewServiceImpl implements ReviewService {
@@ -202,6 +202,23 @@ public class ReviewServiceImpl implements ReviewService {
                 .createdAt(review.getCreatedAt())
                 .updatedAt(review.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    public boolean isReviewOwner(Integer reviewId, String email) {
+        User user = userRepository.findByAccountEmail(email)
+                .orElse(null);
+        if (user == null) {
+            return false;
+        }
+        
+        Review review = reviewRepository.findById(reviewId)
+                .orElse(null);
+        if (review == null) {
+            return false;
+        }
+        
+        return review.getUserId().equals(user.getId());
     }
 
     private double round(double value) {

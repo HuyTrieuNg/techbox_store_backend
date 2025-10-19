@@ -7,15 +7,18 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
+import vn.techbox.techbox_store.user.model.Role;
+import vn.techbox.techbox_store.user.model.Permission;
 import vn.techbox.techbox_store.user.service.UserService;
+import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,14 +32,8 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('USER_READ')")
-    public List<UserResponse> getAll() {
-        return userService.getAllUsers().stream().map(UserResponse::from).collect(Collectors.toList());
-    }
-
-    @GetMapping("/paginated")
-    @PreAuthorize("hasAuthority('USER_READ')")
-    public ResponseEntity<PagedUserResponse> getAllPaginated(
+    @PreAuthorize("hasAuthority('USER:READ')")
+    public ResponseEntity<PagedUserResponse> getAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -52,7 +49,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_READ') or @userService.isCurrentUser(#id)")
+    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#id)")
     public ResponseEntity<UserResponse> getOne(@PathVariable Integer id) {
         return userService.getUserById(id)
                 .map(UserResponse::from)
@@ -61,7 +58,7 @@ public class UserController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('USER_WRITE')")
+    @PreAuthorize("hasAuthority('USER:WRITE')")
     public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest req) {
         User saved = userService.createUser(req);
         return ResponseEntity.created(URI.create("/api/users/" + saved.getId()))
@@ -69,14 +66,14 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_WRITE') or @userService.isCurrentUser(#id)")
+    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#id)")
     public ResponseEntity<UserResponse> update(@PathVariable Integer id, @RequestBody UserUpdateRequest req) {
         User updated = userService.updateUser(id, req);
         return ResponseEntity.ok(UserResponse.from(updated));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER_DELETE')")
+    @PreAuthorize("hasAuthority('USER:DELETE')")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         // Check if user exists and is not already soft-deleted
         if (userService.getUserById(id).isEmpty()) {
@@ -87,7 +84,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasAuthority('USER_WRITE')")
+    @PreAuthorize("hasAuthority('USER:WRITE')")
     public ResponseEntity<UserResponse> restore(@PathVariable Integer id) {
         try {
             userService.restoreUser(id);
@@ -134,5 +131,73 @@ public class UserController {
     public ResponseEntity<?> test(@PathVariable Integer userId) {
         boolean match = userService.isCurrentUser(userId);
         return ResponseEntity.ok(Map.of("match", match));
+    }
+
+    @GetMapping("/me/authorities")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Map<String, Object> response = new HashMap<>();
+
+        // Lấy thông tin từ Spring Security
+        response.put("username", authentication.getName());
+        response.put("authenticated", authentication.isAuthenticated());
+        response.put("authType", authentication.getClass().getSimpleName());
+
+        // Lấy tất cả authorities từ Spring Security
+        Set<String> authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        // Phân loại roles và permissions
+        Set<String> roles = new HashSet<>();
+        Set<String> permissions = new HashSet<>();
+
+        for (String authority : authorities) {
+            if (authority.startsWith("ROLE_")) {
+                roles.add(authority);
+            } else {
+                permissions.add(authority);
+            }
+        }
+
+        response.put("allAuthorities", authorities);
+        response.put("roles", roles);
+        response.put("permissions", permissions);
+        response.put("authorityCount", authorities.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/debug/security-context")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> debugSecurityContext() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("principal", authentication.getPrincipal().getClass().getSimpleName());
+        debug.put("name", authentication.getName());
+        debug.put("authenticated", authentication.isAuthenticated());
+        debug.put("credentialsNonExpired", true);
+
+        // Chi tiết về authorities
+        List<Map<String, String>> authoritiesDetail = authentication.getAuthorities().stream()
+                .map(auth -> {
+                    Map<String, String> authMap = new HashMap<>();
+                    authMap.put("authority", auth.getAuthority());
+                    authMap.put("class", auth.getClass().getSimpleName());
+                    return authMap;
+                })
+                .collect(Collectors.toList());
+
+        debug.put("authorities", authoritiesDetail);
+        debug.put("totalAuthorities", authentication.getAuthorities().size());
+
+        return ResponseEntity.ok(debug);
     }
 }

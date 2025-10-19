@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.product.dto.AttributeCreateRequest;
 import vn.techbox.techbox_store.product.dto.AttributeResponse;
@@ -18,26 +19,27 @@ import java.util.List;
 public class AttributeController {
     
     private final AttributeService attributeService;
-    
+
     @GetMapping
     public ResponseEntity<List<AttributeResponse>> getAllAttributes() {
         List<AttributeResponse> attributes = attributeService.getAllAttributes();
         return ResponseEntity.ok(attributes);
     }
-    
-    @GetMapping("/{id}")
+
     public ResponseEntity<AttributeResponse> getAttributeById(@PathVariable Integer id) {
         return attributeService.getAttributeById(id)
-                .map(attribute -> ResponseEntity.ok(attribute))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping
     public ResponseEntity<AttributeResponse> createAttribute(@Valid @RequestBody AttributeCreateRequest request) {
         AttributeResponse createdAttribute = attributeService.createAttribute(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdAttribute);
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<AttributeResponse> updateAttribute(
             @PathVariable Integer id, 
@@ -46,6 +48,7 @@ public class AttributeController {
         return ResponseEntity.ok(updatedAttribute);
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAttribute(@PathVariable Integer id) {
         attributeService.deleteAttribute(id);
@@ -58,6 +61,7 @@ public class AttributeController {
         return ResponseEntity.ok(attributes);
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkAttributeExists(
             @RequestParam String name,

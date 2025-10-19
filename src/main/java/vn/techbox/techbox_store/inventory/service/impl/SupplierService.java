@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.inventory.service;
+package vn.techbox.techbox_store.inventory.service.impl;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -19,8 +19,6 @@ public interface VoucherService {
 
     Page<VoucherResponse> getValidVouchers(Pageable pageable);
 
-    Page<VoucherResponse> searchVouchers(String searchTerm, Pageable pageable);
-
     void deleteVoucherByCode(String code);
 
     void restoreVoucherByCode(String code);

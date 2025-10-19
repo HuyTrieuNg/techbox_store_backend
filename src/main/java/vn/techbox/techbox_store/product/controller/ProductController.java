@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
@@ -47,10 +48,11 @@ public class ProductController {
         return (includeDeleted 
                 ? productService.getProductById(id) 
                 : productService.getActiveProductById(id))
-                .map(product -> ResponseEntity.ok(product))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProduct(
             @RequestParam("name") String name,
@@ -89,6 +91,7 @@ public class ProductController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateProduct(
             @PathVariable Integer id,
@@ -144,6 +147,7 @@ public class ProductController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
         try {
@@ -158,6 +162,7 @@ public class ProductController {
         }
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PatchMapping("/{id}/restore")
     public ResponseEntity<Void> restoreProduct(@PathVariable Integer id) {
         productService.restoreProduct(id);
@@ -182,6 +187,7 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
     
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkProductExists(
             @RequestParam String name,

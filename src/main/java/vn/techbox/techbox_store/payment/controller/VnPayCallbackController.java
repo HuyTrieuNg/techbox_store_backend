@@ -20,13 +20,6 @@ public class VnPayCallbackController {
 
     private final VnPayCallbackService vnPayCallbackService;
 
-    @GetMapping("/callback")
-    public ResponseEntity<Map<String, Object>> callback(HttpServletRequest request) {
-        Map<String, String> params = extractParams(request);
-        var result = vnPayCallbackService.handleResult(params, false);
-        return ResponseEntity.ok(result);
-    }
-
     @RequestMapping(value = "/ipn", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<Map<String, String>> ipn(HttpServletRequest request) {
         Map<String, String> params = extractParams(request);

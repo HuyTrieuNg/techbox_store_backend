@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.promotion.dto.*;
 import vn.techbox.techbox_store.promotion.service.PromotionService;
@@ -23,7 +24,8 @@ import java.util.List;
 public class PromotionController {
     
     private final PromotionService promotionService;
-    
+
+    @PreAuthorize("hasAuthority('PROMOTION:WRITE')")
     @PostMapping
     public ResponseEntity<PromotionResponse> createPromotion(@Valid @RequestBody PromotionCreateRequest request) {
         log.info("REST request to create promotion: {}", request.getRuleName());
@@ -36,7 +38,8 @@ public class PromotionController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('PROMOTION:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<PromotionResponse> updatePromotion(
             @PathVariable Integer id,
@@ -51,7 +54,8 @@ public class PromotionController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('PROMOTION:READ')")
     @GetMapping("/{id}")
     public ResponseEntity<PromotionResponse> getPromotionById(@PathVariable Integer id) {
         log.info("REST request to get promotion with ID: {}", id);
@@ -64,7 +68,8 @@ public class PromotionController {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
+    @PreAuthorize("hasAuthority('PROMOTION:READ_ALL')")
     @GetMapping
     public ResponseEntity<Page<PromotionResponse>> getAllPromotions(
             @RequestParam(defaultValue = "0") int page,
@@ -79,7 +84,8 @@ public class PromotionController {
         Page<PromotionResponse> promotions = promotionService.getAllPromotions(pageable);
         return ResponseEntity.ok(promotions);
     }
-    
+
+    @PreAuthorize("hasAuthority('PROMOTION:READ')")
     @GetMapping("/campaign/{campaignId}")
     public ResponseEntity<List<PromotionResponse>> getPromotionsByCampaign(@PathVariable Integer campaignId) {
         log.info("REST request to get promotions for campaign ID: {}", campaignId);
@@ -87,6 +93,8 @@ public class PromotionController {
         List<PromotionResponse> promotions = promotionService.getPromotionsByCampaign(campaignId);
         return ResponseEntity.ok(promotions);
     }
+
+    // ========== Public APIs - Customer cần tính giá khi mua hàng ==========
     
     @GetMapping("/product-variation/{productVariationId}")
     public ResponseEntity<List<PromotionResponse>> getPromotionsByProductVariation(@PathVariable Integer productVariationId) {
@@ -95,7 +103,7 @@ public class PromotionController {
         List<PromotionResponse> promotions = promotionService.getPromotionsByProductVariation(productVariationId);
         return ResponseEntity.ok(promotions);
     }
-    
+
     @PostMapping("/calculate")
     public ResponseEntity<PromotionCalculationResponse> calculatePromotions(@Valid @RequestBody PromotionCalculationRequest request) {
         log.info("REST request to calculate promotions for product variation ID: {}", request.getProductVariationId());
@@ -103,7 +111,7 @@ public class PromotionController {
         PromotionCalculationResponse response = promotionService.calculatePromotions(request);
         return ResponseEntity.ok(response);
     }
-    
+
     @GetMapping("/product-variation/{productVariationId}/calculate")
     public ResponseEntity<PromotionCalculationResponse> calculatePromotionsForProduct(
             @PathVariable Integer productVariationId,
@@ -122,7 +130,10 @@ public class PromotionController {
         PromotionCalculationResponse response = promotionService.calculatePromotions(request);
         return ResponseEntity.ok(response);
     }
+
+    // ========== Admin only ==========
     
+    @PreAuthorize("hasAuthority('PROMOTION:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePromotion(@PathVariable Integer id) {
         log.info("REST request to delete promotion with ID: {}", id);

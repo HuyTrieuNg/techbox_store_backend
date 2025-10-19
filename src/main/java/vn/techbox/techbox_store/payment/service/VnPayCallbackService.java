@@ -14,7 +14,9 @@ import vn.techbox.techbox_store.payment.util.VnPayUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,79 +29,60 @@ public class VnPayCallbackService {
     @Value("${vnpay.hash-secret:}")
     private String hashSecret;
 
-    public Map<String, Object> handleResult(Map<String, String> params, boolean isIpn) {
-        log.info("VNPay {} received params: {}", isIpn ? "IPN" : "Callback", params);
-        Map<String, Object> response = new HashMap<>();
+    // Only keep IPN handler, return exactly {RspCode, Message}
+    public Map<String, String> handleIpn(Map<String, String> originalParams) {
+        Map<String, String> params = new HashMap<>(originalParams);
+        log.info("VNPay IPN received params: {}", params);
 
-        // Extract and remove signature parameters from the map used for hashing
+        // 1) Verify signature first
         String vnpSecureHash = params.remove("vnp_SecureHash");
         params.remove("vnp_SecureHashType");
-
-        // Verify signature
         String canonical = VnPayUtils.buildCanonicalQuery(params);
         String expected = VnPayUtils.hmacSHA512(hashSecret, canonical);
         if (vnpSecureHash == null || !vnpSecureHash.equalsIgnoreCase(expected)) {
-            response.put("success", false);
-            response.put("RspCode", "97");
-            response.put("Message", "Invalid Signature");
-            return response;
+            return Map.of("RspCode", "97", "Message", "Invalid Signature");
         }
 
+        // 2) Extract required fields
         String txnRef = params.get("vnp_TxnRef");
         String transactionId = txnRef != null ? "VNPAY_" + txnRef : null;
         String respCode = params.get("vnp_ResponseCode");
         String amountStr = params.get("vnp_Amount");
 
+        // 3) Validate transaction existence
         if (transactionId == null) {
-            response.put("success", false);
-            response.put("RspCode", "24");
-            response.put("Message", "Missing TxnRef");
-            return response;
+            return Map.of("RspCode", "01", "Message", "Order not found");
         }
-
         Optional<Payment> optPayment = paymentRepository.findByPaymentTransactionId(transactionId);
         if (optPayment.isEmpty()) {
-            response.put("success", false);
-            response.put("RspCode", "01");
-            response.put("Message", "Order not found");
-            return response;
+            return Map.of("RspCode", "01", "Message", "Order not found");
         }
-
         Payment payment = optPayment.get();
         Optional<Order> optOrder = orderRepository.findByPaymentInfo_Id(payment.getId());
         if (optOrder.isEmpty()) {
-            response.put("success", false);
-            response.put("RspCode", "01");
-            response.put("Message", "Order not found");
-            return response;
+            return Map.of("RspCode", "01", "Message", "Order not found");
         }
         Order order = optOrder.get();
 
-        // Idempotency
-        if ("PAID".equalsIgnoreCase(payment.getPaymentStatus())) {
-            response.put("success", true);
-            response.put("RspCode", "00");
-            response.put("Message", "Order already paid");
-            response.put("orderCode", order.getOrderCode());
-            response.put("transactionId", transactionId);
-            return response;
-        }
-
-        // Amount check
+        // 4) Amount check (before confirmed check)
         try {
             if (amountStr != null) {
-                BigDecimal vnpAmount = new BigDecimal(amountStr).divide(new BigDecimal(100));
+                BigDecimal vnpAmount = new BigDecimal(amountStr).movePointLeft(2); // VNPAY amount is in cents
                 if (payment.getFinalAmount() != null && payment.getFinalAmount().compareTo(vnpAmount) != 0) {
-                    response.put("success", false);
-                    response.put("RspCode", "04");
-                    response.put("Message", "Invalid Amount");
-                    return response;
+                    return Map.of("RspCode", "04", "Message", "Invalid amount");
                 }
             }
         } catch (Exception e) {
             log.warn("Invalid vnp_Amount: {}", amountStr);
+            return Map.of("RspCode", "04", "Message", "Invalid amount");
         }
 
+        // 5) Already confirmed
+        if ("PAID".equalsIgnoreCase(payment.getPaymentStatus())) {
+            return Map.of("RspCode", "02", "Message", "Order already confirmed");
+        }
+
+        // 6) Update DB based on vnp_ResponseCode, then always return 00
         // Update payment details if VNPAY payment
         if (payment instanceof VnpayPayment vnp) {
             vnp.setVnpTxnRef(txnRef);
@@ -122,37 +105,16 @@ public class VnPayCallbackService {
             payment.setPaymentStatus("PAID");
             payment.setPaymentCompletedAt(LocalDateTime.now());
             order.setStatus(OrderStatus.CONFIRMED);
-            paymentRepository.save(payment);
-            orderRepository.save(order);
-
-            response.put("success", true);
-            response.put("RspCode", "00");
-            response.put("Message", "Payment confirmed successfully");
         } else {
-            // Failure -> rollback
+            // Failure
             payment.setPaymentStatus("FAILED");
             payment.setPaymentFailedAt(LocalDateTime.now());
             payment.setPaymentFailureReason("VNPay response: " + respCode);
             order.setStatus(OrderStatus.CANCELLED);
-            paymentRepository.save(payment);
-            orderRepository.save(order);
-
-            response.put("success", false);
-            response.put("RspCode", "24");
-            response.put("Message", "Payment failed with code: " + respCode);
         }
+        paymentRepository.save(payment);
+        orderRepository.save(order);
 
-        response.put("orderCode", order.getOrderCode());
-        response.put("transactionId", transactionId);
-        return response;
-    }
-
-    public Map<String, String> handleIpn(Map<String, String> params) {
-        Map<String, Object> result = handleResult(new HashMap<>(params), true);
-        boolean success = Boolean.TRUE.equals(result.get("success"));
-        String rspCode = (String) result.getOrDefault("RspCode", success ? "00" : "97");
-        String message = (String) result.getOrDefault("Message", success ? "Confirm Success" : "Invalid Signature");
-        return Map.of("RspCode", rspCode, "Message", message);
+        return Map.of("RspCode", "00", "Message", "Confirm Success");
     }
 }
-

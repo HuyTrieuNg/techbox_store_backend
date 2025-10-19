@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +30,14 @@ public class ReviewController {
         return auth.getName();
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<ReviewResponse> create(@PathVariable Integer productId,
                                                  @Valid @RequestBody ReviewCreateRequest request) {
         return ResponseEntity.ok(reviewService.createReview(productId, request, currentUserEmail()));
     }
 
+    @PreAuthorize("isAuthenticated() and (@reviewService.isReviewOwner(#reviewId, principal.username) or hasAuthority('REVIEW:UPDATE'))")
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewResponse> update(@PathVariable Integer productId,
                                                  @PathVariable Integer reviewId,
@@ -42,6 +45,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.updateReview(productId, reviewId, request, currentUserEmail()));
     }
 
+    @PreAuthorize("isAuthenticated() and (@reviewService.isReviewOwner(#reviewId, principal.username) or hasAuthority('REVIEW:DELETE'))")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> delete(@PathVariable Integer productId,
                                        @PathVariable Integer reviewId) {
@@ -61,6 +65,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getSummary(productId));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<ReviewResponse> myReview(@PathVariable Integer productId) {
         return ResponseEntity.ok(reviewService.getUserReview(productId, currentUserEmail()));

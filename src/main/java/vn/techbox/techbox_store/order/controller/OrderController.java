@@ -33,7 +33,7 @@ public class OrderController {
     private final UserRepository userRepository;
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('STAFF') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @Operation(summary = "Create new order", description = "Create a new order with items and shipping information")
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
