@@ -2,11 +2,13 @@ package vn.techbox.techbox_store.user.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.user.dto.AddressCreateRequest;
 import vn.techbox.techbox_store.user.dto.AddressResponse;
 import vn.techbox.techbox_store.user.dto.AddressUpdateRequest;
 import vn.techbox.techbox_store.user.model.Address;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 import vn.techbox.techbox_store.user.service.UserAddressService;
 
 import java.net.URI;
@@ -23,16 +25,21 @@ public class UserAddressController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<AddressResponse> createAddress(@PathVariable Integer userId, @RequestBody AddressCreateRequest req) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<AddressResponse> createAddress(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId,
+            @RequestBody AddressCreateRequest req) {
         Address created = userAddressService.createAddress(userId, req);
         return ResponseEntity.created(URI.create("/api/users/" + userId + "/addresses/" + created.getId()))
                 .body(AddressResponse.from(created));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<List<AddressResponse>> getUserAddresses(@PathVariable Integer userId) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<List<AddressResponse>> getUserAddresses(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId) {
         List<AddressResponse> addresses = userAddressService.getUserAddresses(userId).stream()
                 .map(AddressResponse::from)
                 .collect(Collectors.toList());
@@ -40,8 +47,11 @@ public class UserAddressController {
     }
 
     @GetMapping("/{addressId}")
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<AddressResponse> getAddress(@PathVariable Integer userId, @PathVariable Integer addressId) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<AddressResponse> getAddress(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId,
+            @PathVariable Integer addressId) {
         return userAddressService.getAddressById(addressId, userId)
                 .map(AddressResponse::from)
                 .map(ResponseEntity::ok)
@@ -49,8 +59,12 @@ public class UserAddressController {
     }
 
     @PatchMapping("/{addressId}")
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<AddressResponse> updateAddress(@PathVariable Integer userId, @PathVariable Integer addressId, @RequestBody AddressUpdateRequest req) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<AddressResponse> updateAddress(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId,
+            @PathVariable Integer addressId,
+            @RequestBody AddressUpdateRequest req) {
         try {
             Address updated = userAddressService.updateAddress(addressId, userId, req);
             return ResponseEntity.ok(AddressResponse.from(updated));
@@ -63,8 +77,11 @@ public class UserAddressController {
     }
 
     @DeleteMapping("/{addressId}")
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<Void> deleteAddress(@PathVariable Integer userId, @PathVariable Integer addressId) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<Void> deleteAddress(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId,
+            @PathVariable Integer addressId) {
         try {
             userAddressService.deleteAddress(addressId, userId);
             return ResponseEntity.noContent().build();
@@ -77,8 +94,11 @@ public class UserAddressController {
     }
 
     @PatchMapping("/{addressId}/set-default")
-    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userId)")
-    public ResponseEntity<AddressResponse> setDefaultAddress(@PathVariable Integer userId, @PathVariable Integer addressId) {
+    @PreAuthorize("hasRole('CUSTOMER') && @userService.isCurrentUser(#userPrincipal, #userId)")
+    public ResponseEntity<AddressResponse> setDefaultAddress(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId,
+            @PathVariable Integer addressId) {
         try {
             Address updated = userAddressService.setDefaultAddress(addressId, userId);
             return ResponseEntity.ok(AddressResponse.from(updated));

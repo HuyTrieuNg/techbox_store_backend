@@ -8,10 +8,6 @@ import vn.techbox.techbox_store.order.model.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-/**
- * Interface service cho Order
- * Tuân thủ Interface Segregation Principle (ISP)
- */
 public interface OrderService {
 
     OrderResponse createOrder(CreateOrderRequest request, Integer userId);

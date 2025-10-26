@@ -39,6 +39,8 @@ jwt:
     expiry: ${JWT_ACCESS_TOKEN_EXPIRY:108000000}
   refresh-token:
     expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
+  secret: ${JWT_SECRET_KEY}
+  refresh-secret: ${JWT_REFRESH_SECRET_KEY}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}

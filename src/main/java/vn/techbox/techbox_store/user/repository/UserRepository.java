@@ -49,6 +49,7 @@ public interface UserRepository extends JpaRepository<User, Integer>, PagingAndS
             "LEFT JOIN FETCH u.account " +
             "LEFT JOIN FETCH u.roles r " +
             "LEFT JOIN FETCH r.permissions " +
+            "LEFT JOIN FETCH u.addresses " +
             "WHERE u.account.email = :email " +
             "AND u.deletedAt IS NULL " +
             "AND u.account.deletedAt IS NULL " +

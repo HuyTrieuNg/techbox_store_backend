@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.user.service;
 
-import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.user.dto.AddressCreateRequest;
 import vn.techbox.techbox_store.user.dto.AddressUpdateRequest;
 import vn.techbox.techbox_store.user.model.Address;
@@ -8,7 +7,6 @@ import vn.techbox.techbox_store.user.model.Address;
 import java.util.List;
 import java.util.Optional;
 
-@Service
 public interface UserAddressService {
     Address createAddress(Integer userId, AddressCreateRequest req);
     List<Address> getUserAddresses(Integer userId);

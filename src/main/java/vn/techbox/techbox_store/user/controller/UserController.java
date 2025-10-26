@@ -6,16 +6,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
-import vn.techbox.techbox_store.user.model.Role;
-import vn.techbox.techbox_store.user.model.Permission;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 import vn.techbox.techbox_store.user.service.UserService;
-import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.net.URI;
 import java.util.*;
@@ -49,8 +46,10 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#id)")
-    public ResponseEntity<UserResponse> getOne(@PathVariable Integer id) {
+    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#userPrincipal, #id)")
+    public ResponseEntity<UserResponse> getOne(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer id) {
         return userService.getUserById(id)
                 .map(UserResponse::from)
                 .map(ResponseEntity::ok)
@@ -66,8 +65,11 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#id)")
-    public ResponseEntity<UserResponse> update(@PathVariable Integer id, @RequestBody UserUpdateRequest req) {
+    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#userPrincipal, #id)")
+    public ResponseEntity<UserResponse> update(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer id,
+            @RequestBody UserUpdateRequest req) {
         User updated = userService.updateUser(id, req);
         return ResponseEntity.ok(UserResponse.from(updated));
     }
@@ -104,53 +106,45 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> getCurrentUserProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userService.getUserByEmail(email)
-                .map(UserResponse::from)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponse> getCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        User currentUser = userPrincipal.user();
+        return ResponseEntity.ok(UserResponse.from(currentUser));
     }
 
     @PatchMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> updateCurrentUserProfile(@RequestBody UserUpdateRequest req) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userService.getUserByEmail(email)
-                .map(user -> {
-                    User updated = userService.updateUser(user.getId(), req);
-                    return ResponseEntity.ok(UserResponse.from(updated));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<UserResponse> updateCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody UserUpdateRequest req) {
+        User currentUser = userPrincipal.user();
+        User updated = userService.updateUser(currentUser.getId(), req);
+        return ResponseEntity.ok(UserResponse.from(updated));
     }
 
     @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/debug/{userId}")
-    public ResponseEntity<?> test(@PathVariable Integer userId) {
-        boolean match = userService.isCurrentUser(userId);
+    public ResponseEntity<?> test(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId) {
+        boolean match = userService.isCurrentUser(userPrincipal, userId);
         return ResponseEntity.ok(Map.of("match", match));
     }
 
     @GetMapping("/me/authorities")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-
+    public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         Map<String, Object> response = new HashMap<>();
 
-        // Lấy thông tin từ Spring Security
-        response.put("username", authentication.getName());
-        response.put("authenticated", authentication.isAuthenticated());
-        response.put("authType", authentication.getClass().getSimpleName());
+        User currentUser = userPrincipal.user();
 
-        // Lấy tất cả authorities từ Spring Security
-        Set<String> authorities = authentication.getAuthorities().stream()
+        // Lấy thông tin từ UserPrincipal
+        response.put("username", userPrincipal.getUsername());
+        response.put("authenticated", true);
+        response.put("userId", currentUser.getId());
+        response.put("userEmail", currentUser.getAccount().getEmail());
+        response.put("firstName", currentUser.getFirstName());
+        response.put("lastName", currentUser.getLastName());
+
+        // Lấy tất cả authorities từ UserPrincipal
+        Set<String> authorities = userPrincipal.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
@@ -176,17 +170,20 @@ public class UserController {
 
     @GetMapping("/debug/security-context")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> debugSecurityContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
+    public ResponseEntity<Map<String, Object>> debugSecurityContext(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         Map<String, Object> debug = new HashMap<>();
-        debug.put("principal", authentication.getPrincipal().getClass().getSimpleName());
-        debug.put("name", authentication.getName());
-        debug.put("authenticated", authentication.isAuthenticated());
-        debug.put("credentialsNonExpired", true);
+
+        User currentUser = userPrincipal.user();
+
+        debug.put("principal", "UserPrincipal");
+        debug.put("username", userPrincipal.getUsername());
+        debug.put("userId", currentUser.getId());
+        debug.put("authenticated", userPrincipal.isEnabled());
+        debug.put("accountNonLocked", userPrincipal.isAccountNonLocked());
+        debug.put("enabled", userPrincipal.isEnabled());
 
         // Chi tiết về authorities
-        List<Map<String, String>> authoritiesDetail = authentication.getAuthorities().stream()
+        List<Map<String, String>> authoritiesDetail = userPrincipal.getAuthorities().stream()
                 .map(auth -> {
                     Map<String, String> authMap = new HashMap<>();
                     authMap.put("authority", auth.getAuthority());
@@ -196,7 +193,7 @@ public class UserController {
                 .collect(Collectors.toList());
 
         debug.put("authorities", authoritiesDetail);
-        debug.put("totalAuthorities", authentication.getAuthorities().size());
+        debug.put("totalAuthorities", userPrincipal.getAuthorities().size());
 
         return ResponseEntity.ok(debug);
     }

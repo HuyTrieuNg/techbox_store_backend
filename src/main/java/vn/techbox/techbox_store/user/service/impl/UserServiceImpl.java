@@ -5,7 +5,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +16,7 @@ import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.AccountRepository;
 import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
 
@@ -144,16 +144,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByAccountEmail(email);
     }
 
-    public boolean isCurrentUser(Integer userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return false;
-        }
-
-        String currentEmail = authentication.getName();
-        Optional<User> currentUser = getUserByEmail(currentEmail);
-
-        return currentUser.isPresent() && currentUser.get().getId().equals(userId);
+    public boolean isCurrentUser(UserPrincipal userPrincipal, Integer userId) {
+        return userPrincipal.user().getId().equals(userId);
     }
 
     @Transactional
@@ -238,8 +230,10 @@ public class UserServiceImpl implements UserService {
     }
 
     public void deleteUser(Integer id) {
-        User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        User user = userRepository.findByIdWithRoles(id);
+        if (user == null) {
+            throw new RuntimeException("User not found with id: " + id);
+        }
 
         user.setDeletedAt(LocalDateTime.now());
         user.getAccount().setDeletedAt(LocalDateTime.now());

@@ -9,12 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class UserPrincipal implements UserDetails {
-    private final User user;
-
-    public UserPrincipal(User user) {
-        this.user = user;
-    }
+public record UserPrincipal(User user) implements UserDetails {
 
     @Override
     public String getUsername() {
