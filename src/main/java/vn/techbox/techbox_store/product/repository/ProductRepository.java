@@ -14,13 +14,11 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> {
-    
-    Optional<Product> findByName(String name);
-    
+
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Integer id);
-    
+
     // Find all non-deleted products
     @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL")
     List<Product> findAllActive();
@@ -33,15 +31,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
     @Query("SELECT p FROM Product p WHERE p.id = :id AND p.deletedAt IS NULL")
     Optional<Product> findActiveById(@Param("id") Integer id);
     
-    // Find all products including deleted (for admin)
-    @Query("SELECT p FROM Product p")
-    Page<Product> findAllForAdmin(Pageable pageable);
-    
     // Find only deleted products (for admin)
     @Query("SELECT p FROM Product p WHERE p.deletedAt IS NOT NULL")
     Page<Product> findAllDeleted(Pageable pageable);
     
-    // Find products by category including child categories
-    @Query("SELECT DISTINCT p FROM Product p WHERE p.categoryId IN :categoryIds AND p.deletedAt IS NULL")
-    List<Product> findByCategoryIdIn(@Param("categoryIds") List<Integer> categoryIds);
+    // Find products by list of IDs and not deleted
+    @Query("SELECT p FROM Product p WHERE p.id IN :ids AND p.deletedAt IS NULL")
+    Page<Product> findByIdInAndDeletedAtIsNull(@Param("ids") List<Integer> ids, Pageable pageable);
 }

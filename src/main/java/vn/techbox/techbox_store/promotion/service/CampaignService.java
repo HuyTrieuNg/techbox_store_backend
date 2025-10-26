@@ -27,3 +27,4 @@ public interface CampaignService {
 
     void restoreCampaign(Integer id);
 }
+

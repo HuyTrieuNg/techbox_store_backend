@@ -94,6 +94,33 @@ public class ProductController {
     }
     
     /**
+     * Public: Get products by campaign ID (no authentication required)
+     * Returns products that have promotions in the specified campaign
+     */
+    @GetMapping("/campaign/{campaignId}")
+    public ResponseEntity<Page<ProductListResponse>> getProductsByCampaign(
+            @PathVariable Integer campaignId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            Authentication authentication) {
+
+        Integer userId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            userId = ((User) authentication.getPrincipal()).getId();
+        }
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<ProductListResponse> products = productService.getProductsByCampaign(campaignId, pageable, userId);
+        return ResponseEntity.ok(products);
+    }
+
+    /**
      * Admin: Get only soft-deleted products with pagination
      */
     @PreAuthorize("hasAuthority('PRODUCT:READ')")

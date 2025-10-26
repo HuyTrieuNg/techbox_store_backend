@@ -145,7 +145,7 @@ public class ProductServiceImpl implements ProductService {
     public boolean existsByName(String name) {
         return productRepository.existsByName(name);
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public boolean existsByNameAndIdNot(String name, Integer id) {
@@ -187,6 +187,41 @@ public class ProductServiceImpl implements ProductService {
         return productsPage.map(product -> convertToListResponse(product, null));
     }
     
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductListResponse> getProductsByCampaign(Integer campaignId, Pageable pageable, Integer userId) {
+        // Lấy tất cả promotions thuộc campaign này
+        List<Promotion> promotions = promotionRepository.findByCampaignId(campaignId);
+
+        if (promotions.isEmpty()) {
+            // Trả về trang rỗng nếu không có promotion nào
+            return Page.empty(pageable);
+        }
+
+        // Lấy danh sách productVariationIds từ promotions
+        List<Integer> variationIds = promotions.stream()
+                .map(Promotion::getProductVariationId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Lấy danh sách productIds từ variations
+        List<Integer> productIds = productVariationRepository.findAllById(variationIds)
+                .stream()
+                .map(ProductVariation::getProductId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (productIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        // Lấy danh sách products với phân trang
+        Page<Product> productsPage = productRepository.findByIdInAndDeletedAtIsNull(productIds, pageable);
+
+        // Map to response
+        return productsPage.map(product -> convertToListResponse(product, userId));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Optional<ProductDetailResponse> getProductDetailById(Integer id, Integer userId) {
@@ -388,13 +423,7 @@ public class ProductServiceImpl implements ProductService {
         }
         
         // Calculate available quantity (stock - reserved)
-        Integer availableQuantity = 0;
-        if (variation.getStockQuantity() != null) {
-            availableQuantity = variation.getStockQuantity();
-            if (variation.getReservedQuantity() != null) {
-                availableQuantity -= variation.getReservedQuantity();
-            }
-        }
+        Integer availableQuantity = variation.getAvailableQuantity();
         
         return ProductDetailResponse.VariationDto.builder()
                 .id(variation.getId())
@@ -445,35 +474,20 @@ public class ProductServiceImpl implements ProductService {
     // Helper method to build Sort object
     private Sort buildSort(String sortBy, String sortDirection) {
         // Map sortBy field names
-        String field;
-        switch (sortBy != null ? sortBy.toLowerCase() : "id") {
-            case "price":
-                field = "displaySalePrice";
-                break;
-            case "rating":
-                field = "averageRating";
-                break;
-            case "reviewcount":
-            case "review_count":
-                field = "totalRatings";
-                break;
-            case "createdat":
-            case "created_at":
-            case "date":
-                field = "createdAt";
-                break;
-            case "name":
-                field = "name";
-                break;
-            default:
-                field = "id";
-                break;
-        }
-        
+        String field = switch (sortBy != null ? sortBy.toLowerCase() : "id") {
+            case "price" -> "displaySalePrice";
+            case "rating" -> "averageRating";
+            case "reviewcount", "review_count" -> "totalRatings";
+            case "createdat", "created_at", "date" -> "createdAt";
+            case "name" -> "name";
+            default -> "id";
+        };
+
         Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) 
-                ? Sort.Direction.DESC 
+                ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
         
         return Sort.by(direction, field);
     }
 }
+

@@ -126,9 +126,8 @@ public class CampaignServiceImpl implements CampaignService {
     public List<CampaignResponse> getActiveCampaigns() {
         log.info("Retrieving active campaigns");
         
-        LocalDateTime now = LocalDateTime.now();
         return campaignRepository.findAll().stream()
-                .filter(campaign -> campaign.isActive())
+                .filter(Campaign::isActive)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -139,7 +138,7 @@ public class CampaignServiceImpl implements CampaignService {
         log.info("Retrieving scheduled campaigns");
         
         return campaignRepository.findAll().stream()
-                .filter(campaign -> campaign.isScheduled())
+                .filter(Campaign::isScheduled)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -150,7 +149,7 @@ public class CampaignServiceImpl implements CampaignService {
         log.info("Retrieving expired campaigns");
         
         return campaignRepository.findAll().stream()
-                .filter(campaign -> campaign.isExpired())
+                .filter(Campaign::isExpired)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -195,12 +194,6 @@ public class CampaignServiceImpl implements CampaignService {
                 .imageID(campaign.getImageID())
                 .startDate(campaign.getStartDate())
                 .endDate(campaign.getEndDate())
-                .createdAt(campaign.getCreatedAt())
-                .updatedAt(campaign.getUpdatedAt())
-                .status(campaign.getStatus())
-                .isActive(campaign.isActive())
-                .isScheduled(campaign.isScheduled())
-                .isExpired(campaign.isExpired())
                 .promotionCount(campaign.getPromotions() != null ? campaign.getPromotions().size() : 0)
                 .build();
     }

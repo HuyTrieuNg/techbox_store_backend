@@ -1,6 +1,7 @@
 package vn.techbox.techbox_store.product.specification;
 
 import jakarta.persistence.criteria.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import vn.techbox.techbox_store.product.dto.ProductFilterRequest;
 import vn.techbox.techbox_store.product.model.Product;
@@ -12,6 +13,7 @@ import java.util.List;
 /**
  * Specification for dynamic product filtering
  */
+@Slf4j
 public class ProductSpecification {
     
     public static Specification<Product> filterProducts(ProductFilterRequest filter) {
@@ -89,6 +91,7 @@ public class ProductSpecification {
                             predicates.add(criteriaBuilder.exists(attributeSubquery));
                         } catch (NumberFormatException e) {
                             // Skip invalid attribute filter
+                            log.warn("Invalid attribute filter format: {}", attr);
                         }
                     }
                 }

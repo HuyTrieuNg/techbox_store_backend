@@ -20,6 +20,9 @@ public interface ProductService {
     // Admin: Xem chỉ sản phẩm đã xóa mềm với phân trang
     Page<ProductListResponse> getDeletedProductsForAdmin(Pageable pageable);
     
+    // Lấy danh sách sản phẩm theo campaign
+    Page<ProductListResponse> getProductsByCampaign(Integer campaignId, Pageable pageable, Integer userId);
+
     ProductResponse createProduct(ProductCreateRequest request);
     
     ProductResponse updateProduct(Integer id, ProductUpdateRequest request);

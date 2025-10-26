@@ -47,7 +47,7 @@ public class ProductVariation {
 
     @Column(name = "warranty_months")
     private Integer warrantyMonths;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -98,7 +98,8 @@ public class ProductVariation {
     public Integer getAvailableQuantity() {
         int stock = (stockQuantity != null ? stockQuantity : 0);
         int reserved = (reservedQuantity != null ? reservedQuantity : 0);
-        return stock - reserved;
+        int available = stock - reserved;
+        return available > 0 ? available : 0;
     }
     
     // Helper method to decrease quantity
