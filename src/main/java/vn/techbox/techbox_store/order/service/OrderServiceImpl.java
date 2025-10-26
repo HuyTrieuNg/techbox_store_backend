@@ -113,7 +113,7 @@ public class OrderServiceImpl implements OrderService {
             paymentRequest.setOrderId(savedOrder.getId());
             paymentRequest.setPaymentMethod(request.getPaymentMethod());
             paymentRequest.setAmount(savedPaymentInfo.getFinalAmount());
-            paymentRequest.setReturnUrl(null);
+            paymentRequest.setReturnUrl(request.getReturnUrl());
             paymentRequest.setCancelUrl(null);
 
             var processor = paymentServiceFactory.getPaymentService(request.getPaymentMethod());

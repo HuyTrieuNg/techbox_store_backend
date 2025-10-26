@@ -226,16 +226,16 @@ public class VoucherServiceImpl implements VoucherService {
         }
         
         // Check if user has already used this voucher
-    Optional<UserVoucher> existingUsage = userVoucherRepository
-        .findByUserIdAndVoucherCode(request.getUserId(), voucher.getCode());
-        if (existingUsage.isPresent()) {
-            throw new RuntimeException("You have already used this voucher");
-        }
+        Optional<UserVoucher> existingUsage = userVoucherRepository
+            .findByUserIdAndVoucherCode(request.getUserId(), voucher.getCode());
+            if (existingUsage.isPresent()) {
+                throw new RuntimeException("You have already used this voucher");
+            }
         
         // Create voucher usage record
         UserVoucher userVoucher = UserVoucher.builder()
                 .userId(request.getUserId())
-        .voucherCode(voucher.getCode())
+                .voucherCode(voucher.getCode())
                 .orderId(request.getOrderId())
                 .usedAt(LocalDateTime.now())
                 .build();

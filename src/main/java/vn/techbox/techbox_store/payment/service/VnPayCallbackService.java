@@ -29,12 +29,10 @@ public class VnPayCallbackService {
     @Value("${vnpay.hash-secret:}")
     private String hashSecret;
 
-    // Only keep IPN handler, return exactly {RspCode, Message}
     public Map<String, String> handleIpn(Map<String, String> originalParams) {
         Map<String, String> params = new HashMap<>(originalParams);
         log.info("VNPay IPN received params: {}", params);
 
-        // 1) Verify signature first
         String vnpSecureHash = params.remove("vnp_SecureHash");
         params.remove("vnp_SecureHashType");
         String canonical = VnPayUtils.buildCanonicalQuery(params);
@@ -43,13 +41,11 @@ public class VnPayCallbackService {
             return Map.of("RspCode", "97", "Message", "Invalid Signature");
         }
 
-        // 2) Extract required fields
         String txnRef = params.get("vnp_TxnRef");
         String transactionId = txnRef != null ? "VNPAY_" + txnRef : null;
         String respCode = params.get("vnp_ResponseCode");
         String amountStr = params.get("vnp_Amount");
 
-        // 3) Validate transaction existence
         if (transactionId == null) {
             return Map.of("RspCode", "01", "Message", "Order not found");
         }
@@ -64,7 +60,6 @@ public class VnPayCallbackService {
         }
         Order order = optOrder.get();
 
-        // 4) Amount check (before confirmed check)
         try {
             if (amountStr != null) {
                 BigDecimal vnpAmount = new BigDecimal(amountStr).movePointLeft(2); // VNPAY amount is in cents
@@ -77,13 +72,10 @@ public class VnPayCallbackService {
             return Map.of("RspCode", "04", "Message", "Invalid amount");
         }
 
-        // 5) Already confirmed
         if ("PAID".equalsIgnoreCase(payment.getPaymentStatus())) {
             return Map.of("RspCode", "02", "Message", "Order already confirmed");
         }
 
-        // 6) Update DB based on vnp_ResponseCode, then always return 00
-        // Update payment details if VNPAY payment
         if (payment instanceof VnpayPayment vnp) {
             vnp.setVnpTxnRef(txnRef);
             vnp.setVnpResponseCode(respCode);
@@ -101,12 +93,10 @@ public class VnPayCallbackService {
         }
 
         if ("00".equals(respCode)) {
-            // Success
             payment.setPaymentStatus("PAID");
             payment.setPaymentCompletedAt(LocalDateTime.now());
             order.setStatus(OrderStatus.CONFIRMED);
         } else {
-            // Failure
             payment.setPaymentStatus("FAILED");
             payment.setPaymentFailedAt(LocalDateTime.now());
             payment.setPaymentFailureReason("VNPay response: " + respCode);

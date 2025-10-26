@@ -1,49 +1,138 @@
 package vn.techbox.techbox_store.order.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import vn.techbox.techbox_store.order.dto.DiscountCalculationRequest;
+import vn.techbox.techbox_store.order.dto.DiscountCalculationResponse;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderItem;
+import vn.techbox.techbox_store.order.util.OrderCalculationUtil;
 import vn.techbox.techbox_store.payment.model.Payment;
+import vn.techbox.techbox_store.product.model.ProductVariation;
+import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderCalculationService {
 
+    private final OrderCalculationUtil orderUtil;
+    private final ProductVariationRepository productVariationRepository;
+
+    public DiscountCalculationResponse calculateDiscounts(DiscountCalculationRequest request) {
+        log.info("Calculating discounts for {} items with voucher: {}",
+                request.getOrderItems().size(), request.getVoucherCode());
+
+        List<DiscountCalculationResponse.ItemDiscountDetail> itemDiscounts = new ArrayList<>();
+        BigDecimal totalOriginalAmount = BigDecimal.ZERO;
+        BigDecimal totalPromotionDiscount = BigDecimal.ZERO;
+
+        for (DiscountCalculationRequest.OrderItemRequest item : request.getOrderItems()) {
+            totalOriginalAmount = totalOriginalAmount.add(
+                item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
+            );
+        }
+
+        // Tính promotion discount cho từng item
+        for (DiscountCalculationRequest.OrderItemRequest item : request.getOrderItems()) {
+            ProductVariation productVariation = productVariationRepository.findById(item.getProductVariationId())
+                    .orElse(null);
+
+            BigDecimal originalAmount = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
+                    item.getProductVariationId(),
+                    item.getQuantity(),
+                    totalOriginalAmount
+            );
+
+            totalPromotionDiscount = totalPromotionDiscount.add(promotionDiscount);
+
+            String promotionName = orderUtil.findAppliedPromotionName(
+                    item.getProductVariationId(), item.getQuantity(), totalOriginalAmount);
+
+            itemDiscounts.add(DiscountCalculationResponse.ItemDiscountDetail.builder()
+                    .productVariationId(item.getProductVariationId())
+                    .productName(productVariation != null ? productVariation.getProduct().getName() : "Unknown")
+                    .quantity(item.getQuantity())
+                    .unitPrice(item.getUnitPrice())
+                    .originalAmount(originalAmount)
+                    .promotionDiscount(promotionDiscount)
+                    .finalAmount(originalAmount.subtract(promotionDiscount))
+                    .promotionName(promotionName)
+                    .build());
+        }
+
+        // Tính tổng tiền sau promotion discount
+        BigDecimal totalAfterPromotion = totalOriginalAmount.subtract(totalPromotionDiscount);
+
+        // Tính voucher discount
+        DiscountCalculationResponse.VoucherDiscountDetail voucherDetails =
+                calculateVoucherDiscountDetail(totalAfterPromotion, request.getVoucherCode());
+
+        BigDecimal voucherDiscount = voucherDetails.getDiscountAmount();
+        BigDecimal totalDiscount = totalPromotionDiscount.add(voucherDiscount);
+
+        // Tính phí ship và thuế
+        BigDecimal shippingFee = orderUtil.calculateShippingFee();
+        BigDecimal taxAmount = orderUtil.calculateTaxAmount(totalAfterPromotion.subtract(voucherDiscount));
+
+        // Tính tổng cuối cùng
+        BigDecimal finalAmount = totalAfterPromotion
+                .subtract(voucherDiscount)
+                .add(shippingFee)
+                .add(taxAmount);
+
+        return DiscountCalculationResponse.builder()
+                .totalAmount(totalOriginalAmount)
+                .promotionDiscount(totalPromotionDiscount)
+                .voucherDiscount(voucherDiscount)
+                .totalDiscount(totalDiscount)
+                .finalAmount(finalAmount)
+                .shippingFee(shippingFee)
+                .taxAmount(taxAmount)
+                .itemDiscounts(itemDiscounts)
+                .voucherDetails(voucherDetails)
+                .build();
+    }
+
     public void calculateOrderAmounts(Order order, Payment paymentInfo, List<OrderItem> orderItems, String voucherCode) {
-        // Tính tổng tiền từ các order items
+        BigDecimal totalAmountBeforePromotion = orderItems.stream()
+                .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Tính tổng promotion discount và cập nhật lại total price cho từng item
+        calculatePromotionDiscounts(orderItems, totalAmountBeforePromotion);
         BigDecimal totalAmount = orderItems.stream()
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        paymentInfo.setTotalAmount(totalAmount);
+        paymentInfo.setTotalAmount(totalAmountBeforePromotion);
 
         // Tính voucher discount
-        BigDecimal voucherDiscount = calculateVoucherDiscount(totalAmount, voucherCode);
+        BigDecimal voucherDiscount = orderUtil.calculateVoucherDiscount(totalAmount, voucherCode);
         paymentInfo.setVoucherDiscount(voucherDiscount);
 
-        // Tính discount tổng
-        BigDecimal discountAmount = voucherDiscount.add(
-            orderItems.stream()
+        // Tính tổng discount (promotion + voucher)
+        BigDecimal promotionDiscount = orderItems.stream()
                 .map(OrderItem::getDiscountAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-        );
-        paymentInfo.setDiscountAmount(discountAmount);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Tính phí ship
-        BigDecimal shippingFee = calculateShippingFee(order);
+        BigDecimal totalDiscount = promotionDiscount.add(voucherDiscount);
+        paymentInfo.setDiscountAmount(totalDiscount);
+
+        BigDecimal shippingFee = orderUtil.calculateShippingFee(order);
         paymentInfo.setShippingFee(shippingFee);
-
-        // Tính thuế
-        BigDecimal taxAmount = calculateTaxAmount(totalAmount.subtract(discountAmount));
+        BigDecimal taxAmount = orderUtil.calculateTaxAmount(totalAmount.subtract(voucherDiscount));
         paymentInfo.setTaxAmount(taxAmount);
 
         // Tính tổng cuối cùng
         BigDecimal finalAmount = totalAmount
-                .subtract(discountAmount)
+                .subtract(voucherDiscount)
                 .add(shippingFee)
                 .add(taxAmount);
         paymentInfo.setFinalAmount(finalAmount);
@@ -55,30 +144,27 @@ public class OrderCalculationService {
         }
     }
 
-    private BigDecimal calculateVoucherDiscount(BigDecimal totalAmount, String voucherCode) {
-        if (voucherCode == null || voucherCode.trim().isEmpty()) {
-            return BigDecimal.ZERO;
+    public void calculatePromotionDiscounts(List<OrderItem> orderItems, BigDecimal orderAmount) {
+        log.info("Calculating promotion discounts for {} items", orderItems.size());
+
+        for (OrderItem item : orderItems) {
+            BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
+                    item.getProductVariation().getId(),
+                    item.getQuantity(),
+                    orderAmount
+            );
+            item.setDiscountAmount(promotionDiscount);
+
+            // Cập nhật lại total price sau khi áp dụng discount
+            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal discountedPrice = itemTotal.subtract(promotionDiscount);
+            item.setTotalPrice(discountedPrice);
+
+            if (promotionDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                log.info("Applied promotion discount {} for product variation {}",
+                        promotionDiscount, item.getProductVariation().getId());
+            }
         }
-
-        // TODO: Implement voucher logic
-        // Tạm thời return 0
-        return BigDecimal.TEN;
-    }
-
-    private BigDecimal calculateShippingFee(Order order) {
-        // TODO: Implement shipping fee calculation based on:
-        // - Địa chỉ giao hàng
-        // - Trọng lượng sản phẩm
-        // - Phương thức vận chuyển
-
-        // Tạm thời fix phí ship 30k
-        return new BigDecimal("30000");
-    }
-
-    private BigDecimal calculateTaxAmount(BigDecimal taxableAmount) {
-        // TODO: Implement tax calculation if needed
-        // Vietnam VAT is 10% for most products
-        return BigDecimal.ZERO;
     }
 
     public BigDecimal calculateItemTotal(OrderItem item) {
@@ -86,4 +172,22 @@ public class OrderCalculationService {
                 .multiply(BigDecimal.valueOf(item.getQuantity()))
                 .subtract(item.getDiscountAmount());
     }
+
+    private DiscountCalculationResponse.VoucherDiscountDetail calculateVoucherDiscountDetail(
+            BigDecimal totalAmount, String voucherCode) {
+
+        OrderCalculationUtil.VoucherValidationResult validationResult =
+                orderUtil.validateVoucher(totalAmount, voucherCode);
+
+        return DiscountCalculationResponse.VoucherDiscountDetail.builder()
+                .voucherCode(validationResult.getVoucherCode())
+                .voucherType(validationResult.getVoucherType())
+                .discountAmount(validationResult.getDiscountAmount())
+                .minOrderAmount(validationResult.getMinOrderAmount())
+                .discountDescription(validationResult.getDiscountDescription())
+                .isValid(validationResult.isValid())
+                .validationMessage(validationResult.getValidationMessage())
+                .build();
+    }
 }
+

@@ -29,9 +29,6 @@ public class VnPayPaymentService implements PaymentService {
     @Value("${vnpay.return-url:}")
     private String defaultReturnUrl;
 
-    @Value("${vnpay.ipn-url:}")
-    private String ipnUrl;
-
     @Override
     public Payment initiatePayment(Order order) {
         VnpayPayment payment = VnpayPayment.builder().build();
@@ -59,7 +56,6 @@ public class VnPayPaymentService implements PaymentService {
         vnpParams.put("vnp_OrderType", "other");
         vnpParams.put("vnp_Locale", "vn");
         vnpParams.put("vnp_ReturnUrl", returnUrl);
-//        vnpParams.put("vnp_IpnUrl", ipnUrl);
         vnpParams.put("vnp_IpAddr", "0.0.0.0");
         vnpParams.put("vnp_CreateDate", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
 

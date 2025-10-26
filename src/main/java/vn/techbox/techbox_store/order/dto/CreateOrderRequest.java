@@ -28,6 +28,8 @@ public class CreateOrderRequest {
 
     private String voucherCode;
 
+    private String returnUrl;
+
     @Data
     public static class OrderItemRequest {
         @NotNull(message = "Product variation ID is required")
