@@ -26,6 +26,14 @@ public interface UserRepository extends JpaRepository<User, Integer>, PagingAndS
             "AND u.account.deletedAt IS NULL")
     Optional<User> findByAccountEmail(@Param("email") String email);
 
+    @Query("SELECT u FROM User u " +
+            "LEFT JOIN FETCH u.account " +
+            "LEFT JOIN FETCH u.addresses " +
+            "WHERE u.account.email = :email " +
+            "AND u.deletedAt IS NULL " +
+            "AND u.account.deletedAt IS NULL")
+    Optional<User> findByAccountEmailWithAddresses(@Param("email") String email);
+
     @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
     boolean existsByIdAndNotDeleted(@Param("id") Integer id);
 
@@ -49,7 +57,6 @@ public interface UserRepository extends JpaRepository<User, Integer>, PagingAndS
             "LEFT JOIN FETCH u.account " +
             "LEFT JOIN FETCH u.roles r " +
             "LEFT JOIN FETCH r.permissions " +
-            "LEFT JOIN FETCH u.addresses " +
             "WHERE u.account.email = :email " +
             "AND u.deletedAt IS NULL " +
             "AND u.account.deletedAt IS NULL " +

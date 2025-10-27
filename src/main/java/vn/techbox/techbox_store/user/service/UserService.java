@@ -14,7 +14,8 @@ public interface UserService {
     List<User> getAllUsers();
     Page<User> getAllUsersWithPagination(Pageable pageable);
     Optional<User> getUserById(Integer id);
-    Optional<User> getUserByEmail(String email); // renamed
+    Optional<User> getUserByEmail(String email);
+    Optional<User> getUserByEmailWithAddresses(String email);
     User updateUser(Integer id, UserUpdateRequest req);
     void deleteUser(Integer id);
     void restoreUser(Integer id);

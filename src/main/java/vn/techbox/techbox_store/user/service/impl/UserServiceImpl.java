@@ -144,6 +144,10 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByAccountEmail(email);
     }
 
+    public Optional<User> getUserByEmailWithAddresses(String email) {
+        return userRepository.findByAccountEmailWithAddresses(email);
+    }
+
     public boolean isCurrentUser(UserPrincipal userPrincipal, Integer userId) {
         return userPrincipal.user().getId().equals(userId);
     }

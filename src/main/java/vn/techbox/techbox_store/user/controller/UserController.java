@@ -107,8 +107,11 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> getCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        User currentUser = userPrincipal.user();
-        return ResponseEntity.ok(UserResponse.from(currentUser));
+        Optional<User> currentUser = userService.getUserByEmailWithAddresses(userPrincipal.getUsername());
+        return currentUser
+                .map(UserResponse::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/profile")
