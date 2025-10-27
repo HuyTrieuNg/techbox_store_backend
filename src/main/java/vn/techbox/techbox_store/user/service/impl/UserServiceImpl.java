@@ -149,7 +149,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public boolean isCurrentUser(UserPrincipal userPrincipal, Integer userId) {
-        return userPrincipal.user().getId().equals(userId);
+        return userPrincipal.getId().equals(userId);
     }
 
     @Transactional

@@ -12,14 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.order.dto.*;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 import vn.techbox.techbox_store.order.service.OrderService;
-import vn.techbox.techbox_store.user.repository.UserRepository;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -30,17 +28,16 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
-    private final UserRepository userRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     @Operation(summary = "Create new order", description = "Create a new order with items and shipping information")
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
         try {
-            Integer userId = getUserId(userDetails);
+            Integer userId = userPrincipal.getId();
             log.info("Creating order for user: {}", userId);
 
             OrderResponse response = orderService.createOrder(request, userId);
@@ -57,9 +54,9 @@ public class OrderController {
     @Operation(summary = "Get order by ID", description = "Get order details by order ID")
     public ResponseEntity<OrderResponse> getOrderById(
             @PathVariable Long orderId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        Integer userId = getUserId(userDetails);
+        Integer userId = userPrincipal.getId();
         OrderResponse response = orderService.getOrderById(orderId, userId);
 
         return ResponseEntity.ok(response);
@@ -70,9 +67,9 @@ public class OrderController {
     @Operation(summary = "Get order by code", description = "Get order details by order code")
     public ResponseEntity<OrderResponse> getOrderByCode(
             @PathVariable String orderCode,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        Integer userId = getUserId(userDetails);
+        Integer userId = userPrincipal.getId();
         OrderResponse response = orderService.getOrderByCode(orderCode, userId);
 
         return ResponseEntity.ok(response);
@@ -85,9 +82,9 @@ public class OrderController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) OrderStatus status,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        Integer userId = getUserId(userDetails);
+        Integer userId = userPrincipal.getId();
         Pageable pageable = PageRequest.of(page, size);
         Page<OrderResponse> orders;
 
@@ -105,9 +102,9 @@ public class OrderController {
     @Operation(summary = "Cancel order", description = "Cancel an order by user")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable Long orderId,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        Integer userId = getUserId(userDetails);
+        Integer userId = userPrincipal.getId();
         log.info("Cancelling order {} by user: {}", orderId, userId);
 
         OrderResponse response = orderService.cancelOrder(orderId, userId);
@@ -129,23 +126,5 @@ public class OrderController {
         OrderResponse response = orderService.updateOrderStatus(orderId, status);
 
         return ResponseEntity.ok(response);
-    }
-
-    private Integer getUserId(UserDetails userDetails) {
-        try {
-            log.debug("Retrieving user ID for: {}", userDetails.getUsername());
-            return userRepository.findByAccountEmail(userDetails.getUsername())
-                    .map(user -> {
-                        log.debug("Found user ID: {} for email: {}", user.getId(), userDetails.getUsername());
-                        return user.getId();
-                    })
-                    .orElseThrow(() -> {
-                        log.error("User not found for email: {}", userDetails.getUsername());
-                        return new RuntimeException("User not found with email: " + userDetails.getUsername());
-                    });
-        } catch (Exception e) {
-            log.error("Error retrieving user ID for email {}: {}", userDetails.getUsername(), e.getMessage());
-            throw e;
-        }
     }
 }

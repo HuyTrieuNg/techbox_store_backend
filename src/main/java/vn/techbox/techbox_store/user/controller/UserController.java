@@ -116,9 +116,9 @@ public class UserController {
 
     @PatchMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> updateCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody UserUpdateRequest req) {
-        User currentUser = userPrincipal.user();
-        User updated = userService.updateUser(currentUser.getId(), req);
+    public ResponseEntity<UserResponse> updateCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                 @RequestBody UserUpdateRequest req) {
+        User updated = userService.updateUser(userPrincipal.getId(), req);
         return ResponseEntity.ok(UserResponse.from(updated));
     }
 
@@ -136,15 +136,13 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         Map<String, Object> response = new HashMap<>();
 
-        User currentUser = userPrincipal.user();
-
         // Lấy thông tin từ UserPrincipal
         response.put("username", userPrincipal.getUsername());
         response.put("authenticated", true);
-        response.put("userId", currentUser.getId());
-        response.put("userEmail", currentUser.getAccount().getEmail());
-        response.put("firstName", currentUser.getFirstName());
-        response.put("lastName", currentUser.getLastName());
+        response.put("userId", userPrincipal.getId());
+        response.put("userEmail", userPrincipal.email());
+        response.put("firstName", userPrincipal.firstName());
+        response.put("lastName", userPrincipal.lastName());
 
         // Lấy tất cả authorities từ UserPrincipal
         Set<String> authorities = userPrincipal.getAuthorities().stream()
@@ -176,11 +174,9 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> debugSecurityContext(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         Map<String, Object> debug = new HashMap<>();
 
-        User currentUser = userPrincipal.user();
-
         debug.put("principal", "UserPrincipal");
         debug.put("username", userPrincipal.getUsername());
-        debug.put("userId", currentUser.getId());
+        debug.put("userId", userPrincipal.getId());
         debug.put("authenticated", userPrincipal.isEnabled());
         debug.put("accountNonLocked", userPrincipal.isAccountNonLocked());
         debug.put("enabled", userPrincipal.isEnabled());

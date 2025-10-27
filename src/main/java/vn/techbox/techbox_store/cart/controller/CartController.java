@@ -26,7 +26,7 @@ public class CartController {
     @GetMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CartResponse> getUserCart(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         log.info("Getting cart for user: {}", userId);
 
         CartResponse cart = cartService.getUserCart(userId);
@@ -39,7 +39,7 @@ public class CartController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody AddToCartRequest request) {
 
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         log.info("Adding product {} to cart for user {}",
                 request.getProductVariationId(), userId);
 
@@ -54,7 +54,7 @@ public class CartController {
             @PathVariable Integer productVariationId,
             @Valid @RequestBody UpdateCartItemRequest request) {
 
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         log.info("Updating cart item for user {}, product {}, quantity {}",
                 userId, productVariationId, request.getQuantity());
 
@@ -68,7 +68,7 @@ public class CartController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable Integer productVariationId) {
 
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         log.info("Removing product {} from cart for user {}", productVariationId, userId);
 
         CartResponse cart = cartService.removeFromCart(userId, productVariationId);
@@ -78,7 +78,7 @@ public class CartController {
     @DeleteMapping("/clear")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Void> clearCart(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         log.info("Clearing cart for user: {}", userId);
 
         cartService.clearCart(userId);
@@ -88,7 +88,7 @@ public class CartController {
     @GetMapping("/count")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<CartCountResponse> getCartItemCount(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        Integer userId = userPrincipal.user().getId();
+        Integer userId = userPrincipal.getId();
         CartResponse cart = cartService.getUserCart(userId);
 
         CartCountResponse response = CartCountResponse.builder()
