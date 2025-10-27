@@ -19,6 +19,11 @@ spring:
         jdbc:
           time_zone: UTC
         default_schema: public
+  jackson:
+    time-zone: UTC
+    date-format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    serialization:
+      write-dates-as-timestamps: false
   security:
     user:
       name: admin

@@ -10,8 +10,7 @@ import java.util.TimeZone;
 public class TechboxStoreApplication {
 
 	public static void main(String[] args) {
-		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-		
+		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 		SpringApplication.run(TechboxStoreApplication.class, args);
 	}
 
