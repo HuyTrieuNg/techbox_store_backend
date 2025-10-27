@@ -26,61 +26,48 @@ public class OrderCalculationUtil {
     private final VoucherRepository voucherRepository;
     private final ProductVariationRepository productVariationRepository;
 
-    public BigDecimal calculatePromotionDiscount(Integer productVariationId, Integer quantity, BigDecimal orderAmount) {
+    public BigDecimal calculatePromotionDiscount(Integer productVariationId, Integer quantity) {
         try {
             List<Promotion> activePromotions = promotionRepository
                     .findActivePromotionsByProductVariationId(productVariationId, LocalDateTime.now());
 
+            if (activePromotions.isEmpty()) {
+                log.debug("No active promotions found for product variation {}", productVariationId);
+                return BigDecimal.ZERO;
+            }
+
+            BigDecimal productPrice = getProductVariationPrice(productVariationId);
+            if (productPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                log.warn("Invalid product price {} for product variation {}", productPrice, productVariationId);
+                return BigDecimal.ZERO;
+            }
+
             BigDecimal maxDiscount = BigDecimal.ZERO;
+            Promotion bestPromotion = null;
 
             for (Promotion promotion : activePromotions) {
-                if (promotion.getCampaign() != null && promotion.getCampaign().isActive()) {
-                    BigDecimal productPrice = getProductVariationPrice(productVariationId);
-                    BigDecimal discount = promotion.calculateDiscount(productPrice, quantity, orderAmount);
+                if (promotion.getCampaign() != null && promotion.getCampaign().isActive() && promotion.isValid()) {
+                    BigDecimal discount = promotion.calculateDiscount(productPrice, quantity);
 
                     if (discount.compareTo(maxDiscount) > 0) {
                         maxDiscount = discount;
-                        log.debug("Found better promotion discount {} for product {}",
-                                discount, productVariationId);
+                        bestPromotion = promotion;
+                        log.debug("Found better promotion discount {} for product {} from campaign {}",
+                                discount, productVariationId, promotion.getCampaign().getName());
                     }
                 }
+            }
+
+            if (bestPromotion != null) {
+                log.info("Applied best promotion with discount {} for product variation {}", maxDiscount, productVariationId);
             }
 
             return maxDiscount;
 
         } catch (Exception e) {
             log.error("Error calculating promotion discount for product variation {}: {}",
-                    productVariationId, e.getMessage());
+                    productVariationId, e.getMessage(), e);
             return BigDecimal.ZERO;
-        }
-    }
-
-    public String findAppliedPromotionName(Integer productVariationId, Integer quantity, BigDecimal orderAmount) {
-        try {
-            List<Promotion> activePromotions = promotionRepository
-                    .findActivePromotionsByProductVariationId(productVariationId, LocalDateTime.now());
-
-            BigDecimal maxDiscount = BigDecimal.ZERO;
-            String promotionName = null;
-
-            for (Promotion promotion : activePromotions) {
-                if (promotion.getCampaign() != null && promotion.getCampaign().isActive()) {
-                    BigDecimal productPrice = getProductVariationPrice(productVariationId);
-                    BigDecimal discount = promotion.calculateDiscount(productPrice, quantity, orderAmount);
-
-                    if (discount.compareTo(maxDiscount) > 0) {
-                        maxDiscount = discount;
-                        promotionName = promotion.getRuleName();
-                    }
-                }
-            }
-
-            return promotionName;
-
-        } catch (Exception e) {
-            log.error("Error finding applied promotion name for product variation {}: {}",
-                    productVariationId, e.getMessage());
-            return null;
         }
     }
 

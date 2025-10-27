@@ -46,7 +46,7 @@ public class OrderResponse {
         private String productVariationName;
         private Integer quantity;
         private BigDecimal unitPrice;
-        private BigDecimal totalPrice;
+        private BigDecimal totalAmount;
         private BigDecimal discountAmount;
     }
 }

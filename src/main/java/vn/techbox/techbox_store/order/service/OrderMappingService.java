@@ -62,7 +62,7 @@ public class OrderMappingService {
         response.setProductVariationName(item.getProductVariationName());
         response.setQuantity(item.getQuantity());
         response.setUnitPrice(item.getUnitPrice());
-        response.setTotalPrice(item.getTotalPrice());
+        response.setTotalAmount(item.getTotalPrice());
         response.setDiscountAmount(item.getDiscountAmount());
 
         return response;

@@ -46,14 +46,10 @@ public class OrderCalculationService {
             BigDecimal originalAmount = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
             BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
                     item.getProductVariationId(),
-                    item.getQuantity(),
-                    totalOriginalAmount
+                    item.getQuantity()
             );
 
             totalPromotionDiscount = totalPromotionDiscount.add(promotionDiscount);
-
-            String promotionName = orderUtil.findAppliedPromotionName(
-                    item.getProductVariationId(), item.getQuantity(), totalOriginalAmount);
 
             itemDiscounts.add(DiscountCalculationResponse.ItemDiscountDetail.builder()
                     .productVariationId(item.getProductVariationId())
@@ -63,7 +59,6 @@ public class OrderCalculationService {
                     .originalAmount(originalAmount)
                     .promotionDiscount(promotionDiscount)
                     .finalAmount(originalAmount.subtract(promotionDiscount))
-                    .promotionName(promotionName)
                     .build());
         }
 
@@ -106,7 +101,7 @@ public class OrderCalculationService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Tính tổng promotion discount và cập nhật lại total price cho từng item
-        calculatePromotionDiscounts(orderItems, totalAmountBeforePromotion);
+        calculatePromotionDiscounts(orderItems);
         BigDecimal totalAmount = orderItems.stream()
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -144,14 +139,13 @@ public class OrderCalculationService {
         }
     }
 
-    public void calculatePromotionDiscounts(List<OrderItem> orderItems, BigDecimal orderAmount) {
+    public void calculatePromotionDiscounts(List<OrderItem> orderItems) {
         log.info("Calculating promotion discounts for {} items", orderItems.size());
 
         for (OrderItem item : orderItems) {
             BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
                     item.getProductVariation().getId(),
-                    item.getQuantity(),
-                    orderAmount
+                    item.getQuantity()
             );
             item.setDiscountAmount(promotionDiscount);
 
@@ -190,4 +184,3 @@ public class OrderCalculationService {
                 .build();
     }
 }
-
