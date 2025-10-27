@@ -12,22 +12,23 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ProductResponse {
-    
+
     private Integer id;
     private String name;
     private String description;
     private Integer categoryId;
+    private String categoryName;
     private Integer brandId;
+    private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private Double averageRating;
+    private Integer totalRatings;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
-    
-    // Additional fields for related entities
-    private String categoryName;
-    private String brandName;
-    
+    private Boolean inWishlist;
+
     // Helper method to check if deleted
     public boolean isDeleted() {
         return deletedAt != null;

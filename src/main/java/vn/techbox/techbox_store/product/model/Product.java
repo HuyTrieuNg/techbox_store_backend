@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -38,6 +39,28 @@ public class Product {
     
     @Column(name = "image_public_id")
     private String imagePublicId;
+
+    // Phi chuẩn hóa - thông tin đánh giá
+    @Column(name = "average_rating")
+    @Builder.Default
+    private Double averageRating = 0.0;
+
+    @Column(name = "total_ratings")
+    @Builder.Default
+    private Integer totalRatings = 0;
+
+    // Phi chuẩn hóa - thông tin giá và giảm giá của biến thể có giá thấp nhất
+    @Column(name = "display_original_price", precision = 10, scale = 2)
+    private BigDecimal displayOriginalPrice;
+    
+    @Column(name = "display_sale_price", precision = 10, scale = 2)
+    private BigDecimal displaySalePrice;
+    
+    @Column(name = "discount_type", length = 50)
+    private String discountType; // PERCENTAGE or FIXED
+    
+    @Column(name = "discount_value", precision = 10, scale = 2)
+    private BigDecimal discountValue;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -56,6 +79,8 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", insertable = false, updatable = false)
     private Brand brand;
+
+
     
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ProductVariation> productVariations;

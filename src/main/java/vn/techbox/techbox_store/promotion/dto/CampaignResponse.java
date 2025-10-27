@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
@@ -28,21 +27,6 @@ public class CampaignResponse {
     
     private LocalDateTime endDate;
     
-    private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
-    
-    // Computed fields
-    private String status;
-    
-    private boolean isActive;
-    
-    private boolean isScheduled;
-    
-    private boolean isExpired;
-    
-    // Related data
-    private List<PromotionResponse> promotions;
-    
+
     private Integer promotionCount;
 }

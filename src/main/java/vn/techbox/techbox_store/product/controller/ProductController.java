@@ -1,17 +1,20 @@
 package vn.techbox.techbox_store.product.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
-import vn.techbox.techbox_store.product.dto.ProductCreateRequest;
-import vn.techbox.techbox_store.product.dto.ProductResponse;
-import vn.techbox.techbox_store.product.dto.ProductUpdateRequest;
+import vn.techbox.techbox_store.product.dto.*;
 import vn.techbox.techbox_store.product.service.ProductService;
+import vn.techbox.techbox_store.user.model.User;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -26,29 +29,132 @@ public class ProductController {
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
     
+    /**
+     * Search and filter products with multiple criteria
+     * Supports: name, brand, category, attributes, price range, rating
+     * With sorting and pagination
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<ProductListResponse>> searchAndFilterProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer brandId,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) List<Integer> categoryIds,
+            @RequestParam(required = false) List<String> attributes,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
+
+        Integer userId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            userId = ((User) authentication.getPrincipal()).getId();
+        }
+
+        ProductFilterRequest filterRequest = ProductFilterRequest.builder()
+                .name(name)
+                .brandId(brandId)
+                .categoryId(categoryId)
+                .categoryIds(categoryIds)
+                .attributes(attributes)
+                .minPrice(minPrice)
+                .maxPrice(maxPrice)
+                .minRating(minRating)
+                .sortBy(sortBy)
+                .sortDirection(sortDirection)
+                .page(page)
+                .size(size)
+                .build();
+
+        Page<ProductListResponse> products = productService.filterProducts(filterRequest, userId);
+        return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Public: Get all active products with pagination (no authentication required)
+     */
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts(
-            @RequestParam(defaultValue = "false") boolean includeDeleted) {
-        List<ProductResponse> products = includeDeleted 
-                ? productService.getAllProducts() 
-                : productService.getAllActiveProducts();
+    public ResponseEntity<Page<ProductListResponse>> getAllProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<ProductListResponse> products = productService.getAllProducts(pageable);
         return ResponseEntity.ok(products);
     }
     
-    @GetMapping("/active")
-    public ResponseEntity<List<ProductResponse>> getAllActiveProducts() {
-        List<ProductResponse> products = productService.getAllActiveProducts();
+    /**
+     * Public: Get products by campaign ID (no authentication required)
+     * Returns products that have promotions in the specified campaign
+     */
+    @GetMapping("/campaign/{campaignId}")
+    public ResponseEntity<Page<ProductListResponse>> getProductsByCampaign(
+            @PathVariable Integer campaignId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            Authentication authentication) {
+
+        Integer userId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            userId = ((User) authentication.getPrincipal()).getId();
+        }
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<ProductListResponse> products = productService.getProductsByCampaign(campaignId, pageable, userId);
         return ResponseEntity.ok(products);
     }
-    
+
+    /**
+     * Admin: Get only soft-deleted products with pagination
+     */
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @GetMapping("/admin/deleted")
+    public ResponseEntity<Page<ProductListResponse>> getDeletedProductsForAdmin(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "deletedAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<ProductListResponse> products = productService.getDeletedProductsForAdmin(pageable);
+        return ResponseEntity.ok(products);
+    }
+
+    /**
+     * Get product detail with full information (variations, attributes, promotions)
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponse> getProductById(
+    public ResponseEntity<ProductDetailResponse> getProductDetail(
             @PathVariable Integer id,
-            @RequestParam(defaultValue = "false") boolean includeDeleted) {
-        return (includeDeleted 
-                ? productService.getProductById(id) 
-                : productService.getActiveProductById(id))
-                .map(ResponseEntity::ok)
+            Authentication authentication) {
+
+        Integer userId = null;
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            userId = ((User) authentication.getPrincipal()).getId();
+        }
+
+        return productService.getProductDetailById(id, userId)
+                .map(product -> ResponseEntity.ok(product))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -167,24 +273,6 @@ public class ProductController {
     public ResponseEntity<Void> restoreProduct(@PathVariable Integer id) {
         productService.restoreProduct(id);
         return ResponseEntity.ok().build();
-    }
-    
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByCategory(@PathVariable Integer categoryId) {
-        List<ProductResponse> products = productService.getProductsByCategory(categoryId);
-        return ResponseEntity.ok(products);
-    }
-    
-    @GetMapping("/brand/{brandId}")
-    public ResponseEntity<List<ProductResponse>> getProductsByBrand(@PathVariable Integer brandId) {
-        List<ProductResponse> products = productService.getProductsByBrand(brandId);
-        return ResponseEntity.ok(products);
-    }
-    
-    @GetMapping("/search")
-    public ResponseEntity<List<ProductResponse>> searchProducts(@RequestParam String keyword) {
-        List<ProductResponse> products = productService.searchProductsByName(keyword);
-        return ResponseEntity.ok(products);
     }
     
     @PreAuthorize("hasAuthority('PRODUCT:READ')")

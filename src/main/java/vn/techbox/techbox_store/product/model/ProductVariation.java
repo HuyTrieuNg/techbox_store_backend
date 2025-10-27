@@ -47,7 +47,7 @@ public class ProductVariation {
 
     @Column(name = "warranty_months")
     private Integer warrantyMonths;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -94,9 +94,12 @@ public class ProductVariation {
         this.deletedAt = null;
     }
     
-    // Helper method to check if in stock
-    public boolean isInStock() {
-        return stockQuantity != null && (stockQuantity - (reservedQuantity != null ? reservedQuantity : 0)) > 0;
+    // Helper method to get available quantity (stock - reserved)
+    public Integer getAvailableQuantity() {
+        int stock = (stockQuantity != null ? stockQuantity : 0);
+        int reserved = (reservedQuantity != null ? reservedQuantity : 0);
+        int available = stock - reserved;
+        return available > 0 ? available : 0;
     }
     
     // Helper method to decrease quantity

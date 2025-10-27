@@ -38,10 +38,8 @@ public class PromotionCalculationResponse {
     @AllArgsConstructor
     public static class AppliedPromotion {
         private Integer promotionId;
-        private String ruleName;
         private String campaignName;
         private String discountType;
         private BigDecimal discountAmount;
-        private String discountDisplay;
     }
 }

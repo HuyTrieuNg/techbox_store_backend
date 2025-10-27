@@ -13,6 +13,7 @@ import java.util.List;
 public interface PromotionRepository extends JpaRepository<Promotion, Integer> {
     List<Promotion> findByCampaignId(Integer campaignId);
     List<Promotion> findByProductVariationId(Integer productVariationId);
+    List<Promotion> findByProductVariationIdIn(List<Integer> productVariationIds);
 
     @Query("SELECT p FROM Promotion p JOIN p.campaign c " +
            "WHERE p.productVariationId = :productVariationId " +
