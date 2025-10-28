@@ -29,7 +29,7 @@ public class PromotionServiceImpl implements PromotionService {
     
     @Override
     public PromotionResponse createPromotion(PromotionCreateRequest request) {
-        log.info("Creating new promotion: {}", request.getRuleName());
+        log.info("Creating new promotion for product variation: {}", request.getProductVariationId());
         
         // Validate campaign exists
         Campaign campaign = campaignRepository.findById(request.getCampaignId())
@@ -43,13 +43,9 @@ public class PromotionServiceImpl implements PromotionService {
         
         Promotion promotion = Promotion.builder()
                 .campaign(campaign)
-                .ruleName(request.getRuleName())
                 .productVariationId(request.getProductVariationId())
                 .discountType(request.getDiscountType())
                 .discountValue(request.getDiscountValue())
-                .minQuantity(request.getMinQuantity())
-                .minOrderAmount(request.getMinOrderAmount())
-                .maxDiscountAmount(request.getMaxDiscountAmount())
                 .build();
         
         Promotion savedPromotion = promotionRepository.save(promotion);
@@ -64,10 +60,6 @@ public class PromotionServiceImpl implements PromotionService {
         
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Promotion not found with ID: " + id));
-        
-        if (request.getRuleName() != null) {
-            promotion.setRuleName(request.getRuleName());
-        }
         
         if (request.getProductVariationId() != null) {
             promotion.setProductVariationId(request.getProductVariationId());
@@ -84,18 +76,6 @@ public class PromotionServiceImpl implements PromotionService {
                 throw new IllegalArgumentException("Percentage discount cannot exceed 100%");
             }
             promotion.setDiscountValue(request.getDiscountValue());
-        }
-        
-        if (request.getMinQuantity() != null) {
-            promotion.setMinQuantity(request.getMinQuantity());
-        }
-        
-        if (request.getMinOrderAmount() != null) {
-            promotion.setMinOrderAmount(request.getMinOrderAmount());
-        }
-        
-        if (request.getMaxDiscountAmount() != null) {
-            promotion.setMaxDiscountAmount(request.getMaxDiscountAmount());
         }
         
         Promotion savedPromotion = promotionRepository.save(promotion);
@@ -162,8 +142,7 @@ public class PromotionServiceImpl implements PromotionService {
         for (Promotion promotion : applicablePromotions) {
             BigDecimal discount = promotion.calculateDiscount(
                     request.getOriginalPrice(), 
-                    request.getQuantity(), 
-                    request.getOrderAmount()
+                    request.getQuantity()
             );
             
             if (discount.compareTo(BigDecimal.ZERO) > 0) {
@@ -171,11 +150,9 @@ public class PromotionServiceImpl implements PromotionService {
                 
                 appliedPromotions.add(PromotionCalculationResponse.AppliedPromotion.builder()
                         .promotionId(promotion.getId())
-                        .ruleName(promotion.getRuleName())
                         .campaignName(promotion.getCampaign().getName())
                         .discountType(promotion.getDiscountType().name())
                         .discountAmount(discount)
-                        .discountDisplay(promotion.getDiscountDisplay())
                         .build());
             }
         }
@@ -213,16 +190,11 @@ public class PromotionServiceImpl implements PromotionService {
                 .id(promotion.getId())
                 .campaignId(promotion.getCampaign().getId())
                 .campaignName(promotion.getCampaign().getName())
-                .ruleName(promotion.getRuleName())
                 .productVariationId(promotion.getProductVariationId())
                 .discountType(promotion.getDiscountType())
                 .discountValue(promotion.getDiscountValue())
-                .minQuantity(promotion.getMinQuantity())
-                .minOrderAmount(promotion.getMinOrderAmount())
-                .maxDiscountAmount(promotion.getMaxDiscountAmount())
                 .createdAt(promotion.getCreatedAt())
                 .updatedAt(promotion.getUpdatedAt())
-                .discountDisplay(promotion.getDiscountDisplay())
                 .isActive(promotion.isActive())
                 .build();
     }

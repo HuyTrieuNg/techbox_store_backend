@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.ProductVariationCreateRequest;
 import vn.techbox.techbox_store.product.dto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.ProductVariationUpdateRequest;
+import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
@@ -65,21 +66,30 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         }
         
         // Verify product exists and is active
-        if (!productRepository.findActiveById(request.getProductId()).isPresent()) {
-            throw new IllegalArgumentException("Active product not found with id: " + request.getProductId());
-        }
+        Product product = productRepository.findActiveById(request.getProductId())
+                .orElseThrow(() -> new IllegalArgumentException("Active product not found with id: " + request.getProductId()));
         
+        // Check if this is the first variation for the product
+        List<ProductVariation> existingVariations = productVariationRepository.findByProductId(request.getProductId());
+        boolean isFirstVariation = existingVariations.isEmpty();
 
-    ProductVariation productVariation = ProductVariation.builder()
-        .variationName(request.getVariationName())
-        .productId(request.getProductId())
-        .price(request.getPrice())
-        .sku(request.getSku())
-        .avgCostPrice(request.getAvgCostPrice())
-        .warrantyMonths(request.getWarrantyMonths())
-        .build();
+        ProductVariation productVariation = ProductVariation.builder()
+            .variationName(request.getVariationName())
+            .productId(request.getProductId())
+            .price(request.getPrice())
+            .sku(request.getSku())
+            .avgCostPrice(request.getAvgCostPrice())
+            .warrantyMonths(request.getWarrantyMonths())
+            .build();
         
         ProductVariation savedVariation = productVariationRepository.save(productVariation);
+        
+        // Update product display price if this is the first variation
+        if (isFirstVariation && request.getPrice() != null) {
+            product.setDisplayOriginalPrice(request.getPrice());
+            // Note: displaySalePrice will be updated by promotion logic
+            productRepository.save(product);
+        }
         
         // Save images if provided
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {

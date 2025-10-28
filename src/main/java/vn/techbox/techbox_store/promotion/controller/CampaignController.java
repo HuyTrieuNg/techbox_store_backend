@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.promotion.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,6 +15,8 @@ import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
 import vn.techbox.techbox_store.promotion.dto.CampaignCreateRequest;
 import vn.techbox.techbox_store.promotion.dto.CampaignResponse;
 import vn.techbox.techbox_store.promotion.dto.CampaignUpdateRequest;
+import vn.techbox.techbox_store.promotion.model.Campaign;
+import vn.techbox.techbox_store.promotion.repository.CampaignRepository;
 import vn.techbox.techbox_store.promotion.service.CampaignService;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class CampaignController {
     
     private final CampaignService campaignService;
     private final CloudinaryService cloudinaryService;
+    private final CampaignRepository campaignRepository;
 
     @PreAuthorize("hasAuthority('CAMPAIGN:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
@@ -134,9 +136,15 @@ public class CampaignController {
     @GetMapping("/{id}")
     public ResponseEntity<CampaignResponse> getCampaignById(@PathVariable Integer id) {
         log.info("REST request to get campaign with ID: {}", id);
-        
+
         try {
             CampaignResponse response = campaignService.getCampaignById(id);
+            Campaign campaign = campaignRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Campaign not found"));
+            // Only return if campaign is active
+            if (!campaign.isActive()) {
+                return ResponseEntity.notFound().build();
+            }
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error("Campaign not found: {}", e.getMessage());
@@ -145,7 +153,7 @@ public class CampaignController {
     }
 
     // ========== Admin APIs ==========
-    
+
     @PreAuthorize("hasAuthority('CAMPAIGN:READ_ALL')")
     @GetMapping
     public ResponseEntity<Page<CampaignResponse>> getAllCampaigns(

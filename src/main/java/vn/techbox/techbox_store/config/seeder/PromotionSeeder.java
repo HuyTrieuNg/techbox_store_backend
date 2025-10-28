@@ -69,13 +69,9 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 0) {
             promotions.add(createPromotion(
                 megaSale,
-                "Giảm 10% iPhone 15 Pro Max",
                 variations.get(0).getId(),
                 PromotionType.PERCENTAGE,
-                new BigDecimal("10.00"),
-                1,
-                BigDecimal.ZERO,
-                new BigDecimal("3000000") // Max giảm 3 triệu
+                new BigDecimal("10.00")
             ));
         }
         
@@ -83,13 +79,9 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 9) {
             promotions.add(createPromotion(
                 megaSale,
-                "Giảm 15% Samsung Galaxy S24 Ultra",
                 variations.get(9).getId(),
                 PromotionType.PERCENTAGE,
-                new BigDecimal("15.00"),
-                1,
-                BigDecimal.ZERO,
-                new BigDecimal("5000000") // Max giảm 5 triệu
+                new BigDecimal("15.00") // Max giảm 5 triệu
             ));
         }
         
@@ -97,13 +89,10 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 16) {
             promotions.add(createPromotion(
                 blackFriday,
-                "Giảm 5 triệu MacBook Pro M3",
+                
                 variations.get(16).getId(),
                 PromotionType.FIXED,
-                new BigDecimal("5000000"),
-                1,
-                new BigDecimal("40000000"), // Đơn tối thiểu 40 triệu
-                null
+                new BigDecimal("5000000")
             ));
         }
         
@@ -111,13 +100,9 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 22) {
             promotions.add(createPromotion(
                 audioWeek,
-                "Giảm 20% AirPods Pro Gen 2",
                 variations.get(22).getId(),
                 PromotionType.PERCENTAGE,
-                new BigDecimal("20.00"),
-                1,
-                BigDecimal.ZERO,
-                new BigDecimal("1500000") // Max giảm 1.5 triệu
+                new BigDecimal("20.00")
             ));
         }
         
@@ -125,13 +110,9 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 24) {
             promotions.add(createPromotion(
                 audioWeek,
-                "Giảm 25% Sony WH-1000XM5",
                 variations.get(24).getId(),
                 PromotionType.PERCENTAGE,
-                new BigDecimal("25.00"),
-                1,
-                BigDecimal.ZERO,
-                new BigDecimal("2000000") // Max giảm 2 triệu
+                new BigDecimal("25.00") // Max giảm 2 triệu
             ));
         }
         
@@ -139,13 +120,9 @@ public class PromotionSeeder implements DataSeeder {
         if (variations.size() > 5) {
             promotions.add(createPromotion(
                 blackFriday,
-                "Mua 2 iPhone giảm 30%",
                 variations.get(5).getId(),
                 PromotionType.PERCENTAGE,
-                new BigDecimal("30.00"),
-                2, // Số lượng tối thiểu: 2
-                BigDecimal.ZERO,
-                new BigDecimal("10000000") // Max giảm 10 triệu
+                new BigDecimal("30.00")
             ));
         }
         
@@ -156,23 +133,16 @@ public class PromotionSeeder implements DataSeeder {
     
     private Promotion createPromotion(
             Campaign campaign,
-            String ruleName,
             Integer productVariationId,
             PromotionType discountType,
-            BigDecimal discountValue,
-            Integer minQuantity,
-            BigDecimal minOrderAmount,
-            BigDecimal maxDiscountAmount) {
+            BigDecimal discountValue
+           ) {
         
         return Promotion.builder()
                 .campaign(campaign)
-                .ruleName(ruleName)
                 .productVariationId(productVariationId)
                 .discountType(discountType)
                 .discountValue(discountValue)
-                .minQuantity(minQuantity)
-                .minOrderAmount(minOrderAmount)
-                .maxDiscountAmount(maxDiscountAmount)
                 .build();
     }
 }

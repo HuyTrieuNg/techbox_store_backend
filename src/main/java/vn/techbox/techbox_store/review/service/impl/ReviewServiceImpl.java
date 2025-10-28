@@ -7,7 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
-import vn.techbox.techbox_store.product.dto.*;
+import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.review.dto.ReviewCreateRequest;
 import vn.techbox.techbox_store.review.dto.ReviewResponse;
 import vn.techbox.techbox_store.review.dto.ReviewSummaryResponse;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("reviewService")
 @RequiredArgsConstructor
 @Transactional
 public class ReviewServiceImpl implements ReviewService {
@@ -32,6 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductService productService;
 
     @Override
     public ReviewResponse createReview(Integer productId, ReviewCreateRequest request, String currentUserEmail) {
@@ -64,6 +65,10 @@ public class ReviewServiceImpl implements ReviewService {
                     .build();
         }
         Review saved = reviewRepository.save(review);
+        
+        // Cập nhật rating cho product
+        productService.updateProductRating(productId);
+        
         return mapToResponse(saved, user);
     }
 
@@ -96,6 +101,10 @@ public class ReviewServiceImpl implements ReviewService {
         }
         review.setUpdatedAt(LocalDateTime.now());
         Review saved = reviewRepository.save(review);
+        
+        // Cập nhật rating cho product
+        productService.updateProductRating(productId);
+        
         return mapToResponse(saved, user);
     }
 
@@ -116,6 +125,9 @@ public class ReviewServiceImpl implements ReviewService {
 
         review.softDelete();
         reviewRepository.save(review);
+        
+        // Cập nhật rating cho product
+        productService.updateProductRating(productId);
     }
 
     @Override

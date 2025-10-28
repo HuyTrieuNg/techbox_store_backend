@@ -1,10 +1,8 @@
 package vn.techbox.techbox_store.user.service;
 
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.user.dto.TokenResponse;
 
-@Service
 public interface AuthService {
     String generateToken(String username);
     String generateRefreshToken(String username);

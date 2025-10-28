@@ -29,7 +29,7 @@ public class CategoryController {
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Integer id) {
         return categoryService.getCategoryById(id)
-                .map(category -> ResponseEntity.ok(category))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     

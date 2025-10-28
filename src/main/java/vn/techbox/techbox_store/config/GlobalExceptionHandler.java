@@ -5,11 +5,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vn.techbox.techbox_store.order.exception.OrderException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +25,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    // ===== SECURITY EXCEPTIONS =====
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAuthorizationDenied(
             AuthorizationDeniedException ex, WebRequest request) {
@@ -51,7 +55,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<Map<String, Object>> handleAuthentication(
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(
             AuthenticationException ex, WebRequest request) {
         logger.warn("Authentication failed: {}", ex.getMessage());
 
@@ -64,51 +68,50 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
 
+    // ===== ORDER EXCEPTIONS =====
+    @ExceptionHandler(OrderException.class)
+    public ResponseEntity<ApiErrorResponse> handleOrderException(OrderException ex) {
+        logger.error("Order exception occurred: {}", ex.getMessage());
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Order Error", ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // ===== VALIDATION EXCEPTIONS =====
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("error", "Validation Failed");
+        response.put("errors", errors);
+
+        logger.warn("Validation failed: {}", errors);
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
-        logger.warn("Validation error: {}", ex.getMessage());
-        ApiErrorResponse error = new ApiErrorResponse(
-            "VALIDATION_ERROR",
-            ex.getMessage(),
-            false
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        logger.error("Illegal argument exception: {}", ex.getMessage());
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Invalid Argument", ex.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(
-            RuntimeException ex, WebRequest request) {
-        logger.error("Runtime exception: {}", ex.getMessage());
-
-        if (ex.getMessage() != null && ex.getMessage().contains("Invalid refresh token")) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "INVALID_REFRESH_TOKEN");
-            errorResponse.put("message", "Invalid or expired refresh token. Please login again.");
-            errorResponse.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "RUNTIME_ERROR");
-        errorResponse.put("message", ex.getMessage());
-        errorResponse.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
+    // ===== GENERIC EXCEPTION =====
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(
-            Exception ex, WebRequest request) {
-        logger.error("Unexpected error: {}", ex.getMessage(), ex);
+    public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
+        logger.error("Unexpected error occurred: {}", ex.getMessage(), ex);
 
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "INTERNAL_SERVER_ERROR");
-        errorResponse.put("message", "An unexpected error occurred. Please try again later.");
-        errorResponse.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        errorResponse.put("path", request.getDescription(false).replace("uri=", ""));
-
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Internal Server Error", "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

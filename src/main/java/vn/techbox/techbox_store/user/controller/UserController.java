@@ -1,18 +1,21 @@
 package vn.techbox.techbox_store.user.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.user.dto.UserCreateRequest;
-import vn.techbox.techbox_store.user.dto.UserResponse;
-import vn.techbox.techbox_store.user.dto.UserUpdateRequest;
+import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 import vn.techbox.techbox_store.user.service.UserService;
 
 import java.net.URI;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -27,13 +30,26 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('USER:READ')")
-    public List<UserResponse> getAll() {
-        return userService.getAllUsers().stream().map(UserResponse::from).collect(Collectors.toList());
+    public ResponseEntity<PagedUserResponse> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<User> userPage = userService.getAllUsersWithPagination(pageable);
+        Page<UserResponse> userResponsePage = userPage.map(UserResponse::from);
+
+        return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#id)")
-    public ResponseEntity<UserResponse> getOne(@PathVariable Integer id) {
+    @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#userPrincipal, #id)")
+    public ResponseEntity<UserResponse> getOne(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer id) {
         return userService.getUserById(id)
                 .map(UserResponse::from)
                 .map(ResponseEntity::ok)
@@ -49,8 +65,11 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#id)")
-    public ResponseEntity<UserResponse> update(@PathVariable Integer id, @RequestBody UserUpdateRequest req) {
+    @PreAuthorize("hasAuthority('USER:UPDATE') or @userService.isCurrentUser(#userPrincipal, #id)")
+    public ResponseEntity<UserResponse> update(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer id,
+            @RequestBody UserUpdateRequest req) {
         User updated = userService.updateUser(id, req);
         return ResponseEntity.ok(UserResponse.from(updated));
     }
@@ -87,10 +106,9 @@ public class UserController {
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> getCurrentUserProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userService.getUserByEmail(email)
+    public ResponseEntity<UserResponse> getCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        Optional<User> currentUser = userService.getUserByEmailWithAddresses(userPrincipal.getUsername());
+        return currentUser
                 .map(UserResponse::from)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -98,12 +116,84 @@ public class UserController {
 
     @PatchMapping("/profile")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponse> updateCurrentUserProfile(@RequestBody UserUpdateRequest req) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User currentUser = userService.getUserByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        User updated = userService.updateUser(currentUser.getId(), req);
+    public ResponseEntity<UserResponse> updateCurrentUserProfile(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                 @RequestBody UserUpdateRequest req) {
+        User updated = userService.updateUser(userPrincipal.getId(), req);
         return ResponseEntity.ok(UserResponse.from(updated));
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/debug/{userId}")
+    public ResponseEntity<?> test(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer userId) {
+        boolean match = userService.isCurrentUser(userPrincipal, userId);
+        return ResponseEntity.ok(Map.of("match", match));
+    }
+
+    @GetMapping("/me/authorities")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        Map<String, Object> response = new HashMap<>();
+
+        // Lấy thông tin từ UserPrincipal
+        response.put("username", userPrincipal.getUsername());
+        response.put("authenticated", true);
+        response.put("userId", userPrincipal.getId());
+        response.put("userEmail", userPrincipal.email());
+        response.put("firstName", userPrincipal.firstName());
+        response.put("lastName", userPrincipal.lastName());
+
+        // Lấy tất cả authorities từ UserPrincipal
+        Set<String> authorities = userPrincipal.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        // Phân loại roles và permissions
+        Set<String> roles = new HashSet<>();
+        Set<String> permissions = new HashSet<>();
+
+        for (String authority : authorities) {
+            if (authority.startsWith("ROLE_")) {
+                roles.add(authority);
+            } else {
+                permissions.add(authority);
+            }
+        }
+
+        response.put("allAuthorities", authorities);
+        response.put("roles", roles);
+        response.put("permissions", permissions);
+        response.put("authorityCount", authorities.size());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/debug/security-context")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> debugSecurityContext(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        Map<String, Object> debug = new HashMap<>();
+
+        debug.put("principal", "UserPrincipal");
+        debug.put("username", userPrincipal.getUsername());
+        debug.put("userId", userPrincipal.getId());
+        debug.put("authenticated", userPrincipal.isEnabled());
+        debug.put("accountNonLocked", userPrincipal.isAccountNonLocked());
+        debug.put("enabled", userPrincipal.isEnabled());
+
+        // Chi tiết về authorities
+        List<Map<String, String>> authoritiesDetail = userPrincipal.getAuthorities().stream()
+                .map(auth -> {
+                    Map<String, String> authMap = new HashMap<>();
+                    authMap.put("authority", auth.getAuthority());
+                    authMap.put("class", auth.getClass().getSimpleName());
+                    return authMap;
+                })
+                .collect(Collectors.toList());
+
+        debug.put("authorities", authoritiesDetail);
+        debug.put("totalAuthorities", userPrincipal.getAuthorities().size());
+
+        return ResponseEntity.ok(debug);
     }
 }

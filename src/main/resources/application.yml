@@ -10,7 +10,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-      # ddl-auto: create-drop
+#      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
@@ -19,10 +19,21 @@ spring:
         jdbc:
           time_zone: UTC
         default_schema: public
+  jackson:
+    time-zone: UTC
+    date-format: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+    serialization:
+      write-dates-as-timestamps: false
   security:
     user:
       name: admin
       password: admin123
+
+logging:
+  level:
+    org:
+        springframework:
+            security: DEBUG
 
 server:
   servlet:
@@ -33,9 +44,25 @@ jwt:
     expiry: ${JWT_ACCESS_TOKEN_EXPIRY:108000000}
   refresh-token:
     expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
+  secret: ${JWT_SECRET_KEY}
+  refresh-secret: ${JWT_REFRESH_SECRET_KEY}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
   api-key: ${CLOUDINARY_API_KEY}
   api-secret: ${CLOUDINARY_API_SECRET}
 
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://localhost:3000/vnpay-callback}
+  ipn-url: ${VNPAY_IPN_URL:http://localhost:8080/api/payments/vnpay/ipn}
+
+order:
+  default-shipping-fee: 30000
+  code-prefix: "ORD"
+
+user:
+  address:
+    max-per-user: ${USER_ADDRESS_MAX_PER_USER:3}

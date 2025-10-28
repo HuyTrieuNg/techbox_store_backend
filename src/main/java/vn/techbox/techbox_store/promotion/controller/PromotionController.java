@@ -28,7 +28,6 @@ public class PromotionController {
     @PreAuthorize("hasAuthority('PROMOTION:WRITE')")
     @PostMapping
     public ResponseEntity<PromotionResponse> createPromotion(@Valid @RequestBody PromotionCreateRequest request) {
-        log.info("REST request to create promotion: {}", request.getRuleName());
         
         try {
             PromotionResponse response = promotionService.createPromotion(request);

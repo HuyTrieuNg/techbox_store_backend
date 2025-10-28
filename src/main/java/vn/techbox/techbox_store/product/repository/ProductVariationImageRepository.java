@@ -14,6 +14,9 @@ public interface ProductVariationImageRepository extends JpaRepository<ProductVa
     @Query("SELECT pvi FROM ProductVariationImage pvi WHERE pvi.productVariationId = :variationId ORDER BY pvi.id ASC")
     List<ProductVariationImage> findByProductVariationId(@Param("variationId") Integer variationId);
     
+    @Query("SELECT pvi FROM ProductVariationImage pvi WHERE pvi.productVariationId IN :variationIds ORDER BY pvi.productVariationId, pvi.id ASC")
+    List<ProductVariationImage> findByProductVariationIdIn(@Param("variationIds") List<Integer> variationIds);
+    
     @Query("DELETE FROM ProductVariationImage pvi WHERE pvi.productVariationId = :variationId")
     void deleteByProductVariationId(@Param("variationId") Integer variationId);
     

@@ -21,26 +21,16 @@ public class PromotionResponse {
     
     private String campaignName;
     
-    private String ruleName;
-    
     private Integer productVariationId;
     
     private PromotionType discountType;
     
     private BigDecimal discountValue;
     
-    private Integer minQuantity;
-    
-    private BigDecimal minOrderAmount;
-    
-    private BigDecimal maxDiscountAmount;
-    
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
     
     // Computed fields
-    private String discountDisplay;
-    
     private boolean isActive;
 }
