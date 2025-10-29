@@ -44,8 +44,8 @@ jwt:
     expiry: ${JWT_ACCESS_TOKEN_EXPIRY:108000000}
   refresh-token:
     expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
-  secret: ${JWT_SECRET_KEY}
-  refresh-secret: ${JWT_REFRESH_SECRET_KEY}
+  secret: ${JWT_SECRET_KEY:techbox-default-jwt-secret-key-for-development-only-please-change-in-production-environment-256-bits}
+  refresh-secret: ${JWT_REFRESH_SECRET_KEY:techbox-default-jwt-refresh-secret-key-for-development-only-please-change-in-production-environment-256-bits}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
