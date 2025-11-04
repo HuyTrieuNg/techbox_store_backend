@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 
 @Data
 @NoArgsConstructor
@@ -23,6 +24,8 @@ public class ProductCreateRequest {
     private Integer categoryId;
     
     private Integer brandId;
+
+    private ProductStatus status; // PUBLISHED, DRAFT, ARCHIVED
 
     private Integer warrantyMonths; // in months
     

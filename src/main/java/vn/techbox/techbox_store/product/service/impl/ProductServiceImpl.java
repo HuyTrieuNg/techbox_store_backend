@@ -73,6 +73,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(request.getBrandId())
                 .imageUrl(request.getImageUrl())
                 .imagePublicId(request.getImagePublicId())
+                .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
                 .warrantyMonths(request.getWarrantyMonths())
                 .build();
         
@@ -114,6 +115,10 @@ public class ProductServiceImpl implements ProductService {
         if (request.getImageUrl() != null || request.getImagePublicId() != null) {
             product.setImageUrl(request.getImageUrl());
             product.setImagePublicId(request.getImagePublicId());
+        }
+
+        if (request.getStatus() != null) {
+            product.setStatus(request.getStatus());
         }
 
         if (request.getWarrantyMonths() != null) {
@@ -263,6 +268,7 @@ public class ProductServiceImpl implements ProductService {
                 .id(product.getId())
                 .name(product.getName())
                 .imageUrl(product.getImageUrl())
+                .status(product.getStatus())
                 .warrantyMonths(product.getWarrantyMonths())
                 .displayOriginalPrice(product.getDisplayOriginalPrice())
                 .displaySalePrice(product.getDisplaySalePrice())
@@ -359,6 +365,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandName(brandName)
                 .imageUrl(product.getImageUrl())
                 .imagePublicId(product.getImagePublicId())
+                .status(product.getStatus())
                 .warrantyMonths(product.getWarrantyMonths())
                 .averageRating(product.getAverageRating())
                 .totalRatings(product.getTotalRatings())
@@ -458,6 +465,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(product.getBrandId())
                 .imageUrl(product.getImageUrl())
                 .imagePublicId(product.getImagePublicId())
+                .status(product.getStatus())
                 .warrantyMonths(product.getWarrantyMonths())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())

@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class ProductDetailResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private ProductStatus status;
     private Integer warrantyMonths;
     
     // Rating information

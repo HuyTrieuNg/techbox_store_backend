@@ -43,7 +43,7 @@ public class ProductVariation {
     private Integer reservedQuantity = 0;
 
     @Column(name = "avg_cost_price", precision = 10, scale = 2)
-    private BigDecimal avgCostPrice;
+        private BigDecimal avgCostPrice;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

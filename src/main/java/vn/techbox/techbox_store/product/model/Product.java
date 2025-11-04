@@ -40,6 +40,10 @@ public class Product {
     @Column(name = "image_public_id")
     private String imagePublicId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private ProductStatus status = ProductStatus.DRAFT;
 
     @Column(name = "warranty_months")
     private Integer warrantyMonths;
