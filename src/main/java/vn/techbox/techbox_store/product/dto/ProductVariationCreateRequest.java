@@ -36,6 +36,4 @@ public class ProductVariationCreateRequest {
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
-
-    private Integer warrantyMonths;
 }

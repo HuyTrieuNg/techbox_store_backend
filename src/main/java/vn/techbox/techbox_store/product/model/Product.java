@@ -40,6 +40,10 @@ public class Product {
     @Column(name = "image_public_id")
     private String imagePublicId;
 
+
+    @Column(name = "warranty_months")
+    private Integer warrantyMonths;
+
     // Phi chuẩn hóa - thông tin đánh giá
     @Column(name = "average_rating")
     @Builder.Default

@@ -45,9 +45,6 @@ public class ProductVariation {
     @Column(name = "avg_cost_price", precision = 10, scale = 2)
     private BigDecimal avgCostPrice;
 
-    @Column(name = "warranty_months")
-    private Integer warrantyMonths;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     

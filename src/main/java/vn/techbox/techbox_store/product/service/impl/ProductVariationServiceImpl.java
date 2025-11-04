@@ -79,7 +79,6 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             .price(request.getPrice())
             .sku(request.getSku())
             .avgCostPrice(request.getAvgCostPrice())
-            .warrantyMonths(request.getWarrantyMonths())
             .build();
         
         ProductVariation savedVariation = productVariationRepository.save(productVariation);
@@ -144,9 +143,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setAvgCostPrice(request.getAvgCostPrice());
         }
 
-        if (request.getWarrantyMonths() != null) {
-            variation.setWarrantyMonths(request.getWarrantyMonths());
-        }
+
         
         ProductVariation updatedVariation = productVariationRepository.save(variation);
         return convertToResponse(updatedVariation);
@@ -245,7 +242,6 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                 .stockQuantity(variation.getStockQuantity())
                 .reservedQuantity(variation.getReservedQuantity())
                 .avgCostPrice(variation.getAvgCostPrice())
-                .warrantyMonths(variation.getWarrantyMonths())
                 .createdAt(variation.getCreatedAt())
                 .updatedAt(variation.getUpdatedAt())
                 .deletedAt(variation.getDeletedAt())

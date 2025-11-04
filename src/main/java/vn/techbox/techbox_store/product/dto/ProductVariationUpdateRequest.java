@@ -38,8 +38,6 @@ public class ProductVariationUpdateRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
 
-    private Integer warrantyMonths;
-
     // Backwards-compatibility: support old builder method `quantity(...)` by mapping it to stockQuantity
     public static class ProductVariationUpdateRequestBuilder {
         public ProductVariationUpdateRequestBuilder quantity(Integer quantity) {

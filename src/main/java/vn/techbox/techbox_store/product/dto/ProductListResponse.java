@@ -21,7 +21,9 @@ public class ProductListResponse {
     private String name;
     
     private String imageUrl;
-    
+
+    private Integer warrantyMonths;
+
     // Giá gốc của biến thể có giá thấp nhất
     private BigDecimal displayOriginalPrice;
     

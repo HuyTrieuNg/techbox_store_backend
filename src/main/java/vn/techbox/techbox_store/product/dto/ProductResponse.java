@@ -22,6 +22,7 @@ public class ProductResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private Integer warrantyMonths;
     private Double averageRating;
     private Integer totalRatings;
     private LocalDateTime createdAt;

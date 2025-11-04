@@ -24,7 +24,7 @@ public class ProductVariationResponse {
     private Integer stockQuantity;
     private Integer reservedQuantity;
     private BigDecimal avgCostPrice;
-    private Integer warrantyMonths;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;

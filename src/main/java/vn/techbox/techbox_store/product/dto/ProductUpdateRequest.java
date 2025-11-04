@@ -1,5 +1,7 @@
 package vn.techbox.techbox_store.product.dto;
 
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,5 +29,8 @@ public class ProductUpdateRequest {
     
     @Size(max = 255, message = "Image public ID must not exceed 255 characters")
     private String imagePublicId;
+
+    @PositiveOrZero(message = "Base price must be zero or positive")
+    private Integer warrantyMonths;
 
 }

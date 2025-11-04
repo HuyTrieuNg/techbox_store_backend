@@ -28,6 +28,7 @@ public class ProductDetailResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private Integer warrantyMonths;
     
     // Rating information
     private Double averageRating;
@@ -80,7 +81,6 @@ public class ProductDetailResponse {
         private BigDecimal price;
         private String sku;
         private Integer availableQuantity;  // Số lượng khả dụng (stockQuantity - reservedQuantity)
-        private Integer warrantyMonths;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         

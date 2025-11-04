@@ -73,6 +73,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(request.getBrandId())
                 .imageUrl(request.getImageUrl())
                 .imagePublicId(request.getImagePublicId())
+                .warrantyMonths(request.getWarrantyMonths())
                 .build();
         
         Product savedProduct = productRepository.save(product);
@@ -115,7 +116,11 @@ public class ProductServiceImpl implements ProductService {
             product.setImagePublicId(request.getImagePublicId());
         }
 
-        
+        if (request.getWarrantyMonths() != null) {
+            product.setWarrantyMonths(request.getWarrantyMonths());
+        }
+
+
         Product updatedProduct = productRepository.save(product);
         return convertToResponse(updatedProduct);
     }
@@ -258,12 +263,14 @@ public class ProductServiceImpl implements ProductService {
                 .id(product.getId())
                 .name(product.getName())
                 .imageUrl(product.getImageUrl())
+                .warrantyMonths(product.getWarrantyMonths())
                 .displayOriginalPrice(product.getDisplayOriginalPrice())
                 .displaySalePrice(product.getDisplaySalePrice())
                 .discountType(product.getDiscountType())
                 .discountValue(product.getDiscountValue())
                 .averageRating(product.getAverageRating())
                 .totalRatings(product.getTotalRatings());
+
         
         // Check wishlist nếu user đã đăng nhập
         if (userId != null) {
@@ -352,6 +359,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandName(brandName)
                 .imageUrl(product.getImageUrl())
                 .imagePublicId(product.getImagePublicId())
+                .warrantyMonths(product.getWarrantyMonths())
                 .averageRating(product.getAverageRating())
                 .totalRatings(product.getTotalRatings())
                 .displayOriginalPrice(product.getDisplayOriginalPrice())
@@ -431,7 +439,6 @@ public class ProductServiceImpl implements ProductService {
                 .price(variation.getPrice())
                 .sku(variation.getSku())
                 .availableQuantity(availableQuantity)
-                .warrantyMonths(variation.getWarrantyMonths())
                 .createdAt(variation.getCreatedAt())
                 .updatedAt(variation.getUpdatedAt())
                 .salePrice(salePrice)
@@ -451,6 +458,7 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(product.getBrandId())
                 .imageUrl(product.getImageUrl())
                 .imagePublicId(product.getImagePublicId())
+                .warrantyMonths(product.getWarrantyMonths())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .deletedAt(product.getDeletedAt())
