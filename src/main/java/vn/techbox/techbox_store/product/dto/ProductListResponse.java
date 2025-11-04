@@ -45,7 +45,4 @@ public class ProductListResponse {
     // Tổng số đánh giá
     private Integer totalRatings;
     
-    // Có trong wishlist không (false nếu chưa đăng nhập)
-    @Builder.Default
-    private Boolean inWishlist = false;
 }

@@ -90,7 +90,6 @@ public class WishListServiceImpl implements WishListService {
                 .discountValue(product.getDiscountValue())
                 .averageRating(product.getAverageRating())
                 .totalRatings(product.getTotalRatings())
-                .inWishlist(true)
                 .build();
     }
 }

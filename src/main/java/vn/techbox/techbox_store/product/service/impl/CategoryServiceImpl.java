@@ -10,6 +10,7 @@ import vn.techbox.techbox_store.product.model.Category;
 import vn.techbox.techbox_store.product.repository.CategoryRepository;
 import vn.techbox.techbox_store.product.service.CategoryService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -53,6 +54,24 @@ public class CategoryServiceImpl implements CategoryService {
                 .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Integer> getAllChildCategoryIds(Integer parentCategoryId) {
+        List<Integer> result = new ArrayList<>();
+        
+        // Add the parent category itself
+        result.add(parentCategoryId);
+        
+        // Recursively get all child category IDs
+        List<Category> childCategories = categoryRepository.findByParentCategoryId(parentCategoryId);
+        for (Category child : childCategories) {
+            // Recursive call to get all descendants
+            result.addAll(getAllChildCategoryIds(child.getId()));
+        }
+        
+        return result;
     }
     
     @Override

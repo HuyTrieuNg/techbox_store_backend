@@ -65,6 +65,11 @@ public class ProductVariation {
     @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariationImage> images;
     
+    // Relationship with Promotions (one variation can have multiple promotions through campaigns)
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_variation_id", insertable = false, updatable = false)
+    private List<vn.techbox.techbox_store.promotion.model.Promotion> promotions;
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -28,18 +28,12 @@ public class ProductController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
-    
-    /**
-     * Search and filter products with multiple criteria
-     * Supports: name, brand, category, attributes, price range, rating
-     * With sorting and pagination
-     */
-    @GetMapping("/search")
-    public ResponseEntity<Page<ProductListResponse>> searchAndFilterProducts(
+
+    @GetMapping()
+    public ResponseEntity<Page<ProductListResponse>> filterProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Integer brandId,
             @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) List<Integer> categoryIds,
             @RequestParam(required = false) List<String> attributes,
             @RequestParam(required = false) java.math.BigDecimal minPrice,
             @RequestParam(required = false) java.math.BigDecimal maxPrice,
@@ -47,19 +41,12 @@ public class ProductController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            Authentication authentication) {
-        
-        Integer userId = null;
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            userId = ((User) authentication.getPrincipal()).getId();
-        }
-        
+            @RequestParam(defaultValue = "20") int size) {
+                
         ProductFilterRequest filterRequest = ProductFilterRequest.builder()
                 .name(name)
                 .brandId(brandId)
                 .categoryId(categoryId)
-                .categoryIds(categoryIds)
                 .attributes(attributes)
                 .minPrice(minPrice)
                 .maxPrice(maxPrice)
@@ -70,90 +57,17 @@ public class ProductController {
                 .size(size)
                 .build();
         
-        Page<ProductListResponse> products = productService.filterProducts(filterRequest, userId);
-        return ResponseEntity.ok(products);
-    }
-    
-    /**
-     * Public: Get all active products with pagination (no authentication required)
-     */
-    @GetMapping
-    public ResponseEntity<Page<ProductListResponse>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection) {
-        
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") 
-                ? Sort.Direction.DESC 
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        
-        Page<ProductListResponse> products = productService.getAllProducts(pageable);
-        return ResponseEntity.ok(products);
-    }
-    
-    /**
-     * Public: Get products by campaign ID (no authentication required)
-     * Returns products that have promotions in the specified campaign
-     */
-    @GetMapping("/campaign/{campaignId}")
-    public ResponseEntity<Page<ProductListResponse>> getProductsByCampaign(
-            @PathVariable Integer campaignId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            Authentication authentication) {
-
-        Integer userId = null;
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            userId = ((User) authentication.getPrincipal()).getId();
-        }
-
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC")
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-
-        Page<ProductListResponse> products = productService.getProductsByCampaign(campaignId, pageable, userId);
+        Page<ProductListResponse> products = productService.filterProducts(filterRequest);
         return ResponseEntity.ok(products);
     }
 
-    /**
-     * Admin: Get only soft-deleted products with pagination
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:READ')")
-    @GetMapping("/admin/deleted")
-    public ResponseEntity<Page<ProductListResponse>> getDeletedProductsForAdmin(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "deletedAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection) {
-        
-        Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") 
-                ? Sort.Direction.DESC 
-                : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-        
-        Page<ProductListResponse> products = productService.getDeletedProductsForAdmin(pageable);
-        return ResponseEntity.ok(products);
-    }
-    
-    /**
-     * Get product detail with full information (variations, attributes, promotions)
-     */
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetailResponse> getProductDetail(
-            @PathVariable Integer id,
-            Authentication authentication) {
+            @PathVariable Integer id) {
         
         Integer userId = null;
-        if (authentication != null && authentication.getPrincipal() instanceof User) {
-            userId = ((User) authentication.getPrincipal()).getId();
-        }
-        
-        return productService.getProductDetailById(id, userId)
+
+        return productService.getProductDetailById(id)
                 .map(product -> ResponseEntity.ok(product))
                 .orElse(ResponseEntity.notFound().build());
     }
