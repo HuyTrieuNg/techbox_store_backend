@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.CategoryDto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,9 +11,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AttributeCreateRequest {
+public class CategoryUpdateRequest {
     
-    @NotBlank(message = "Attribute name is required")
-    @Size(max = 255, message = "Attribute name must not exceed 255 characters")
+    @NotBlank(message = "Category name is required")
+    @Size(max = 255, message = "Category name must not exceed 255 characters")
     private String name;
+    
+    private Integer parentCategoryId;
 }

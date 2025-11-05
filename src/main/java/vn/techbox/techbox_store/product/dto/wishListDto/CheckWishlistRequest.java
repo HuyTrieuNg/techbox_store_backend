@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.wishListDto;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;

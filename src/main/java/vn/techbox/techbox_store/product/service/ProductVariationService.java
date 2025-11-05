@@ -1,8 +1,8 @@
 package vn.techbox.techbox_store.product.service;
 
-import vn.techbox.techbox_store.product.dto.ProductVariationCreateRequest;
-import vn.techbox.techbox_store.product.dto.ProductVariationResponse;
-import vn.techbox.techbox_store.product.dto.ProductVariationUpdateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;

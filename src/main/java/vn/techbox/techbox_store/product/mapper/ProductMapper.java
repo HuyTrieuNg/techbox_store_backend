@@ -8,9 +8,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import vn.techbox.techbox_store.product.dto.ProductDetailResponse;
-import vn.techbox.techbox_store.product.dto.ProductListResponse;
-import vn.techbox.techbox_store.product.dto.ProductResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductResponse;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductAttribute;
 import vn.techbox.techbox_store.product.model.ProductVariation;

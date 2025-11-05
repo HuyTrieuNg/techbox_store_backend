@@ -1,8 +1,8 @@
 package vn.techbox.techbox_store.product.service;
 
-import vn.techbox.techbox_store.product.dto.AttributeCreateRequest;
-import vn.techbox.techbox_store.product.dto.AttributeResponse;
-import vn.techbox.techbox_store.product.dto.AttributeUpdateRequest;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeCreateRequest;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeResponse;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;

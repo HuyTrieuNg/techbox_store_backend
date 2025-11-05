@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.dto.CheckWishlistRequest;
-import vn.techbox.techbox_store.product.dto.ProductListResponse;
-import vn.techbox.techbox_store.product.dto.WishListRequest;
+import vn.techbox.techbox_store.product.dto.wishListDto.CheckWishlistRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.wishListDto.WishListRequest;
 import vn.techbox.techbox_store.product.service.WishListService;
 import vn.techbox.techbox_store.user.model.User;
 

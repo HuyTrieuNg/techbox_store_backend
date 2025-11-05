@@ -2,8 +2,8 @@ package vn.techbox.techbox_store.product.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import vn.techbox.techbox_store.product.dto.ProductListResponse;
-import vn.techbox.techbox_store.product.dto.WishListRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.wishListDto.WishListRequest;
 
 import java.util.List;
 import java.util.Map;

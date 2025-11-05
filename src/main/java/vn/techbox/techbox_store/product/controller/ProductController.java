@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.dto.*;
+import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductFilterRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
 import vn.techbox.techbox_store.product.service.ProductService;
 
 import java.util.List;

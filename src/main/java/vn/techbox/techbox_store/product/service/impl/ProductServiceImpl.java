@@ -8,7 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.techbox.techbox_store.product.dto.*;
+import vn.techbox.techbox_store.product.dto.productDto.*;
 import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
 import vn.techbox.techbox_store.product.mapper.ProductMapper;

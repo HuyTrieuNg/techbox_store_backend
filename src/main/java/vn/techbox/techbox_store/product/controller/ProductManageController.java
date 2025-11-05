@@ -7,9 +7,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
-import vn.techbox.techbox_store.product.dto.ProductCreateRequest;
-import vn.techbox.techbox_store.product.dto.ProductResponse;
-import vn.techbox.techbox_store.product.dto.ProductUpdateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductCreateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductUpdateRequest;
 import vn.techbox.techbox_store.product.service.ProductService;
 
 import java.io.IOException;
@@ -21,12 +21,13 @@ import java.util.Map;
  * Only accessible by users with appropriate admin permissions
  */
 @RestController
-@RequestMapping("/mamage/products")
+@RequestMapping("/manage/products")
 @RequiredArgsConstructor
 public class ProductManageController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
+
 
     /**
      * Create a new product

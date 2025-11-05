@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.dto.BrandCreateRequest;
-import vn.techbox.techbox_store.product.dto.BrandResponse;
-import vn.techbox.techbox_store.product.dto.BrandUpdateRequest;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandCreateRequest;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandResponse;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandUpdateRequest;
 import vn.techbox.techbox_store.product.service.BrandService;
 
 import java.util.List;

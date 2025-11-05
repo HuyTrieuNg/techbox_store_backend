@@ -1,8 +1,8 @@
 package vn.techbox.techbox_store.product.service;
 
-import vn.techbox.techbox_store.product.dto.CategoryCreateRequest;
-import vn.techbox.techbox_store.product.dto.CategoryResponse;
-import vn.techbox.techbox_store.product.dto.CategoryUpdateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryCreateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryResponse;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,10 +1,9 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import vn.techbox.techbox_store.product.model.ProductStatus;
 
 import java.math.BigDecimal;
 
@@ -22,8 +21,6 @@ public class ProductListResponse {
     private String name;
     
     private String imageUrl;
-
-    private ProductStatus status;
 
     private Integer warrantyMonths;
 

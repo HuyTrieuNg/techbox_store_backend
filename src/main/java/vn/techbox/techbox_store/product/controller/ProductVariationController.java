@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.product.controller;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,9 +7,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
-import vn.techbox.techbox_store.product.dto.ProductVariationCreateRequest;
-import vn.techbox.techbox_store.product.dto.ProductVariationResponse;
-import vn.techbox.techbox_store.product.dto.ProductVariationUpdateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
 import java.io.IOException;

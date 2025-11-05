@@ -1,8 +1,8 @@
 package vn.techbox.techbox_store.product.service;
 
-import vn.techbox.techbox_store.product.dto.BrandCreateRequest;
-import vn.techbox.techbox_store.product.dto.BrandResponse;
-import vn.techbox.techbox_store.product.dto.BrandUpdateRequest;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandCreateRequest;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandResponse;
+import vn.techbox.techbox_store.product.dto.brandDto.BrandUpdateRequest;
 
 import java.util.List;
 import java.util.Optional;
