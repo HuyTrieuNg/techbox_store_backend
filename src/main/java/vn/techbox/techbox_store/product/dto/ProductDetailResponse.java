@@ -29,7 +29,6 @@ public class ProductDetailResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
-    private ProductStatus status;
     private Integer warrantyMonths;
     
     // Rating information
@@ -42,9 +41,6 @@ public class ProductDetailResponse {
     private String discountType;
     private BigDecimal discountValue;
     
-    // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
     
     // Product-level attributes (thuộc tính chung của sản phẩm)
     private List<AttributeDto> attributes;
@@ -77,10 +73,7 @@ public class ProductDetailResponse {
         private Integer id;
         private String variationName;
         private BigDecimal price;
-        private String sku;
         private Integer availableQuantity;  // Số lượng khả dụng (stockQuantity - reservedQuantity)
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
         
         // Pricing with promotion (calculated realtime)
         private BigDecimal salePrice;        // Giá sau khi giảm
