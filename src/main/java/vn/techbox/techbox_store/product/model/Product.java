@@ -103,10 +103,17 @@ public class Product {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-
-        if (this.spu == null && this.id != null) {
-            this.spu = String.format("PRD-%05d", this.id);
+        // Generate SPU if not provided
+        if (this.spu == null) {
+            this.spu = generateSpu();
         }
+    }
+    
+    private String generateSpu() {
+        // Generate unique SPU using UUID (short version)
+        // Format: PRD-XXXXXXXX (8 uppercase alphanumeric characters)
+        String uuid = java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        return "PRD-" + uuid.substring(0, 8);
     }
     
     @PreUpdate

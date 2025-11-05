@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -19,26 +18,15 @@ public class ProductVariationResponse {
     private String variationName;
     private Integer productId;
     private BigDecimal price;
-    private String sku;
-    private List<String> imageUrls;
-    private Integer stockQuantity;
-    private Integer reservedQuantity;
-    private BigDecimal avgCostPrice;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime deletedAt;
+    private List<String> imageUrls;
+    private Integer availableQuantity;
+
+    // Pricing with promotion (calculated realtime)
+    private BigDecimal salePrice;        // Giá sau khi giảm
+    private String discountType;         // PERCENTAGE hoặc FIXED
+    private BigDecimal discountValue;    // Mức giảm
     
     // Additional fields for related entities
     private String productName;
-    
-    // Helper methods
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
-    
-    public boolean isInStock() {
-        int available = (stockQuantity != null ? stockQuantity : 0) - (reservedQuantity != null ? reservedQuantity : 0);
-        return available > 0;
-    }
 }

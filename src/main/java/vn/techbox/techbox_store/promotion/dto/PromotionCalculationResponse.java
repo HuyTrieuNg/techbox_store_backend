@@ -16,30 +16,14 @@ public class PromotionCalculationResponse {
     
     private Integer productVariationId;
     
-    private BigDecimal originalPrice;
-    
-    private BigDecimal originalTotal;
-    
-    private Integer quantity;
-    
-    private BigDecimal orderAmount;
-    
-    private BigDecimal totalDiscount;
-    
-    private BigDecimal finalPrice;
-    
-    private BigDecimal finalTotal;
-    
-    private List<AppliedPromotion> appliedPromotions;
-    
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class AppliedPromotion {
-        private Integer promotionId;
-        private String campaignName;
-        private String discountType;
-        private BigDecimal discountAmount;
-    }
+    private BigDecimal salePrice;
+                
+    private String discountType;            // PERCENTAGE hoặc FIXED
+
+    private BigDecimal discountValue;       // Giá trị giảm (% hoặc số tiền)
+
+    private Integer promotionId;            // ID của promotion 
+
+    private Integer campaignId;             // ID của campaign 
+
 }

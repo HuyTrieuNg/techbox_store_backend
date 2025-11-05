@@ -111,24 +111,6 @@ public class PromotionController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/product-variation/{productVariationId}/calculate")
-    public ResponseEntity<PromotionCalculationResponse> calculatePromotionsForProduct(
-            @PathVariable Integer productVariationId,
-            @RequestParam BigDecimal originalPrice,
-            @RequestParam(defaultValue = "1") Integer quantity,
-            @RequestParam BigDecimal orderAmount) {
-        log.info("REST request to calculate promotions for product variation ID: {} via GET", productVariationId);
-        
-        PromotionCalculationRequest request = PromotionCalculationRequest.builder()
-                .productVariationId(productVariationId)
-                .originalPrice(originalPrice)
-                .quantity(quantity)
-                .orderAmount(orderAmount)
-                .build();
-        
-        PromotionCalculationResponse response = promotionService.calculatePromotions(request);
-        return ResponseEntity.ok(response);
-    }
 
     // ========== Admin only ==========
     

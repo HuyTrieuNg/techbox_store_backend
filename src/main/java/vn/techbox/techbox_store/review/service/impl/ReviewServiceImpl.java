@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("reviewService")
 @RequiredArgsConstructor
 @Transactional
 public class ReviewServiceImpl implements ReviewService {

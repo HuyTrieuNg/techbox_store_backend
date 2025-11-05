@@ -15,14 +15,14 @@ import org.slf4j.LoggerFactory;
 import vn.techbox.techbox_store.user.dto.TokenResponse;
 import vn.techbox.techbox_store.user.service.AuthService;
 
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -37,24 +37,11 @@ public class AuthServiceImpl implements AuthService {
     @Value("${jwt.refresh-token.expiry}")
     private long refreshTokenExpiry;
 
-    private final String secretKey;
-    private final String refreshSecretKey;
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    public AuthServiceImpl() {
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGen.generateKey();
-            secretKey = Base64.getUrlEncoder().withoutPadding().encodeToString(sk.getEncoded());
-
-            SecretKey refreshSk = keyGen.generateKey();
-            refreshSecretKey = Base64.getUrlEncoder().withoutPadding().encodeToString(refreshSk.getEncoded());
-
-            System.out.println("Base64 Secret Key for jwt.io: " + secretKey);
-            System.out.println("Base64 Refresh Secret Key for jwt.io: " + refreshSecretKey);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    @Value("${jwt.refresh-secret}")
+    private String refreshSecretKey;
 
     public String generateToken(String username) {
         Map<String, Object> claims = new HashMap<>();
@@ -87,13 +74,30 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private SecretKey getKey() {
-        byte[] keyBytes = Base64.getUrlDecoder().decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return buildHmacKey(secretKey);
     }
 
     private SecretKey getRefreshKey() {
-        byte[] keyBytes = Base64.getUrlDecoder().decode(refreshSecretKey);
+        return buildHmacKey(refreshSecretKey);
+    }
+
+    private SecretKey buildHmacKey(String secret) {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        if (keyBytes.length < 32) {
+            keyBytes = sha256(keyBytes);
+        }
+
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private byte[] sha256(byte[] input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return digest.digest(input);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
+        }
     }
 
     public String extractUserName(String token) {

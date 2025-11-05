@@ -38,16 +38,13 @@ public class ProductVariationController {
     
     @GetMapping("/{id}")
     public ResponseEntity<ProductVariationResponse> getProductVariationById(
-            @PathVariable Integer id,
-            @RequestParam(defaultValue = "false") boolean includeDeleted) {
-        return (includeDeleted 
-                ? productVariationService.getProductVariationById(id) 
-                : productVariationService.getActiveProductVariationById(id))
+            @PathVariable Integer id){
+        return  productVariationService.getActiveProductVariationById(id)
                 .map(variation -> ResponseEntity.ok(variation))
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_WRITE')")
+    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createProductVariation(
         @RequestParam(value = "variationName", required = false) String variationName,
@@ -96,7 +93,7 @@ public class ProductVariationController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateProductVariation(
             @PathVariable Integer id,
@@ -159,14 +156,14 @@ public class ProductVariationController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_DELETE')")
+    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProductVariation(@PathVariable Integer id) {
         productVariationService.deleteProductVariation(id);
         return ResponseEntity.noContent().build();
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PatchMapping("/{id}/restore")
     public ResponseEntity<Void> restoreProductVariation(@PathVariable Integer id) {
         productVariationService.restoreProductVariation(id);
@@ -189,7 +186,7 @@ public class ProductVariationController {
     }
     
 
-    @PreAuthorize("hasAuthority('PRODUCT_REPORT')")
+    @PreAuthorize("hasAuthority('PRODUCT:REPORT')")
     @GetMapping("/low-stock")
     public ResponseEntity<List<ProductVariationResponse>> getLowStockVariations(
             @RequestParam(defaultValue = "10") Integer threshold) {
@@ -204,7 +201,7 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_UPDATE')")
+    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PatchMapping("/{id}/stock")
     public ResponseEntity<ProductVariationResponse> updateStock(
             @PathVariable Integer id, 
@@ -213,7 +210,7 @@ public class ProductVariationController {
         return ResponseEntity.ok(updatedVariation);
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT_READ')")
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkSkuExists(
             @RequestParam String sku,

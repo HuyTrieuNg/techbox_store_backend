@@ -20,7 +20,6 @@ public class AttributeController {
     
     private final AttributeService attributeService;
 
-
     @GetMapping
     public ResponseEntity<List<AttributeResponse>> getAllAttributes() {
         List<AttributeResponse> attributes = attributeService.getAllAttributes();
@@ -29,7 +28,7 @@ public class AttributeController {
 
     public ResponseEntity<AttributeResponse> getAttributeById(@PathVariable Integer id) {
         return attributeService.getAttributeById(id)
-                .map(attribute -> ResponseEntity.ok(attribute))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     

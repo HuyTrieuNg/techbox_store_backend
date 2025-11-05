@@ -25,6 +25,8 @@ public class ProductSeeder implements DataSeeder {
     @Override
     @Transactional
     public void seed() {
+        log.info("Starting Product seeding...");
+        
         List<Product> products = new ArrayList<>();
         List<ProductVariation> variations = new ArrayList<>();
 
@@ -207,6 +209,12 @@ public class ProductSeeder implements DataSeeder {
 
     @Override
     public boolean shouldSkip() {
-        return productRepository.count() > 0;
+        long count = productRepository.count();
+        if (count > 0) {
+            log.info("Products already exist ({} found), skipping ProductSeeder", count);
+            return true;
+        }
+        log.info("No products found, will run ProductSeeder");
+        return false;
     }
 }

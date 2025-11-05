@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=vn.techbox.techbox_store.config.DotenvConfig
+

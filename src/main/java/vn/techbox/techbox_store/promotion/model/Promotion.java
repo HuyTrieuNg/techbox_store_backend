@@ -58,19 +58,16 @@ public class Promotion {
     
     // Utility methods
     public BigDecimal calculateDiscount(BigDecimal originalPrice, Integer quantity) {
-        BigDecimal discount;
-        
-        switch (discountType) {
-            case PERCENTAGE:
-                discount = originalPrice.multiply(BigDecimal.valueOf(quantity))
+        BigDecimal discount = switch (discountType) {
+            case PERCENTAGE -> originalPrice.multiply(BigDecimal.valueOf(quantity))
                     .multiply(discountValue)
-                    .divide(BigDecimal.valueOf(100));
-                break;
-            case FIXED:
-                discount = discountValue.multiply(BigDecimal.valueOf(quantity));
-                break;
-            default:
-                discount = BigDecimal.ZERO;
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            case FIXED -> discountValue.multiply(BigDecimal.valueOf(quantity));
+        };
+
+        BigDecimal itemTotal = originalPrice.multiply(BigDecimal.valueOf(quantity));
+        if (discount.compareTo(itemTotal) > 0) {
+            discount = itemTotal;
         }
         
         return discount;

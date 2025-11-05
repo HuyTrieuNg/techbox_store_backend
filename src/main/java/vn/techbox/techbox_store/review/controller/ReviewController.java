@@ -30,8 +30,6 @@ public class ReviewController {
         return auth.getName();
     }
 
-    // ========== Customer APIs (Authenticated) ==========
-    
     @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<ReviewResponse> create(@PathVariable Integer productId,
@@ -55,8 +53,6 @@ public class ReviewController {
         return ResponseEntity.noContent().build();
     }
 
-    // ========== Public APIs (No authentication required) ==========
-    
     @GetMapping
     public ResponseEntity<Page<ReviewResponse>> list(@PathVariable Integer productId,
                                                      @RequestParam(defaultValue = "0") int page,
@@ -69,8 +65,6 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getSummary(productId));
     }
 
-    // ========== User-specific API (Authenticated) ==========
-    
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<ReviewResponse> myReview(@PathVariable Integer productId) {

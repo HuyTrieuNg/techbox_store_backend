@@ -153,7 +153,7 @@ public class CampaignController {
     }
 
     // ========== Admin APIs ==========
-    
+
     @PreAuthorize("hasAuthority('CAMPAIGN:READ_ALL')")
     @GetMapping
     public ResponseEntity<Page<CampaignResponse>> getAllCampaigns(

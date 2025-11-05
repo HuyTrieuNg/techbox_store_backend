@@ -27,7 +27,7 @@ public interface UserVoucherRepository extends JpaRepository<UserVoucher, UserVo
     // Check if user has already used a specific voucher
        @Query("SELECT uv FROM UserVoucher uv WHERE uv.userId = :userId AND uv.voucherCode = :voucherCode")
        Optional<UserVoucher> findByUserIdAndVoucherCode(@Param("userId") Integer userId, 
-                                                                                       @Param("voucherCode") String voucherCode);
+                                                        @Param("voucherCode") String voucherCode);
     
     // Count usage for a specific voucher
        @Query("SELECT COUNT(uv) FROM UserVoucher uv WHERE uv.voucherCode = :voucherCode")

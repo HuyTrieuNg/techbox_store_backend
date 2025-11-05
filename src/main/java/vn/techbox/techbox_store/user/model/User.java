@@ -8,6 +8,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 @Setter
 @Getter
@@ -30,9 +32,6 @@ public class User {
 
     @Column(name = "phone", length = 20)
     private String phone;
-
-    @Column(name = "address")
-    private String address;
 
     @Column(name = "date_of_birth")
     private LocalDateTime dateOfBirth;
@@ -62,6 +61,11 @@ public class User {
     )
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
+
+    // One-to-many relationship with Address
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Address> addresses = new ArrayList<>();
 
     @Override
     public String toString() {
