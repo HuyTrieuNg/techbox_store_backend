@@ -21,9 +21,9 @@ import java.util.Map;
  * Only accessible by users with appropriate admin permissions
  */
 @RestController
-@RequestMapping("/admin/products")
+@RequestMapping("/mamage/products")
 @RequiredArgsConstructor
-public class ProductAdminController {
+public class ProductManageController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
