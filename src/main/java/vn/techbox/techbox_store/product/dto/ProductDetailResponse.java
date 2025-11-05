@@ -46,10 +46,6 @@ public class ProductDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // Wishlist status
-    @Builder.Default
-    private Boolean inWishlist = false;
-    
     // Product-level attributes (thuộc tính chung của sản phẩm)
     private List<AttributeDto> attributes;
     

@@ -44,8 +44,8 @@ public class ProductFilterRequest {
     // Filter by product status
     private ProductStatus status;
     
-    // Filter by promotion
-    private Integer promotionId;
+    // Filter by campaign
+    private Integer campaignId;
     
     // Sorting
     private String sortBy; // price, rating, reviewCount, createdAt, newest (id DESC)

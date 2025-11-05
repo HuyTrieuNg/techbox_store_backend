@@ -15,10 +15,14 @@ import vn.techbox.techbox_store.product.mapper.ProductMapper;
 import vn.techbox.techbox_store.product.service.CategoryService;
 import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
+import vn.techbox.techbox_store.promotion.model.Promotion;
+import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 import vn.techbox.techbox_store.review.repository.ReviewRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,25 +32,30 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final ProductVariationRepository productVariationRepository;
+    private final VariationAttributeRepository variationAttributeRepository;
+    private final ProductVariationImageRepository productVariationImageRepository;
     private final ReviewRepository reviewRepository;
+    private final PromotionRepository promotionRepository;
     private final CategoryService categoryService;
     private final ProductMapper productMapper;
     
     @Override
     @Transactional(readOnly = true)
     public Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest) {
-        ProductFilterRequest enrichedFilter = prepareFilter(filterRequest);
+        ProductFilterRequest filter = prepareFilter(filterRequest);
         
         // Build sort
-        Sort sort = buildSort(enrichedFilter.getSortBy(), enrichedFilter.getSortDirection());
+        Sort sort = buildSort(filter.getSortBy(), filter.getSortDirection());
         
         // Build pageable
-        int page = enrichedFilter.getPage() != null ? enrichedFilter.getPage() : 0;
-        int size = enrichedFilter.getSize() != null ? enrichedFilter.getSize() : 20;
+        int page = filter.getPage() != null ? filter.getPage() : 0;
+        int size = filter.getSize() != null ? filter.getSize() : 20;
         Pageable pageable = PageRequest.of(page, size, sort);
         
         // Build specification from enriched filter
-        Specification<Product> spec = buildFilterSpecification(enrichedFilter);
+        Specification<Product> spec = buildFilterSpecification(filter);
         
         // Query with specification
         Page<Product> productsPage = productRepository.findAll(spec, pageable);
@@ -59,42 +68,98 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Optional<ProductDetailResponse> getProductDetailById(Integer id) {
-        // Step 1: Fetch Product with category and brand
-        Optional<Product> productOpt = productRepository.findFullDetailById(id);
+        Optional<Product> productOpt = productRepository.findActiveById(id);
         
         if (productOpt.isEmpty()) {
             return Optional.empty();
         }
         
-        // Step 2: Fetch product attributes (to avoid MultipleBagFetchException)
-        productRepository.findWithAttributes(id);
-        
-        // Step 3: Fetch variations (just the list)
-        productRepository.findWithVariations(id);
-        
-        // Step 4: Fetch variation images
-        productRepository.findVariationImagesById(id);
-        
-        // Step 5: Fetch variation attributes
-        productRepository.findVariationAttributesById(id);
-        
-        // Step 6: Fetch variation promotions with campaigns
-        productRepository.findVariationPromotionsById(id);
-        
-        // All data is now loaded in Hibernate session cache
-        // Get the product entity which now has all relationships loaded
         Product product = productOpt.get();
         
-        // Pass complete data to mapper
-        return Optional.of(productMapper.toDetailResponse(product));
+        // Get category and brand names
+        String categoryName = product.getCategoryId() != null 
+                ? categoryRepository.findById(product.getCategoryId())
+                    .map(Category::getName).orElse(null)
+                : null;
+        
+        String brandName = product.getBrandId() != null
+                ? brandRepository.findById(product.getBrandId())
+                    .map(Brand::getName).orElse(null)
+                : null;
+        
+        // Get product attributes with their attribute details
+        List<ProductAttribute> productAttributes = 
+                productAttributeRepository.findByProductId(product.getId());
+        
+        // Get all product variations
+        List<ProductVariation> productVariations = 
+                productVariationRepository.findByProductId(product.getId());
+        
+        // Batch load all related data to avoid N+1 queries
+        List<Integer> variationIds = productVariations.stream()
+                .map(ProductVariation::getId)
+                .collect(Collectors.toList());
+        
+        // Batch fetch variation images
+        Map<Integer, List<ProductVariationImage>> imagesMap = 
+                productVariationImageRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(img -> img.getProductVariationId()));
+        
+        // Batch fetch variation attributes
+        Map<Integer, List<VariationAttribute>> variationAttributesMap = 
+                variationAttributeRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(va -> va.getProductVariationId()));
+        
+        // Batch fetch promotions
+        Map<Integer, List<Promotion>> promotionsMap = 
+                promotionRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(Promotion::getProductVariationId));
+        
+        // Use mapper to convert to response
+        ProductDetailResponse response = productMapper.toDetailResponse(
+                product, 
+                categoryName, 
+                brandName,
+                productAttributes,
+                productVariations,
+                imagesMap,
+                variationAttributesMap,
+                promotionsMap
+        );
+        
+        return Optional.of(response);
     }
 
     
     @Override
     @Transactional(readOnly = true)
     public Optional<ProductResponse> getProductById(Integer id) {
-        return productRepository.findById(id)
-                .map(this::convertToResponse);
+        Optional<Product> productOpt = productRepository.findById(id);
+        
+        if (productOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Product product = productOpt.get();
+        
+        // Get category and brand names
+        String categoryName = product.getCategoryId() != null 
+                ? categoryRepository.findById(product.getCategoryId())
+                    .map(Category::getName).orElse(null)
+                : null;
+        
+        String brandName = product.getBrandId() != null
+                ? brandRepository.findById(product.getBrandId())
+                    .map(Brand::getName).orElse(null)
+                : null;
+        
+        // Use mapper to convert to response
+        ProductResponse response = productMapper.toResponse(product, categoryName, brandName);
+        
+        return Optional.of(response);
     }
     
     
@@ -271,9 +336,9 @@ public class ProductServiceImpl implements ProductService {
             spec = spec.and(ProductSpecification.ratingGreaterThanOrEqual(filter.getMinRating()));
         }
         
-        // Apply promotion filter
-        if (filter.getPromotionId() != null) {
-            spec = spec.and(ProductSpecification.hasPromotion(filter.getPromotionId()));
+        // Apply campaign filter
+        if (filter.getCampaignId() != null) {
+            spec = spec.and(ProductSpecification.hasCampaignId(filter.getCampaignId()));
         }
         
         // Apply attributes filter
@@ -320,34 +385,19 @@ public class ProductServiceImpl implements ProductService {
     
 
     private ProductResponse convertToResponse(Product product) {
-        ProductResponse response = ProductResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .categoryId(product.getCategoryId())
-                .brandId(product.getBrandId())
-                .imageUrl(product.getImageUrl())
-                .imagePublicId(product.getImagePublicId())
-                .status(product.getStatus())
-                .warrantyMonths(product.getWarrantyMonths())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .deletedAt(product.getDeletedAt())
-                .build();
+        // Get category and brand names
+        String categoryName = product.getCategoryId() != null 
+                ? categoryRepository.findById(product.getCategoryId())
+                    .map(Category::getName).orElse(null)
+                : null;
         
-        // Set category name if categoryId exists
-        if (product.getCategoryId() != null) {
-            categoryRepository.findById(product.getCategoryId())
-                    .ifPresent(category -> response.setCategoryName(category.getName()));
-        }
+        String brandName = product.getBrandId() != null
+                ? brandRepository.findById(product.getBrandId())
+                    .map(Brand::getName).orElse(null)
+                : null;
         
-        // Set brand name if brandId exists
-        if (product.getBrandId() != null) {
-            brandRepository.findById(product.getBrandId())
-                    .ifPresent(brand -> response.setBrandName(brand.getName()));
-        }
-        
-        return response;
+        // Use mapper to convert to response
+        return productMapper.toResponse(product, categoryName, brandName);
     }
     
     // Helper method to build Sort object

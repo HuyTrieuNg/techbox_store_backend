@@ -2,6 +2,7 @@ package vn.techbox.techbox_store.product.mapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -9,7 +10,9 @@ import org.springframework.stereotype.Component;
 
 import vn.techbox.techbox_store.product.dto.ProductDetailResponse;
 import vn.techbox.techbox_store.product.dto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.ProductResponse;
 import vn.techbox.techbox_store.product.model.Product;
+import vn.techbox.techbox_store.product.model.ProductAttribute;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
 import vn.techbox.techbox_store.product.model.VariationAttribute;
@@ -20,8 +23,7 @@ import vn.techbox.techbox_store.promotion.model.PromotionType;
 public class ProductMapper {
     
     /**
-     * Map Product entity to ProductListResponse DTO
-     * Used for product listing/filtering
+     * Convert Product entity to ProductListResponse DTO
      */
     public ProductListResponse toListResponse(Product product) {
         if (product == null) return null;
@@ -40,41 +42,67 @@ public class ProductMapper {
     }
 
     /**
-     * Map Product entity (fully fetched with @EntityGraph) to ProductDetailResponse DTO
-     * This method expects Product to be fully loaded with all relationships:
-     * - category, brand, productAttributes, variations, images, variationAttributes, promotions
-     * 
-     * @param product Fully fetched Product entity
-     * @return ProductDetailResponse with complete product details
+     * Convert Product entity to ProductResponse DTO
      */
-    public ProductDetailResponse toDetailResponse(Product product) {
+    public ProductResponse toResponse(Product product, String categoryName, String brandName) {
         if (product == null) return null;
+        
+        ProductResponse response = ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .categoryId(product.getCategoryId())
+                .brandId(product.getBrandId())
+                .imageUrl(product.getImageUrl())
+                .imagePublicId(product.getImagePublicId())
+                .status(product.getStatus())
+                .warrantyMonths(product.getWarrantyMonths())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .deletedAt(product.getDeletedAt())
+                .categoryName(categoryName)
+                .brandName(brandName)
+                .build();
+        
+        return response;
+    }
 
-        // Get category and brand names (safe because of JOIN FETCH)
-        String categoryName = (product.getCategory() != null) 
-                ? product.getCategory().getName() 
-                : null;
+    /**
+     * Convert Product entity to ProductDetailResponse DTO with pre-loaded data
+     */
+    public ProductDetailResponse toDetailResponse(
+            Product product, 
+            String categoryName,
+            String brandName,
+            List<ProductAttribute> productAttributes,
+            List<ProductVariation> productVariations,
+            Map<Integer, List<ProductVariationImage>> imagesMap,
+            Map<Integer, List<VariationAttribute>> variationAttributesMap,
+            Map<Integer, List<Promotion>> promotionsMap) {
         
-        String brandName = (product.getBrand() != null) 
-                ? product.getBrand().getName() 
-                : null;
+        if (product == null) return null;
         
-        // Get product attributes (safe because of JOIN FETCH)
-        List<ProductDetailResponse.AttributeDto> productAttributes = 
-                product.getProductAttributes().stream()
-                        .map(pa -> ProductDetailResponse.AttributeDto.builder()
-                                .id(pa.getAttribute().getId())
-                                .name(pa.getAttribute().getName())
-                                .value(pa.getValue())
-                                .build())
-                        .collect(Collectors.toList());
+        // Convert product attributes to DTOs
+        List<ProductDetailResponse.AttributeDto> productAttributeDtos = 
+                productAttributes.stream()
+                    .map(pa -> ProductDetailResponse.AttributeDto.builder()
+                            .id(pa.getAttributeId())
+                            .name(pa.getAttribute().getName())
+                            .value(pa.getValue())
+                            .build())
+                    .collect(Collectors.toList());
         
-        // Convert variations (safe because of JOIN FETCH)
+        // Convert variations to DTOs with pre-loaded data
         List<ProductDetailResponse.VariationDto> variations = 
-                product.getProductVariations().stream()
-                        .map(this::convertToVariationDto)
-                        .collect(Collectors.toList());
-
+                productVariations.stream()
+                    .map(variation -> toVariationDto(
+                            variation,
+                            imagesMap.getOrDefault(variation.getId(), List.of()),
+                            variationAttributesMap.getOrDefault(variation.getId(), List.of()),
+                            promotionsMap.getOrDefault(variation.getId(), List.of())
+                    ))
+                    .collect(Collectors.toList());
+        
         return ProductDetailResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -95,24 +123,19 @@ public class ProductMapper {
                 .discountValue(product.getDiscountValue())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
-                .attributes(productAttributes)
+                .attributes(productAttributeDtos)
                 .variations(variations)
                 .build();
     }
     
     /**
-     * Convert ProductVariation entity to VariationDto
-     * Works with pre-loaded relationships (images, variationAttributes, promotions)
-     * 
-     * @param variation ProductVariation entity with pre-loaded relationships
-     * @return VariationDto with all details including calculated sale price
+     * Convert ProductVariation to VariationDto with pre-loaded related data
      */
-    private ProductDetailResponse.VariationDto convertToVariationDto(ProductVariation variation) {
-        
-        // Get pre-loaded relationships (already fetched via @EntityGraph)
-        List<ProductVariationImage> images = variation.getImages();
-        List<VariationAttribute> variationAttributes = variation.getVariationAttributes();
-        List<Promotion> promotions = variation.getPromotions();
+    private ProductDetailResponse.VariationDto toVariationDto(
+            ProductVariation variation,
+            List<ProductVariationImage> images,
+            List<VariationAttribute> variationAttributes,
+            List<Promotion> promotions) {
         
         // Convert images to DTOs
         List<ProductDetailResponse.ImageDto> imageDtos = images.stream()
@@ -181,4 +204,6 @@ public class ProductMapper {
                 .attributes(attributeDtos)
                 .build();
     }
+    
+
 }

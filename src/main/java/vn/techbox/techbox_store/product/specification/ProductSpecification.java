@@ -3,7 +3,6 @@ package vn.techbox.techbox_store.product.specification;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
-import vn.techbox.techbox_store.product.dto.ProductFilterRequest;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductAttribute;
 import vn.techbox.techbox_store.product.model.ProductStatus;
@@ -83,28 +82,28 @@ public class ProductSpecification {
     }
     
     /**
-     * Filter by promotion ID
-     * Finds products that have variations with the specified promotion
+     * Filter by campaign ID
+     * Finds products that have variations with promotions in the specified campaign
      */
-    public static Specification<Product> hasPromotion(Integer promotionId) {
+    public static Specification<Product> hasCampaignId(Integer campaignId) {
         return (root, query, criteriaBuilder) -> {
             if (query == null) {
                 return criteriaBuilder.conjunction();
             }
             
-            Subquery<Integer> promotionSubquery = query.subquery(Integer.class);
-            Root<ProductVariation> variationRoot = promotionSubquery.from(ProductVariation.class);
+            Subquery<Integer> campaignSubquery = query.subquery(Integer.class);
+            Root<ProductVariation> variationRoot = campaignSubquery.from(ProductVariation.class);
             Join<ProductVariation, Promotion> promotionJoin = variationRoot.join("promotions");
             
-            promotionSubquery.select(variationRoot.get("productId"));
-            promotionSubquery.where(
+            campaignSubquery.select(variationRoot.get("productId"));
+            campaignSubquery.where(
                 criteriaBuilder.and(
                     criteriaBuilder.equal(variationRoot.get("productId"), root.get("id")),
-                    criteriaBuilder.equal(promotionJoin.get("id"), promotionId)
+                    criteriaBuilder.equal(promotionJoin.get("campaign").get("id"), campaignId)
                 )
             );
             
-            return criteriaBuilder.exists(promotionSubquery);
+            return criteriaBuilder.exists(campaignSubquery);
         };
     }
     
