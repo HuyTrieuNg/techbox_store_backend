@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.brandDto.BrandCreateRequest;
 import vn.techbox.techbox_store.product.dto.brandDto.BrandResponse;
 import vn.techbox.techbox_store.product.dto.brandDto.BrandUpdateRequest;
+import vn.techbox.techbox_store.product.mapper.BrandMapper;
 import vn.techbox.techbox_store.product.model.Brand;
 import vn.techbox.techbox_store.product.repository.BrandRepository;
 import vn.techbox.techbox_store.product.service.BrandService;
@@ -20,13 +21,14 @@ import java.util.stream.Collectors;
 public class BrandServiceImpl implements BrandService {
     
     private final BrandRepository brandRepository;
+    private final BrandMapper brandMapper;
     
     @Override
     @Transactional(readOnly = true)
     public List<BrandResponse> getAllBrands() {
         return brandRepository.findAll()
                 .stream()
-                .map(this::convertToResponse)
+                .map(brandMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -34,7 +36,7 @@ public class BrandServiceImpl implements BrandService {
     @Transactional(readOnly = true)
     public Optional<BrandResponse> getBrandById(Integer id) {
         return brandRepository.findById(id)
-                .map(this::convertToResponse);
+                .map(brandMapper::toResponse);
     }
     
     @Override
@@ -49,7 +51,7 @@ public class BrandServiceImpl implements BrandService {
                 .build();
         
         Brand savedBrand = brandRepository.save(brand);
-        return convertToResponse(savedBrand);
+        return brandMapper.toResponse(savedBrand);
     }
     
     @Override
@@ -65,7 +67,7 @@ public class BrandServiceImpl implements BrandService {
         brand.setName(request.getName());
         
         Brand updatedBrand = brandRepository.save(brand);
-        return convertToResponse(updatedBrand);
+        return brandMapper.toResponse(updatedBrand);
     }
     
     @Override

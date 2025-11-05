@@ -33,6 +33,9 @@ public class Product {
     
     @Column(name = "brand_id")
     private Integer brandId;
+
+    @Column(name = "SPU", nullable = false, unique = true)
+    private String spu;
     
     @Column(name = "image_url")
     private String imageUrl;
@@ -100,6 +103,10 @@ public class Product {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+
+        if (this.spu == null && this.id != null) {
+            this.spu = String.format("PRD-%05d", this.id);
+        }
     }
     
     @PreUpdate
@@ -115,10 +122,12 @@ public class Product {
     // Helper method to soft delete
     public void delete() {
         this.deletedAt = LocalDateTime.now();
+        this.status = ProductStatus.DELETED;
     }
     
     // Helper method to restore
     public void restore() {
         this.deletedAt = null;
+        this.status = ProductStatus.DRAFT;
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
+import vn.techbox.techbox_store.product.mapper.ProductVariationMapper;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
@@ -26,13 +27,14 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     private final ProductVariationRepository productVariationRepository;
     private final ProductRepository productRepository;
     private final ProductVariationImageRepository productVariationImageRepository;
+    private final ProductVariationMapper productVariationMapper;
     
     @Override
     @Transactional(readOnly = true)
     public List<ProductVariationResponse> getAllProductVariations() {
         return productVariationRepository.findAll()
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -41,7 +43,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public List<ProductVariationResponse> getAllActiveProductVariations() {
         return productVariationRepository.findAllActive()
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -49,14 +51,14 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     @Transactional(readOnly = true)
     public Optional<ProductVariationResponse> getProductVariationById(Integer id) {
         return productVariationRepository.findById(id)
-                .map(this::convertToResponse);
+                .map(productVariationMapper::toResponse);
     }
     
     @Override
     @Transactional(readOnly = true)
     public Optional<ProductVariationResponse> getActiveProductVariationById(Integer id) {
         return productVariationRepository.findActiveById(id)
-                .map(this::convertToResponse);
+                .map(productVariationMapper::toResponse);
     }
     
     @Override
@@ -95,7 +97,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             saveProductVariationImages(savedVariation.getId(), request.getImageUrls(), request.getImagePublicIds());
         }
         
-        return convertToResponse(savedVariation);
+        return productVariationMapper.toResponse(savedVariation);
     }
     
     @Override
@@ -146,7 +148,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
 
         
         ProductVariation updatedVariation = productVariationRepository.save(variation);
-        return convertToResponse(updatedVariation);
+        return productVariationMapper.toResponse(updatedVariation);
     }
     
     @Override
@@ -172,7 +174,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public List<ProductVariationResponse> getVariationsByProductId(Integer productId) {
         return productVariationRepository.findByProductId(productId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -181,7 +183,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public List<ProductVariationResponse> getInStockVariations() {
         return productVariationRepository.findInStockVariations()
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -190,7 +192,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public List<ProductVariationResponse> getInStockVariationsByProductId(Integer productId) {
         return productVariationRepository.findInStockByProductId(productId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -199,7 +201,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public List<ProductVariationResponse> getLowStockVariations(Integer threshold) {
         return productVariationRepository.findLowStockVariations(threshold)
                 .stream()
-                .map(this::convertToResponse)
+                .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -207,7 +209,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     @Transactional(readOnly = true)
     public Optional<ProductVariationResponse> getVariationBySku(String sku) {
         return productVariationRepository.findBySku(sku)
-                .map(this::convertToResponse);
+                .map(productVariationMapper::toResponse);
     }
     
     @Override
@@ -216,7 +218,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                 .orElseThrow(() -> new IllegalArgumentException("Product variation not found with id: " + id));
         variation.setStockQuantity(stockQuantity);
         ProductVariation updatedVariation = productVariationRepository.save(variation);
-        return convertToResponse(updatedVariation);
+        return productVariationMapper.toResponse(updatedVariation);
     }
     
     @Override
@@ -231,31 +233,6 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         return productVariationRepository.existsBySkuAndIdNot(sku, id);
     }
     
-    private ProductVariationResponse convertToResponse(ProductVariation variation) {
-        ProductVariationResponse response = ProductVariationResponse.builder()
-                .id(variation.getId())
-                .variationName(variation.getVariationName())
-                .productId(variation.getProductId())
-                .price(variation.getPrice())
-                .sku(variation.getSku())
-                .imageUrls(getProductVariationImageUrls(variation.getId()))
-                .stockQuantity(variation.getStockQuantity())
-                .reservedQuantity(variation.getReservedQuantity())
-                .avgCostPrice(variation.getAvgCostPrice())
-                .createdAt(variation.getCreatedAt())
-                .updatedAt(variation.getUpdatedAt())
-                .deletedAt(variation.getDeletedAt())
-                .build();
-        
-        // Set product name if productId exists
-        if (variation.getProductId() != null) {
-            productRepository.findById(variation.getProductId())
-                    .ifPresent(product -> response.setProductName(product.getName()));
-        }
-        
-        return response;
-    }
-    
     // Helper methods for image handling
     private void saveProductVariationImages(Integer variationId, List<String> imageUrls, List<String> imagePublicIds) {
         for (int i = 0; i < imageUrls.size(); i++) {
@@ -267,13 +244,5 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                     .build();
             productVariationImageRepository.save(image);
         }
-    }
-    
-    private List<String> getProductVariationImageUrls(Integer variationId) {
-        return productVariationImageRepository
-                .findByProductVariationId(variationId)
-                .stream()
-                .map(ProductVariationImage::getImageUrl)
-                .collect(Collectors.toList());
     }
 }

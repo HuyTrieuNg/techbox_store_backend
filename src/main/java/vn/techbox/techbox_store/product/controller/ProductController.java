@@ -10,6 +10,9 @@ import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
 import vn.techbox.techbox_store.product.service.ProductService;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 /**
  * Public Product Controller - Read-only operations
@@ -21,6 +24,10 @@ import java.util.List;
 public class ProductController {
     
     private final ProductService productService;
+
+
+    // ============================================
+    // public endpoints for product browsing and details
 
     @GetMapping()
     public ResponseEntity<Page<ProductListResponse>> filterProducts(
@@ -64,4 +71,17 @@ public class ProductController {
                 .map(product -> ResponseEntity.ok(product))
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // end of public endpoints
+    // ============================================
+    
+    // ============================================
+    // management endpoints for products
+
+    @GetMapping("/manage/{id}")
+    public String getMethodName(@PathVariable Integer id) {
+        return new String();
+    }
+    
+
 }

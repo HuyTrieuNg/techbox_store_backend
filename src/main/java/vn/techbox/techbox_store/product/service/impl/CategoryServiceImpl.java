@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryCreateRequest;
 import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryResponse;
 import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
+import vn.techbox.techbox_store.product.mapper.CategoryMapper;
 import vn.techbox.techbox_store.product.model.Category;
 import vn.techbox.techbox_store.product.repository.CategoryRepository;
 import vn.techbox.techbox_store.product.service.CategoryService;
@@ -21,13 +22,14 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
     
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
     
     @Override
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll()
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -35,7 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public Optional<CategoryResponse> getCategoryById(Integer id) {
         return categoryRepository.findById(id)
-                .map(this::convertToResponse);
+                .map(categoryMapper::toResponse);
     }
     
     @Override
@@ -43,7 +45,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getRootCategories() {
         return categoryRepository.findRootCategories()
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -52,7 +54,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getChildCategories(Integer parentId) {
         return categoryRepository.findChildCategories(parentId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -94,7 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .build();
         
         Category savedCategory = categoryRepository.save(category);
-        return convertToResponse(savedCategory);
+        return categoryMapper.toResponse(savedCategory);
     }
     
     @Override
@@ -123,7 +125,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setParentCategoryId(request.getParentCategoryId());
         
         Category updatedCategory = categoryRepository.save(category);
-        return convertToResponse(updatedCategory);
+        return categoryMapper.toResponse(updatedCategory);
     }
     
     @Override
@@ -151,29 +153,5 @@ public class CategoryServiceImpl implements CategoryService {
     public boolean existsByNameAndIdNot(String name, Integer id) {
         return categoryRepository.existsByNameAndIdNot(name, id);
     }
-    
-    private CategoryResponse convertToResponse(Category category) {
-        CategoryResponse.CategoryResponseBuilder builder = CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .parentCategoryId(category.getParentCategoryId())
-                .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt());
-        
-        // Set parent category name if exists
-        if (category.getParentCategory() != null) {
-            builder.parentCategoryName(category.getParentCategory().getName());
-        }
-        
-        // Set child categories if exists
-        if (category.getChildCategories() != null && !category.getChildCategories().isEmpty()) {
-            List<CategoryResponse> childResponses = category.getChildCategories()
-                    .stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            builder.childCategories(childResponses);
-        }
-        
-        return builder.build();
-    }
 }
+
