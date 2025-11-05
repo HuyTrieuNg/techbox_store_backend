@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.order.dto.OrderResponse;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderItem;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,7 +25,8 @@ public class OrderMappingService {
         // Map payment information
         if (order.getPaymentInfo() != null) {
             response.setPaymentMethod(order.getPaymentInfo().getPaymentMethod());
-            response.setPaymentStatus(order.getPaymentInfo().getPaymentStatus());
+            PaymentStatus ps = order.getPaymentInfo().getPaymentStatus();
+            response.setPaymentStatus(ps != null ? ps.name() : PaymentStatus.PENDING.name());
             response.setTotalAmount(order.getPaymentInfo().getTotalAmount());
             response.setDiscountAmount(order.getPaymentInfo().getDiscountAmount());
             response.setShippingFee(order.getPaymentInfo().getShippingFee());

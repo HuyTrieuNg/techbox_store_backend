@@ -1,5 +1,7 @@
 package vn.techbox.techbox_store.payment.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.order.dto.PaymentRequest;
@@ -8,6 +10,7 @@ import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.payment.model.PaymentMethod;
 import vn.techbox.techbox_store.payment.model.VnpayPayment;
 import vn.techbox.techbox_store.payment.model.Payment;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 import vn.techbox.techbox_store.payment.service.PaymentService;
 import vn.techbox.techbox_store.payment.util.VnPayUtils;
 
@@ -15,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class VnPayPaymentService implements PaymentService {
 
     @Value("${vnpay.tmn-code:}")
@@ -33,7 +38,7 @@ public class VnPayPaymentService implements PaymentService {
     public Payment initiatePayment(Order order) {
         VnpayPayment payment = VnpayPayment.builder().build();
         payment.setPaymentMethod(PaymentMethod.VNPAY);
-        payment.setPaymentStatus("PENDING");
+        payment.setPaymentStatus(PaymentStatus.PENDING);
         return payment;
     }
 
@@ -44,6 +49,10 @@ public class VnPayPaymentService implements PaymentService {
         String txnRef = generateTxnRef();
         String orderInfo = "Payment for Order " + request.getOrderId();
         String returnUrl = request.getReturnUrl() != null ? request.getReturnUrl() : defaultReturnUrl;
+
+        TimeZone vietnamTimeZone = TimeZone.getTimeZone("Asia/Ho_Chi_Minh");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        dateFormat.setTimeZone(vietnamTimeZone);
 
         Map<String, String> vnpParams = new HashMap<>();
         vnpParams.put("vnp_Version", "2.1.0");
@@ -57,11 +66,11 @@ public class VnPayPaymentService implements PaymentService {
         vnpParams.put("vnp_Locale", "vn");
         vnpParams.put("vnp_ReturnUrl", returnUrl);
         vnpParams.put("vnp_IpAddr", "0.0.0.0");
-        vnpParams.put("vnp_CreateDate", new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()));
+        vnpParams.put("vnp_CreateDate", dateFormat.format(new Date()));
 
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(vietnamTimeZone);
         cal.add(Calendar.MINUTE, 15);
-        vnpParams.put("vnp_ExpireDate", new SimpleDateFormat("yyyyMMddHHmmss").format(cal.getTime()));
+        vnpParams.put("vnp_ExpireDate", dateFormat.format(cal.getTime()));
 
         String canonicalQuery = VnPayUtils.buildCanonicalQuery(vnpParams);
         String secureHash = VnPayUtils.hmacSHA512(hashSecret, canonicalQuery);
