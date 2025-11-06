@@ -131,6 +131,34 @@ public class UserController {
         return ResponseEntity.ok(Map.of("match", match));
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        if (userPrincipal == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        // Lấy role từ authorities
+        Set<String> roles = userPrincipal.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .filter(auth -> auth.startsWith("ROLE_"))
+                .collect(Collectors.toSet());
+
+        Map<String, Object> response = Map.of(
+            "id", userPrincipal.getId(),
+            "username", userPrincipal.getUsername(),
+            "email", userPrincipal.email(),
+            "firstName", userPrincipal.firstName(),
+            "lastName", userPrincipal.lastName(),
+            "authenticated", true,
+            "roles", roles
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/me/authorities")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> getCurrentUserAuthorities(@AuthenticationPrincipal UserPrincipal userPrincipal) {

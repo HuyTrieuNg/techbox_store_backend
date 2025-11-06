@@ -14,7 +14,6 @@ import vn.techbox.techbox_store.product.helpers.SortHelper;
 import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
 import vn.techbox.techbox_store.product.mapper.ProductMapper;
-import vn.techbox.techbox_store.product.service.CategoryService;
 import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
 import vn.techbox.techbox_store.promotion.model.Promotion;
@@ -286,19 +285,6 @@ public class ProductServiceImpl implements ProductService {
     }
     
    
-
-
-    
-   
-    
-    
-
-    
-
-    
-
-   
-
     
     
     @Override

@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.product.specification;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
 
 import vn.techbox.techbox_store.product.dto.productDto.ProductFilterRequest;
 import vn.techbox.techbox_store.product.model.Product;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 @Slf4j
 public class ProductSpecification {
 

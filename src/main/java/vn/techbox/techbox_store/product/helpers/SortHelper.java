@@ -1,7 +1,9 @@
 package vn.techbox.techbox_store.product.helpers;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SortHelper {
     
     public Sort buildSort(String sortBy, String sortDirection) {
