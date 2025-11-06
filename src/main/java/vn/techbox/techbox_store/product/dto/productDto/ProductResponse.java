@@ -1,9 +1,10 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 
 import java.time.LocalDateTime;
 
@@ -22,6 +23,8 @@ public class ProductResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private ProductStatus status;
+    private Integer warrantyMonths;
     private Double averageRating;
     private Integer totalRatings;
     private LocalDateTime createdAt;

@@ -8,17 +8,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.techbox.techbox_store.product.dto.*;
+import vn.techbox.techbox_store.product.dto.productDto.*;
 import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
+import vn.techbox.techbox_store.product.mapper.ProductMapper;
+import vn.techbox.techbox_store.product.service.CategoryService;
 import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
 import vn.techbox.techbox_store.promotion.model.Promotion;
-import vn.techbox.techbox_store.promotion.model.PromotionType;
 import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 import vn.techbox.techbox_store.review.repository.ReviewRepository;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,21 +32,134 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
-    private final WishListRepository wishListRepository;
     private final ProductAttributeRepository productAttributeRepository;
     private final ProductVariationRepository productVariationRepository;
     private final VariationAttributeRepository variationAttributeRepository;
     private final ProductVariationImageRepository productVariationImageRepository;
     private final ReviewRepository reviewRepository;
     private final PromotionRepository promotionRepository;
+    private final CategoryService categoryService;
+    private final ProductMapper productMapper;
     
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest) {
+        ProductFilterRequest filter = prepareFilter(filterRequest);
+        
+        // Build sort
+        Sort sort = buildSort(filter.getSortBy(), filter.getSortDirection());
+        
+        // Build pageable
+        int page = filter.getPage() != null ? filter.getPage() : 0;
+        int size = filter.getSize() != null ? filter.getSize() : 20;
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        // Build specification from enriched filter
+        Specification<Product> spec = buildFilterSpecification(filter);
+        
+        // Query with specification
+        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        
+        // Map to response
+        return productsPage.map(productMapper::toListResponse);
+    }
     
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<ProductDetailResponse> getProductDetailById(Integer id) {
+        Optional<Product> productOpt = productRepository.findActiveById(id);
+        
+        if (productOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Product product = productOpt.get();
+        
+        // Get category and brand names
+        String categoryName = product.getCategoryId() != null 
+                ? categoryRepository.findById(product.getCategoryId())
+                    .map(Category::getName).orElse(null)
+                : null;
+        
+        String brandName = product.getBrandId() != null
+                ? brandRepository.findById(product.getBrandId())
+                    .map(Brand::getName).orElse(null)
+                : null;
+        
+        // Get product attributes with their attribute details
+        List<ProductAttribute> productAttributes = 
+                productAttributeRepository.findByProductId(product.getId());
+        
+        // Get all product variations
+        List<ProductVariation> productVariations = 
+                productVariationRepository.findByProductId(product.getId());
+        
+        // Batch load all related data to avoid N+1 queries
+        List<Integer> variationIds = productVariations.stream()
+                .map(ProductVariation::getId)
+                .collect(Collectors.toList());
+        
+        // Batch fetch variation images
+        Map<Integer, List<ProductVariationImage>> imagesMap = 
+                productVariationImageRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(img -> img.getProductVariationId()));
+        
+        // Batch fetch variation attributes
+        Map<Integer, List<VariationAttribute>> variationAttributesMap = 
+                variationAttributeRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(va -> va.getProductVariationId()));
+        
+        // Batch fetch promotions
+        Map<Integer, List<Promotion>> promotionsMap = 
+                promotionRepository.findByProductVariationIdIn(variationIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(Promotion::getProductVariationId));
+        
+        // Use mapper to convert to response
+        ProductDetailResponse response = productMapper.toDetailResponse(
+                product, 
+                categoryName, 
+                brandName,
+                productAttributes,
+                productVariations,
+                imagesMap,
+                variationAttributesMap,
+                promotionsMap
+        );
+        
+        return Optional.of(response);
+    }
+
     
     @Override
     @Transactional(readOnly = true)
     public Optional<ProductResponse> getProductById(Integer id) {
-        return productRepository.findById(id)
-                .map(this::convertToResponse);
+        Optional<Product> productOpt = productRepository.findById(id);
+        
+        if (productOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        Product product = productOpt.get();
+        
+        // Get category and brand names
+        String categoryName = product.getCategoryId() != null 
+                ? categoryRepository.findById(product.getCategoryId())
+                    .map(Category::getName).orElse(null)
+                : null;
+        
+        String brandName = product.getBrandId() != null
+                ? brandRepository.findById(product.getBrandId())
+                    .map(Brand::getName).orElse(null)
+                : null;
+        
+        // Use mapper to convert to response
+        ProductResponse response = productMapper.toResponse(product, categoryName, brandName);
+        
+        return Optional.of(response);
     }
     
     
@@ -73,6 +186,8 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(request.getBrandId())
                 .imageUrl(request.getImageUrl())
                 .imagePublicId(request.getImagePublicId())
+                .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
+                .warrantyMonths(request.getWarrantyMonths())
                 .build();
         
         Product savedProduct = productRepository.save(product);
@@ -115,7 +230,15 @@ public class ProductServiceImpl implements ProductService {
             product.setImagePublicId(request.getImagePublicId());
         }
 
-        
+        if (request.getStatus() != null) {
+            product.setStatus(request.getStatus());
+        }
+
+        if (request.getWarrantyMonths() != null) {
+            product.setWarrantyMonths(request.getWarrantyMonths());
+        }
+
+
         Product updatedProduct = productRepository.save(product);
         return convertToResponse(updatedProduct);
     }
@@ -125,7 +248,9 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
         
-        product.delete(); // Soft delete
+        // Soft delete: set both deletedAt and status
+        product.delete(); // Sets deletedAt
+        product.setStatus(ProductStatus.DELETED); // Set status to DELETED
         productRepository.save(product);
     }
     
@@ -134,7 +259,13 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
         
-        product.restore();
+        if (!product.isDeleted()) {
+            throw new IllegalArgumentException("Product is not deleted, cannot restore");
+        }
+        
+        // Restore: clear deletedAt and set status to DRAFT (admin needs to review before publishing)
+        product.restore(); // Clears deletedAt
+        product.setStatus(ProductStatus.DRAFT); // Set status to DRAFT after restore
         productRepository.save(product);
     }
     
@@ -152,82 +283,80 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.existsByNameAndIdNot(name, id);
     }
     
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest, Integer userId) {
-        // Build sort
-        Sort sort = buildSort(filterRequest.getSortBy(), filterRequest.getSortDirection());
-        
-        // Build pageable
-        int page = filterRequest.getPage() != null ? filterRequest.getPage() : 0;
-        int size = filterRequest.getSize() != null ? filterRequest.getSize() : 20;
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        // Build specification
-        Specification<Product> spec = ProductSpecification.filterProducts(filterRequest);
-        
-        // Query with specification
-        Page<Product> productsPage = productRepository.findAll(spec, pageable);
-        
-        // Map to response
-        return productsPage.map(product -> convertToListResponse(product, userId));
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductListResponse> getAllProducts(Pageable pageable) {
-        Page<Product> productsPage = productRepository.findAllActive(pageable);
-        return productsPage.map(product -> convertToListResponse(product, null));
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductListResponse> getDeletedProductsForAdmin(Pageable pageable) {
-        Page<Product> productsPage = productRepository.findAllDeleted(pageable);
-        return productsPage.map(product -> convertToListResponse(product, null));
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProductListResponse> getProductsByCampaign(Integer campaignId, Pageable pageable, Integer userId) {
-        // Lấy tất cả promotions thuộc campaign này
-        List<Promotion> promotions = promotionRepository.findByCampaignId(campaignId);
+   
 
-        if (promotions.isEmpty()) {
-            // Trả về trang rỗng nếu không có promotion nào
-            return Page.empty(pageable);
+    private ProductFilterRequest prepareFilter(ProductFilterRequest filter) {
+        ProductFilterRequest.ProductFilterRequestBuilder builder = filter.toBuilder();
+        
+        // mặc định là PUBLISHED cho API công khai
+        if (filter.getStatus() == null) {
+            builder.status(ProductStatus.PUBLISHED);
         }
-
-        // Lấy danh sách productVariationIds từ promotions
-        List<Integer> variationIds = promotions.stream()
-                .map(Promotion::getProductVariationId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // Lấy danh sách productIds từ variations
-        List<Integer> productIds = productVariationRepository.findAllById(variationIds)
-                .stream()
-                .map(ProductVariation::getProductId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (productIds.isEmpty()) {
-            return Page.empty(pageable);
+        
+        // Lấy tất cả danh mục con từ categoryId được cung cấp
+        if (filter.getCategoryId() != null) {
+            List<Integer> allCategoryIds = categoryService.getAllChildCategoryIds(filter.getCategoryId());
+            builder.categoryIds(allCategoryIds);
         }
-
-        // Lấy danh sách products với phân trang
-        Page<Product> productsPage = productRepository.findByIdInAndDeletedAtIsNull(productIds, pageable);
-
-        // Map to response
-        return productsPage.map(product -> convertToListResponse(product, userId));
+        
+        return builder.build();
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<ProductDetailResponse> getProductDetailById(Integer id, Integer userId) {
-        return productRepository.findActiveById(id)
-                .map(product -> convertToDetailResponse(product, userId));
+    
+   
+    private Specification<Product> buildFilterSpecification(ProductFilterRequest filter) {
+        Specification<Product> spec = Specification.where(null);
+        
+        // Apply status filter
+        if (filter.getStatus() != null) {
+            spec = spec.and(ProductSpecification.hasStatus(filter.getStatus()));
+        }
+        
+        // Apply name filter
+        if (filter.getName() != null && !filter.getName().trim().isEmpty()) {
+            spec = spec.and(ProductSpecification.nameLike(filter.getName()));
+        }
+        
+        // Apply brand filter
+        if (filter.getBrandId() != null) {
+            spec = spec.and(ProductSpecification.hasBrand(filter.getBrandId()));
+        }
+        
+        // Apply category filter
+        if (filter.getCategoryIds() != null && !filter.getCategoryIds().isEmpty()) {
+            spec = spec.and(ProductSpecification.hasCategories(filter.getCategoryIds()));
+        }
+        
+        // Apply price range filter
+        if (filter.getMinPrice() != null || filter.getMaxPrice() != null) {
+            spec = spec.and(ProductSpecification.priceInRange(filter.getMinPrice(), filter.getMaxPrice()));
+        }
+        
+        // Apply rating filter
+        if (filter.getMinRating() != null) {
+            spec = spec.and(ProductSpecification.ratingGreaterThanOrEqual(filter.getMinRating()));
+        }
+        
+        // Apply campaign filter
+        if (filter.getCampaignId() != null) {
+            spec = spec.and(ProductSpecification.hasCampaignId(filter.getCampaignId()));
+        }
+        
+        // Apply attributes filter
+        if (filter.getAttributes() != null && !filter.getAttributes().isEmpty()) {
+            spec = spec.and(ProductSpecification.hasAttributes(filter.getAttributes()));
+        }
+        
+        return spec;
     }
+    
+
+    
+
+    
+
+   
+
+    
     
     @Override
     public void updateProductRating(Integer productId) {
@@ -252,32 +381,10 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
     
-    // Helper method để convert sang ProductListResponse
-    private ProductListResponse convertToListResponse(Product product, Integer userId) {
-        ProductListResponse.ProductListResponseBuilder builder = ProductListResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .imageUrl(product.getImageUrl())
-                .displayOriginalPrice(product.getDisplayOriginalPrice())
-                .displaySalePrice(product.getDisplaySalePrice())
-                .discountType(product.getDiscountType())
-                .discountValue(product.getDiscountValue())
-                .averageRating(product.getAverageRating())
-                .totalRatings(product.getTotalRatings());
-        
-        // Check wishlist nếu user đã đăng nhập
-        if (userId != null) {
-            boolean inWishlist = wishListRepository.existsByUserIdAndProductId(userId, product.getId());
-            builder.inWishlist(inWishlist);
-        } else {
-            builder.inWishlist(false);
-        }
-        
-        return builder.build();
-    }
+
     
-    // Helper method để convert sang ProductDetailResponse
-    private ProductDetailResponse convertToDetailResponse(Product product, Integer userId) {
+
+    private ProductResponse convertToResponse(Product product) {
         // Get category and brand names
         String categoryName = product.getCategoryId() != null 
                 ? categoryRepository.findById(product.getCategoryId())
@@ -289,186 +396,8 @@ public class ProductServiceImpl implements ProductService {
                     .map(Brand::getName).orElse(null)
                 : null;
         
-        // Check wishlist
-        boolean inWishlist = userId != null && 
-                wishListRepository.existsByUserIdAndProductId(userId, product.getId());
-        
-        // Get product attributes
-        List<ProductDetailResponse.AttributeDto> productAttributes = 
-                productAttributeRepository.findByProductId(product.getId())
-                    .stream()
-                    .map(pa -> ProductDetailResponse.AttributeDto.builder()
-                            .id(pa.getAttributeId())
-                            .name(pa.getAttribute().getName())
-                            .value(pa.getValue())
-                            .build())
-                    .collect(Collectors.toList());
-        
-        // Get all product variations
-        List<ProductVariation> productVariations = 
-                productVariationRepository.findByProductId(product.getId());
-        
-        // Batch load all related data to avoid N+1 queries
-        List<Integer> variationIds = productVariations.stream()
-                .map(ProductVariation::getId)
-                .collect(Collectors.toList());
-        
-        // Batch fetch variation images
-        Map<Integer, List<ProductVariationImage>> imagesMap = 
-                productVariationImageRepository.findByProductVariationIdIn(variationIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(img -> img.getProductVariationId()));
-        
-        // Batch fetch variation attributes
-        Map<Integer, List<VariationAttribute>> variationAttributesMap = 
-                variationAttributeRepository.findByProductVariationIdIn(variationIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(va -> va.getProductVariationId()));
-        
-        // Batch fetch promotions
-        Map<Integer, List<Promotion>> promotionsMap = 
-                promotionRepository.findByProductVariationIdIn(variationIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(Promotion::getProductVariationId));
-        
-        // Convert variations to DTOs with pre-loaded data
-        List<ProductDetailResponse.VariationDto> variations = 
-                productVariations.stream()
-                    .map(variation -> convertToVariationDto(
-                            variation,
-                            imagesMap.getOrDefault(variation.getId(), List.of()),
-                            variationAttributesMap.getOrDefault(variation.getId(), List.of()),
-                            promotionsMap.getOrDefault(variation.getId(), List.of())
-                    ))
-                    .collect(Collectors.toList());
-        
-        return ProductDetailResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .categoryId(product.getCategoryId())
-                .categoryName(categoryName)
-                .brandId(product.getBrandId())
-                .brandName(brandName)
-                .imageUrl(product.getImageUrl())
-                .imagePublicId(product.getImagePublicId())
-                .averageRating(product.getAverageRating())
-                .totalRatings(product.getTotalRatings())
-                .displayOriginalPrice(product.getDisplayOriginalPrice())
-                .displaySalePrice(product.getDisplaySalePrice())
-                .discountType(product.getDiscountType())
-                .discountValue(product.getDiscountValue())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .inWishlist(inWishlist)
-                .attributes(productAttributes)
-                .variations(variations)
-                .build();
-    }
-    
-    // Helper method để convert ProductVariation sang VariationDto with pre-loaded data
-    private ProductDetailResponse.VariationDto convertToVariationDto(
-            ProductVariation variation,
-            List<ProductVariationImage> images,
-            List<VariationAttribute> variationAttributes,
-            List<Promotion> promotions) {
-        
-        // Convert images to DTOs
-        List<ProductDetailResponse.ImageDto> imageDtos = images.stream()
-                .map(img -> ProductDetailResponse.ImageDto.builder()
-                        .id(img.getId())
-                        .imageUrl(img.getImageUrl())
-                        .build())
-                .collect(Collectors.toList());
-        
-        // Convert variation attributes to DTOs
-        List<ProductDetailResponse.AttributeDto> attributeDtos = variationAttributes.stream()
-                .map(va -> ProductDetailResponse.AttributeDto.builder()
-                        .id(va.getAttributeId())
-                        .name(va.getAttribute().getName())
-                        .value(va.getValue())
-                        .build())
-                .collect(Collectors.toList());
-        
-        // Calculate realtime pricing with active promotions
-        BigDecimal salePrice = variation.getPrice();
-        String discountType = null;
-        BigDecimal discountValue = null;
-        
-        // Get the first active promotion (assuming only one active promotion per variation at a time)
-        Optional<Promotion> activePromotion = promotions.stream()
-                .filter(Promotion::isActive)
-                .findFirst();
-        
-        if (activePromotion.isPresent()) {
-            Promotion promo = activePromotion.get();
-            discountType = promo.getDiscountType().name();
-            discountValue = promo.getDiscountValue();
-            
-            // Calculate sale price based on promotion type
-            if (promo.getDiscountType() == PromotionType.PERCENTAGE) {
-                // Percentage discount: price - (price * discountValue / 100)
-                BigDecimal discountAmount = variation.getPrice()
-                        .multiply(discountValue)
-                        .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-                salePrice = variation.getPrice().subtract(discountAmount);
-            } else if (promo.getDiscountType() == PromotionType.FIXED) {
-                // Fixed discount: price - discountValue
-                salePrice = variation.getPrice().subtract(discountValue);
-                // Ensure price doesn't go below zero
-                if (salePrice.compareTo(BigDecimal.ZERO) < 0) {
-                    salePrice = BigDecimal.ZERO;
-                }
-            }
-        }
-        
-        // Calculate available quantity (stock - reserved)
-        Integer availableQuantity = variation.getAvailableQuantity();
-        
-        return ProductDetailResponse.VariationDto.builder()
-                .id(variation.getId())
-                .variationName(variation.getVariationName())
-                .price(variation.getPrice())
-                .sku(variation.getSku())
-                .availableQuantity(availableQuantity)
-                .warrantyMonths(variation.getWarrantyMonths())
-                .createdAt(variation.getCreatedAt())
-                .updatedAt(variation.getUpdatedAt())
-                .salePrice(salePrice)
-                .discountType(discountType)
-                .discountValue(discountValue)
-                .images(imageDtos)
-                .attributes(attributeDtos)
-                .build();
-    }
-    
-    private ProductResponse convertToResponse(Product product) {
-        ProductResponse response = ProductResponse.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .categoryId(product.getCategoryId())
-                .brandId(product.getBrandId())
-                .imageUrl(product.getImageUrl())
-                .imagePublicId(product.getImagePublicId())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
-                .deletedAt(product.getDeletedAt())
-                .build();
-        
-        // Set category name if categoryId exists
-        if (product.getCategoryId() != null) {
-            categoryRepository.findById(product.getCategoryId())
-                    .ifPresent(category -> response.setCategoryName(category.getName()));
-        }
-        
-        // Set brand name if brandId exists
-        if (product.getBrandId() != null) {
-            brandRepository.findById(product.getBrandId())
-                    .ifPresent(brand -> response.setBrandName(brand.getName()));
-        }
-        
-        return response;
+        // Use mapper to convert to response
+        return productMapper.toResponse(product, categoryName, brandName);
     }
     
     // Helper method to build Sort object
@@ -477,8 +406,7 @@ public class ProductServiceImpl implements ProductService {
         String field = switch (sortBy != null ? sortBy.toLowerCase() : "id") {
             case "price" -> "displaySalePrice";
             case "rating" -> "averageRating";
-            case "reviewcount", "review_count" -> "totalRatings";
-            case "createdat", "created_at", "date" -> "createdAt";
+            case "time"-> "createdAt";
             case "name" -> "name";
             default -> "id";
         };

@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,26 +6,24 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
- * DTO for wishlist items - extends product list information with wishlist metadata
+ * DTO for product list display - contains basic information for listing products
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WishlistResponse {
+public class ProductListResponse {
     
-    // Wishlist metadata
-    private Integer wishlistId;
-    private LocalDateTime addedAt;
+    private Integer id;
     
-    // Product information (same as ProductListResponse)
-    private Integer productId;
     private String name;
-    private String imageUrl;
     
+    private String imageUrl;
+
+    private Integer warrantyMonths;
+
     // Giá gốc của biến thể có giá thấp nhất
     private BigDecimal displayOriginalPrice;
     
@@ -44,7 +42,4 @@ public class WishlistResponse {
     // Tổng số đánh giá
     private Integer totalRatings;
     
-    // Luôn true cho wishlist items
-    @Builder.Default
-    private Boolean inWishlist = true;
 }

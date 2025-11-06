@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.dto.CategoryCreateRequest;
-import vn.techbox.techbox_store.product.dto.CategoryResponse;
-import vn.techbox.techbox_store.product.dto.CategoryUpdateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryCreateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryResponse;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
 import vn.techbox.techbox_store.product.service.CategoryService;
 
 import java.util.List;

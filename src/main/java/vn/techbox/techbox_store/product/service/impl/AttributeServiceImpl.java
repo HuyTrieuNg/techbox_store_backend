@@ -3,9 +3,10 @@ package vn.techbox.techbox_store.product.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.techbox.techbox_store.product.dto.AttributeCreateRequest;
-import vn.techbox.techbox_store.product.dto.AttributeResponse;
-import vn.techbox.techbox_store.product.dto.AttributeUpdateRequest;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeCreateRequest;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeResponse;
+import vn.techbox.techbox_store.product.dto.attributeDto.AttributeUpdateRequest;
+import vn.techbox.techbox_store.product.mapper.AttributeMapper;
 import vn.techbox.techbox_store.product.model.Attribute;
 import vn.techbox.techbox_store.product.repository.AttributeRepository;
 import vn.techbox.techbox_store.product.service.AttributeService;
@@ -20,13 +21,14 @@ import java.util.stream.Collectors;
 public class AttributeServiceImpl implements AttributeService {
     
     private final AttributeRepository attributeRepository;
+    private final AttributeMapper attributeMapper;
     
     @Override
     @Transactional(readOnly = true)
     public List<AttributeResponse> getAllAttributes() {
         return attributeRepository.findAll()
                 .stream()
-                .map(this::convertToResponse)
+                .map(attributeMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -34,7 +36,7 @@ public class AttributeServiceImpl implements AttributeService {
     @Transactional(readOnly = true)
     public Optional<AttributeResponse> getAttributeById(Integer id) {
         return attributeRepository.findById(id)
-                .map(this::convertToResponse);
+                .map(attributeMapper::toResponse);
     }
     
     @Override
@@ -48,7 +50,7 @@ public class AttributeServiceImpl implements AttributeService {
                 .build();
         
         Attribute savedAttribute = attributeRepository.save(attribute);
-        return convertToResponse(savedAttribute);
+        return attributeMapper.toResponse(savedAttribute);
     }
     
     @Override
@@ -64,7 +66,7 @@ public class AttributeServiceImpl implements AttributeService {
         }
         
         Attribute updatedAttribute = attributeRepository.save(attribute);
-        return convertToResponse(updatedAttribute);
+        return attributeMapper.toResponse(updatedAttribute);
     }
     
     @Override
@@ -81,7 +83,7 @@ public class AttributeServiceImpl implements AttributeService {
     public List<AttributeResponse> searchAttributesByName(String keyword) {
         return attributeRepository.searchByName(keyword)
                 .stream()
-                .map(this::convertToResponse)
+                .map(attributeMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -97,10 +99,5 @@ public class AttributeServiceImpl implements AttributeService {
         return attributeRepository.existsByNameAndIdNot(name, id);
     }
     
-    private AttributeResponse convertToResponse(Attribute attribute) {
-        return AttributeResponse.builder()
-                .id(attribute.getId())
-                .name(attribute.getName())
-                .build();
-    }
+
 }

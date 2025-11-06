@@ -16,9 +16,14 @@ import vn.techbox.techbox_store.cart.service.CartMappingService;
 import vn.techbox.techbox_store.cart.service.CartService;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.promotion.dto.PromotionCalculationRequest;
+import vn.techbox.techbox_store.promotion.dto.PromotionCalculationResponse;
+import vn.techbox.techbox_store.promotion.service.PromotionService;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +35,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductVariationRepository productVariationRepository;
     private final CartMappingService cartMappingService;
+    private final PromotionService promotionService;
 
     @Override
     @Transactional
@@ -39,14 +45,17 @@ public class CartServiceImpl implements CartService {
         Optional<Cart> cartOpt = cartRepository.findByUserIdWithItems(userId);
 
         if (cartOpt.isPresent()) {
-            return cartMappingService.toCartResponse(cartOpt.get());
+            Cart cart = cartOpt.get();
+            // Lấy thông tin promotion cho tất cả items trong giỏ hàng
+            Map<Integer, PromotionCalculationResponse> promotionMap = getPromotionsForCart(cart);
+            return cartMappingService.toCartResponse(cart, promotionMap);
         }
 
         Cart newCart = Cart.builder()
                 .userId(userId)
                 .build();
         Cart savedCart = cartRepository.save(newCart);
-        return cartMappingService.toCartResponse(savedCart);
+        return cartMappingService.toCartResponse(savedCart, Map.of());
     }
 
     @Override
@@ -57,7 +66,8 @@ public class CartServiceImpl implements CartService {
         addItemToCart(cart, request.getProductVariationId(), request.getQuantity());
 
         Cart updatedCart = cartRepository.findByUserIdWithItems(userId).orElse(cart);
-        return cartMappingService.toCartResponse(updatedCart);
+        Map<Integer, PromotionCalculationResponse> promotionMap = getPromotionsForCart(updatedCart);
+        return cartMappingService.toCartResponse(updatedCart, promotionMap);
     }
 
     @Override
@@ -91,7 +101,8 @@ public class CartServiceImpl implements CartService {
         }
 
         Cart updatedCart = cartRepository.findByUserIdWithItems(userId).orElse(cart);
-        return cartMappingService.toCartResponse(updatedCart);
+        Map<Integer, PromotionCalculationResponse> promotionMap = getPromotionsForCart(updatedCart);
+        return cartMappingService.toCartResponse(updatedCart, promotionMap);
     }
 
     @Override
@@ -106,7 +117,8 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
 
         Cart updatedCart = cartRepository.findByUserIdWithItems(userId).orElse(cart);
-        return cartMappingService.toCartResponse(updatedCart);
+        Map<Integer, PromotionCalculationResponse> promotionMap = getPromotionsForCart(updatedCart);
+        return cartMappingService.toCartResponse(updatedCart, promotionMap);
     }
 
     @Override
@@ -139,11 +151,6 @@ public class CartServiceImpl implements CartService {
                             .build();
                     return cartRepository.save(newCart);
                 });
-    }
-
-    private Cart getUserCartEntity(Integer userId) {
-        return cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new CartException.CartNotFoundException("Cart not found for user: " + userId));
     }
 
     private void addItemToCart(Cart cart, Integer productVariationId, Integer quantity) {
@@ -181,5 +188,28 @@ public class CartServiceImpl implements CartService {
 
         cart.setUpdatedAt(LocalDateTime.now());
         cartRepository.save(cart);
+    }
+    
+    /**
+     * Lấy thông tin promotion cho tất cả items trong giỏ hàng
+     * @param cart Cart entity
+     * @return Map với key là productVariationId và value là PromotionCalculationResponse
+     */
+    private Map<Integer, PromotionCalculationResponse> getPromotionsForCart(Cart cart) {
+        if (cart.getCartItems() == null || cart.getCartItems().isEmpty()) {
+            return Map.of();
+        }
+        
+        return cart.getCartItems().stream()
+                .collect(Collectors.toMap(
+                    cartItem -> cartItem.getProductVariation().getId(),
+                    cartItem -> {
+                        PromotionCalculationRequest request = PromotionCalculationRequest.builder()
+                                .productVariationId(cartItem.getProductVariation().getId())
+                                .originalPrice(cartItem.getUnitPrice())
+                                .build();
+                        return promotionService.calculatePromotions(request);
+                    }
+                ));
     }
 }

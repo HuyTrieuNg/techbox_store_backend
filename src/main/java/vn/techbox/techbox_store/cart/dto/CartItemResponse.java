@@ -20,8 +20,16 @@ public class CartItemResponse {
     private String productImage;
     private String variantName;
     private Integer quantity;
-    private BigDecimal unitPrice;
-    private BigDecimal totalPrice;
+    
+    // Pricing information
+    private BigDecimal originalPrice;    // Giá gốc (để hiển thị)
+    private BigDecimal unitPrice;        // Giá bán sau khuyến mãi (để tính toán)
+    private BigDecimal totalPrice;       // Tổng tiền = unitPrice * quantity
+    
+    // Promotion info (optional)
+    private String discountType;         // PERCENTAGE hoặc FIXED
+    private BigDecimal discountValue;  
+
     private LocalDateTime addedAt;
     private LocalDateTime updatedAt;
 

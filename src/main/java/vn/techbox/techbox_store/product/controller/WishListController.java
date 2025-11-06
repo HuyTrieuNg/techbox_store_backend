@@ -10,10 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import vn.techbox.techbox_store.product.dto.ProductListResponse;
-import vn.techbox.techbox_store.product.dto.WishListRequest;
+import vn.techbox.techbox_store.product.dto.wishListDto.CheckWishlistRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.wishListDto.WishListRequest;
 import vn.techbox.techbox_store.product.service.WishListService;
 import vn.techbox.techbox_store.user.model.User;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/wishlists")
@@ -21,22 +24,6 @@ import vn.techbox.techbox_store.user.model.User;
 public class WishListController {
 
     private final WishListService wishListService;
-
-    /**
-     * Add product to wishlist
-     * POST /wishlists
-     */
-    @PostMapping
-    public ResponseEntity<ProductListResponse> addToWishList(
-            @Valid @RequestBody WishListRequest request,
-            Authentication authentication) {
-        
-        User user = (User) authentication.getPrincipal();
-        Integer userId = user.getId();
-        
-        ProductListResponse response = wishListService.addToWishList(userId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
     /**
      * Get user's wishlist with pagination
@@ -63,6 +50,22 @@ public class WishListController {
     }
 
     /**
+     * Add product to wishlist
+     * POST /wishlists
+     */
+    @PostMapping
+    public ResponseEntity<ProductListResponse> addToWishList(
+            @Valid @RequestBody WishListRequest request,
+            Authentication authentication) {
+        
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
+        
+        ProductListResponse response = wishListService.addToWishList(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
      * Remove product from wishlist
      * DELETE /wishlists/{productId}
      */
@@ -79,5 +82,22 @@ public class WishListController {
         
         wishListService.removeFromWishList(userId, request);
         return ResponseEntity.noContent().build();
+    }
+    
+    /**
+     * Check if multiple products are in wishlist
+     * POST /wishlists/check
+     * @return Map of productId -> inWishlist (true/false)
+     */
+    @PostMapping("/check")
+    public ResponseEntity<Map<Integer, Boolean>> checkInWishlist(
+            @Valid @RequestBody CheckWishlistRequest request,
+            Authentication authentication) {
+        
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
+        
+        Map<Integer, Boolean> result = wishListService.checkInWishlist(userId, request.getProductIds());
+        return ResponseEntity.ok(result);
     }
 }

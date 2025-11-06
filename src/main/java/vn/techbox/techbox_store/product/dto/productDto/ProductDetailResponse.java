@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -28,6 +27,7 @@ public class ProductDetailResponse {
     private String brandName;
     private String imageUrl;
     private String imagePublicId;
+    private Integer warrantyMonths;
     
     // Rating information
     private Double averageRating;
@@ -39,13 +39,6 @@ public class ProductDetailResponse {
     private String discountType;
     private BigDecimal discountValue;
     
-    // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    
-    // Wishlist status
-    @Builder.Default
-    private Boolean inWishlist = false;
     
     // Product-level attributes (thuộc tính chung của sản phẩm)
     private List<AttributeDto> attributes;
@@ -78,11 +71,7 @@ public class ProductDetailResponse {
         private Integer id;
         private String variationName;
         private BigDecimal price;
-        private String sku;
         private Integer availableQuantity;  // Số lượng khả dụng (stockQuantity - reservedQuantity)
-        private Integer warrantyMonths;
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
         
         // Pricing with promotion (calculated realtime)
         private BigDecimal salePrice;        // Giá sau khi giảm

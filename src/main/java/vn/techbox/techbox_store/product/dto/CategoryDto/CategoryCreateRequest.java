@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.CategoryDto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

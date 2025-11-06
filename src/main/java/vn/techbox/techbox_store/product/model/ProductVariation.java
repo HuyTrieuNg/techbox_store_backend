@@ -43,10 +43,7 @@ public class ProductVariation {
     private Integer reservedQuantity = 0;
 
     @Column(name = "avg_cost_price", precision = 10, scale = 2)
-    private BigDecimal avgCostPrice;
-
-    @Column(name = "warranty_months")
-    private Integer warrantyMonths;
+        private BigDecimal avgCostPrice;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -67,6 +64,11 @@ public class ProductVariation {
     
     @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariationImage> images;
+    
+    // Relationship with Promotions (one variation can have multiple promotions through campaigns)
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_variation_id", insertable = false, updatable = false)
+    private List<vn.techbox.techbox_store.promotion.model.Promotion> promotions;
     
     @PrePersist
     protected void onCreate() {

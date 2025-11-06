@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.model.Product;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
@@ -24,6 +25,8 @@ public class ProductSeeder implements DataSeeder {
     @Override
     @Transactional
     public void seed() {
+        log.info("Starting Product seeding...");
+        
         List<Product> products = new ArrayList<>();
         List<ProductVariation> variations = new ArrayList<>();
 
@@ -117,6 +120,7 @@ public class ProductSeeder implements DataSeeder {
                 .description(description)
                 .categoryId(categoryId)
                 .brandId(brandId)
+                .status(ProductStatus.PUBLISHED)
                 .build();
     }
 
@@ -195,7 +199,6 @@ public class ProductSeeder implements DataSeeder {
                 .stockQuantity(0) // Will be updated by inventory imports
                 .reservedQuantity(0)
                 .avgCostPrice(BigDecimal.ZERO)
-                .warrantyMonths(12)
                 .build();
     }
 
@@ -206,6 +209,12 @@ public class ProductSeeder implements DataSeeder {
 
     @Override
     public boolean shouldSkip() {
-        return productRepository.count() > 0;
+        long count = productRepository.count();
+        if (count > 0) {
+            log.info("Products already exist ({} found), skipping ProductSeeder", count);
+            return true;
+        }
+        log.info("No products found, will run ProductSeeder");
+        return false;
     }
 }

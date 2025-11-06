@@ -33,12 +33,23 @@ public class Product {
     
     @Column(name = "brand_id")
     private Integer brandId;
+
+    @Column(name = "SPU", nullable = false, unique = true)
+    private String spu;
     
     @Column(name = "image_url")
     private String imageUrl;
     
     @Column(name = "image_public_id")
     private String imagePublicId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private ProductStatus status = ProductStatus.DRAFT;
+
+    @Column(name = "warranty_months")
+    private Integer warrantyMonths;
 
     // Phi chuẩn hóa - thông tin đánh giá
     @Column(name = "average_rating")
@@ -92,6 +103,17 @@ public class Product {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        // Generate SPU if not provided
+        if (this.spu == null) {
+            this.spu = generateSpu();
+        }
+    }
+    
+    private String generateSpu() {
+        // Generate unique SPU using UUID (short version)
+        // Format: PRD-XXXXXXXX (8 uppercase alphanumeric characters)
+        String uuid = java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        return "PRD-" + uuid.substring(0, 8);
     }
     
     @PreUpdate
@@ -107,10 +129,12 @@ public class Product {
     // Helper method to soft delete
     public void delete() {
         this.deletedAt = LocalDateTime.now();
+        this.status = ProductStatus.DELETED;
     }
     
     // Helper method to restore
     public void restore() {
         this.deletedAt = null;
+        this.status = ProductStatus.DRAFT;
     }
 }

@@ -3,13 +3,15 @@ package vn.techbox.techbox_store.product.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.techbox.techbox_store.product.dto.CategoryCreateRequest;
-import vn.techbox.techbox_store.product.dto.CategoryResponse;
-import vn.techbox.techbox_store.product.dto.CategoryUpdateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryCreateRequest;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryResponse;
+import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
+import vn.techbox.techbox_store.product.mapper.CategoryMapper;
 import vn.techbox.techbox_store.product.model.Category;
 import vn.techbox.techbox_store.product.repository.CategoryRepository;
 import vn.techbox.techbox_store.product.service.CategoryService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,13 +22,14 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
     
     private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
     
     @Override
     @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll()
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -34,7 +37,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public Optional<CategoryResponse> getCategoryById(Integer id) {
         return categoryRepository.findById(id)
-                .map(this::convertToResponse);
+                .map(categoryMapper::toResponse);
     }
     
     @Override
@@ -42,7 +45,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getRootCategories() {
         return categoryRepository.findRootCategories()
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
     }
     
@@ -51,8 +54,26 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryResponse> getChildCategories(Integer parentId) {
         return categoryRepository.findChildCategories(parentId)
                 .stream()
-                .map(this::convertToResponse)
+                .map(categoryMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<Integer> getAllChildCategoryIds(Integer parentCategoryId) {
+        List<Integer> result = new ArrayList<>();
+        
+        // Add the parent category itself
+        result.add(parentCategoryId);
+        
+        // Recursively get all child category IDs
+        List<Category> childCategories = categoryRepository.findByParentCategoryId(parentCategoryId);
+        for (Category child : childCategories) {
+            // Recursive call to get all descendants
+            result.addAll(getAllChildCategoryIds(child.getId()));
+        }
+        
+        return result;
     }
     
     @Override
@@ -75,7 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .build();
         
         Category savedCategory = categoryRepository.save(category);
-        return convertToResponse(savedCategory);
+        return categoryMapper.toResponse(savedCategory);
     }
     
     @Override
@@ -104,7 +125,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setParentCategoryId(request.getParentCategoryId());
         
         Category updatedCategory = categoryRepository.save(category);
-        return convertToResponse(updatedCategory);
+        return categoryMapper.toResponse(updatedCategory);
     }
     
     @Override
@@ -132,29 +153,5 @@ public class CategoryServiceImpl implements CategoryService {
     public boolean existsByNameAndIdNot(String name, Integer id) {
         return categoryRepository.existsByNameAndIdNot(name, id);
     }
-    
-    private CategoryResponse convertToResponse(Category category) {
-        CategoryResponse.CategoryResponseBuilder builder = CategoryResponse.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .parentCategoryId(category.getParentCategoryId())
-                .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt());
-        
-        // Set parent category name if exists
-        if (category.getParentCategory() != null) {
-            builder.parentCategoryName(category.getParentCategory().getName());
-        }
-        
-        // Set child categories if exists
-        if (category.getChildCategories() != null && !category.getChildCategories().isEmpty()) {
-            List<CategoryResponse> childResponses = category.getChildCategories()
-                    .stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            builder.childCategories(childResponses);
-        }
-        
-        return builder.build();
-    }
 }
+

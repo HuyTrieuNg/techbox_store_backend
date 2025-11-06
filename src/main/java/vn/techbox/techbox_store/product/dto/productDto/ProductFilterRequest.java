@@ -1,9 +1,10 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class ProductFilterRequest {
     
     // Search by name
@@ -23,10 +24,11 @@ public class ProductFilterRequest {
     // Filter by brand
     private Integer brandId;
     
-    // Filter by category (parent or child)
+    // Filter by category (parent or child) - will automatically include all child categories
     private Integer categoryId;
     
-    // Filter by multiple categories
+    // Internal use only - auto-populated from categoryId
+    // DO NOT send this field in API request
     private List<Integer> categoryIds;
     
     // Filter by attributes (attribute_id:value)
@@ -39,8 +41,14 @@ public class ProductFilterRequest {
     // Rating filter
     private Double minRating;
     
+    // Filter by product status
+    private ProductStatus status;
+    
+    // Filter by campaign
+    private Integer campaignId;
+    
     // Sorting
-    private String sortBy; // price, rating, reviewCount, createdAt
+    private String sortBy; // price, rating, reviewCount, createdAt, newest (id DESC)
     private String sortDirection; // ASC, DESC
     
     // Pagination

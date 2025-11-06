@@ -7,24 +7,26 @@ import vn.techbox.techbox_store.cart.dto.CartResponse;
 import vn.techbox.techbox_store.cart.model.Cart;
 import vn.techbox.techbox_store.cart.model.CartItem;
 import vn.techbox.techbox_store.product.model.ProductVariation;
+import vn.techbox.techbox_store.promotion.dto.PromotionCalculationResponse;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CartMappingService {
 
-    public CartResponse toCartResponse(Cart cart) {
+    public CartResponse toCartResponse(Cart cart, Map<Integer, PromotionCalculationResponse> promotionMap) {
         if (cart == null) {
             return null;
         }
 
         List<CartItemResponse> itemResponses = cart.getCartItems() != null
             ? cart.getCartItems().stream()
-                .map(this::toCartItemResponse)
+                .map(cartItem -> toCartItemResponse(cartItem, promotionMap))
                 .collect(Collectors.toList())
             : Collections.emptyList();
 
@@ -43,28 +45,51 @@ public class CartMappingService {
                 .build();
     }
 
-    public CartItemResponse toCartItemResponse(CartItem cartItem) {
+    private CartItemResponse toCartItemResponse(CartItem cartItem, Map<Integer, PromotionCalculationResponse> promotionMap) {
         if (cartItem == null) {
             return null;
         }
 
         ProductVariation pv = cartItem.getProductVariation();
+        
+        // Lấy thông tin promotion từ map
+        PromotionCalculationResponse promotionResponse = promotionMap.get(pv.getId());
+        
+        // Giá gốc
+        BigDecimal originalPrice = cartItem.getUnitPrice();
+        
+        // Giá sau khuyến mãi
+        BigDecimal unitPrice = originalPrice;
+        if (promotionResponse != null && promotionResponse.getSalePrice() != null) {
+            unitPrice = promotionResponse.getSalePrice();
+        }
+        
+        // Tổng tiền = unitPrice * quantity
+        BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
 
-        return CartItemResponse.builder()
+        CartItemResponse.CartItemResponseBuilder builder = CartItemResponse.builder()
                 .id(cartItem.getId())
                 .productVariationId(pv.getId())
                 .productName(pv.getProduct().getName())
                 .productImage(getProductImage(pv))
                 .variantName(buildVariantName(pv))
                 .quantity(cartItem.getQuantity())
-                .unitPrice(cartItem.getUnitPrice())
-                .totalPrice(cartItem.getTotalPrice())
+                .originalPrice(originalPrice)
+                .unitPrice(unitPrice)
+                .totalPrice(totalPrice)
                 .addedAt(cartItem.getAddedAt())
                 .updatedAt(cartItem.getUpdatedAt())
                 .sku(pv.getSku())
                 .stockQuantity(pv.getStockQuantity())
-                .isAvailable(pv.getStockQuantity() > 0)
-                .build();
+                .isAvailable(pv.getStockQuantity() > 0);
+        
+        // Thêm thông tin promotion nếu có
+        if (promotionResponse != null && promotionResponse.getDiscountType() != null) {
+            builder.discountType(promotionResponse.getDiscountType())
+                   .discountValue(promotionResponse.getDiscountValue());
+        }
+        
+        return builder.build();
     }
 
     private BigDecimal calculateSubtotal(List<CartItemResponse> items) {

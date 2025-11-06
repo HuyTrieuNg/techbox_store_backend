@@ -14,7 +14,7 @@ import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 import vn.techbox.techbox_store.promotion.service.PromotionService;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -130,46 +130,54 @@ public class PromotionServiceImpl implements PromotionService {
     public PromotionCalculationResponse calculatePromotions(PromotionCalculationRequest request) {
         log.info("Calculating promotions for product variation ID: {}", request.getProductVariationId());
         
-        List<Promotion> applicablePromotions = promotionRepository.findByProductVariationId(request.getProductVariationId())
-                .stream()
-                .filter(promotion -> promotion.isActive())
-                .collect(Collectors.toList());
+        // Lấy promotion active cho product variation
+        List<Promotion> activePromotions = promotionRepository
+                .findActivePromotionsByProductVariationId(
+                    request.getProductVariationId(), 
+                    LocalDateTime.now()
+                );
         
-        BigDecimal originalTotal = request.getOriginalPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
-        BigDecimal totalDiscount = BigDecimal.ZERO;
-        List<PromotionCalculationResponse.AppliedPromotion> appliedPromotions = new ArrayList<>();
+        // Nếu không có promotion active, trả về response với giá gốc
+        if (activePromotions.isEmpty()) {
+            log.debug("No active promotion found for product variation ID: {}", request.getProductVariationId());
+            return PromotionCalculationResponse.builder()
+                    .productVariationId(request.getProductVariationId())
+                    .salePrice(request.getOriginalPrice())
+                    .discountType(null)
+                    .discountValue(null)
+                    .promotionId(null)
+                    .campaignId(null)
+                    .build();
+        }
         
-        for (Promotion promotion : applicablePromotions) {
-            BigDecimal discount = promotion.calculateDiscount(
-                    request.getOriginalPrice(), 
-                    request.getQuantity()
-            );
-            
-            if (discount.compareTo(BigDecimal.ZERO) > 0) {
-                totalDiscount = totalDiscount.add(discount);
-                
-                appliedPromotions.add(PromotionCalculationResponse.AppliedPromotion.builder()
-                        .promotionId(promotion.getId())
-                        .campaignName(promotion.getCampaign().getName())
-                        .discountType(promotion.getDiscountType().name())
-                        .discountAmount(discount)
-                        .build());
+        // Lấy promotion đầu tiên (có thể cải thiện logic này nếu cần)
+        Promotion promotion = activePromotions.get(0);
+        
+        // Tính giá sau khuyến mãi
+        BigDecimal salePrice = request.getOriginalPrice();
+        
+        if ("PERCENTAGE".equals(promotion.getDiscountType().name())) {
+            // Giảm theo phần trăm
+            BigDecimal discount = request.getOriginalPrice()
+                .multiply(promotion.getDiscountValue())
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            salePrice = request.getOriginalPrice().subtract(discount);
+        } else if ("FIXED".equals(promotion.getDiscountType().name())) {
+            // Giảm theo số tiền cố định
+            salePrice = request.getOriginalPrice().subtract(promotion.getDiscountValue());
+            // Đảm bảo giá không âm
+            if (salePrice.compareTo(BigDecimal.ZERO) < 0) {
+                salePrice = BigDecimal.ZERO;
             }
         }
         
-        BigDecimal finalTotal = originalTotal.subtract(totalDiscount);
-        BigDecimal finalPrice = finalTotal.divide(BigDecimal.valueOf(request.getQuantity()));
-        
         return PromotionCalculationResponse.builder()
                 .productVariationId(request.getProductVariationId())
-                .originalPrice(request.getOriginalPrice())
-                .originalTotal(originalTotal)
-                .quantity(request.getQuantity())
-                .orderAmount(request.getOrderAmount())
-                .totalDiscount(totalDiscount)
-                .finalPrice(finalPrice)
-                .finalTotal(finalTotal)
-                .appliedPromotions(appliedPromotions)
+                .salePrice(salePrice)
+                .discountType(promotion.getDiscountType().name())
+                .discountValue(promotion.getDiscountValue())
+                .promotionId(promotion.getId())
+                .campaignId(promotion.getCampaign().getId())
                 .build();
     }
     

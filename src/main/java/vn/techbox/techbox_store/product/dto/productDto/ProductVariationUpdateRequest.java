@@ -1,8 +1,7 @@
-package vn.techbox.techbox_store.product.dto;
+package vn.techbox.techbox_store.product.dto.productDto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,15 +15,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductVariationCreateRequest {
+public class ProductVariationUpdateRequest {
     
     @Size(max = 255, message = "Variation name must not exceed 255 characters")
     private String variationName;
     
-    @NotNull(message = "Product ID is required")
-    private Integer productId;
-    
-    @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
     
@@ -33,9 +28,21 @@ public class ProductVariationCreateRequest {
     
     private List<String> imageUrls; // List of image URLs
     private List<String> imagePublicIds; // List of Cloudinary public IDs
+    private List<String> deleteImageIds; // List of image IDs to delete
+    
+    @Min(value = 0, message = "Stock quantity must be non-negative")
+    private Integer stockQuantity;
+
+    private Integer reservedQuantity;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
 
-    private Integer warrantyMonths;
+    // Backwards-compatibility: support old builder method `quantity(...)` by mapping it to stockQuantity
+    public static class ProductVariationUpdateRequestBuilder {
+        public ProductVariationUpdateRequestBuilder quantity(Integer quantity) {
+            this.stockQuantity = quantity;
+            return this;
+        }
+    }
 }
