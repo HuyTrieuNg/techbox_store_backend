@@ -39,6 +39,14 @@ public class Voucher {
     @Column(name = "usage_limit", nullable = false)
     private Integer usageLimit;
     
+    @Column(name = "reserved_quantity", nullable = false)
+    @Builder.Default
+    private Integer reservedQuantity = 0;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     @Column(name = "valid_from", nullable = false)
     private LocalDateTime validFrom;
     
@@ -93,6 +101,14 @@ public class Voucher {
         return userVouchers == null || userVouchers.size() < usageLimit;
     }
     
+    public Integer getAvailableQuantity() {
+        int limit = (usageLimit != null ? usageLimit : 0);
+        int used = (userVouchers != null ? userVouchers.size() : 0);
+        int reserved = (reservedQuantity != null ? reservedQuantity : 0);
+        int available = limit - used - reserved;
+        return Math.max(0, available);
+    }
+
     public BigDecimal calculateDiscount(BigDecimal orderAmount) {
         if (orderAmount.compareTo(minOrderAmount) < 0) {
             return BigDecimal.ZERO;

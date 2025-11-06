@@ -28,8 +28,9 @@ public abstract class Payment {
     private PaymentMethod paymentMethod;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false)
-    private String paymentStatus = "PENDING";
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
 
     @Column(name = "payment_transaction_id", length = 100)
     private String paymentTransactionId;
