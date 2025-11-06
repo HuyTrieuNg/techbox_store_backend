@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.techbox.techbox_store.payment.model.Payment;
 import vn.techbox.techbox_store.payment.model.PaymentMethod;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 import vn.techbox.techbox_store.user.model.User;
 
 import java.time.LocalDateTime;
@@ -72,7 +73,9 @@ public class Order {
     }
 
     public String getPaymentStatus() {
-        return paymentInfo != null ? paymentInfo.getPaymentStatus() : "PENDING";
+        return paymentInfo != null && paymentInfo.getPaymentStatus() != null
+                ? paymentInfo.getPaymentStatus().name()
+                : PaymentStatus.PENDING.name();
     }
 
     public String getShippingName() {
@@ -85,5 +88,13 @@ public class Order {
 
     public String getShippingAddress() {
         return shippingInfo != null ? shippingInfo.getShippingAddress() : null;
+    }
+
+    public Integer getUserId() {
+        return user != null ? user.getId() : null;
+    }
+
+    public String getVoucherCode() {
+        return paymentInfo != null ? paymentInfo.getVoucherCode() : null;
     }
 }

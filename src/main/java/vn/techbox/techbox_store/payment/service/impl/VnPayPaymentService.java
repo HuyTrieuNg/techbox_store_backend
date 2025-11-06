@@ -1,5 +1,7 @@
 package vn.techbox.techbox_store.payment.service.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import vn.techbox.techbox_store.order.dto.PaymentRequest;
@@ -8,6 +10,7 @@ import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.payment.model.PaymentMethod;
 import vn.techbox.techbox_store.payment.model.VnpayPayment;
 import vn.techbox.techbox_store.payment.model.Payment;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 import vn.techbox.techbox_store.payment.service.PaymentService;
 import vn.techbox.techbox_store.payment.util.VnPayUtils;
 
@@ -15,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class VnPayPaymentService implements PaymentService {
 
     @Value("${vnpay.tmn-code:}")
@@ -33,7 +38,7 @@ public class VnPayPaymentService implements PaymentService {
     public Payment initiatePayment(Order order) {
         VnpayPayment payment = VnpayPayment.builder().build();
         payment.setPaymentMethod(PaymentMethod.VNPAY);
-        payment.setPaymentStatus("PENDING");
+        payment.setPaymentStatus(PaymentStatus.PENDING);
         return payment;
     }
 
