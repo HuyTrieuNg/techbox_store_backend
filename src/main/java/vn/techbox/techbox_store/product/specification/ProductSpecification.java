@@ -3,6 +3,8 @@ package vn.techbox.techbox_store.product.specification;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
+
+import vn.techbox.techbox_store.product.dto.productDto.ProductFilterRequest;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductAttribute;
 import vn.techbox.techbox_store.product.model.ProductStatus;
@@ -15,6 +17,54 @@ import java.util.List;
 
 @Slf4j
 public class ProductSpecification {
+
+
+    public Specification<Product> buildFilterSpecification(ProductFilterRequest filter) {
+        Specification<Product> spec = Specification.where(null);
+        
+        // Apply status filter
+        if (filter.getStatus() != null) {
+            spec = spec.and(ProductSpecification.hasStatus(filter.getStatus()));
+        }
+        
+        // Apply name filter
+        if (filter.getName() != null && !filter.getName().trim().isEmpty()) {
+            spec = spec.and(ProductSpecification.nameLike(filter.getName()));
+        }
+        
+        // Apply brand filter
+        if (filter.getBrandId() != null) {
+            spec = spec.and(ProductSpecification.hasBrand(filter.getBrandId()));
+        }
+        
+        // Apply category filter
+        if (filter.getCategoryIds() != null && !filter.getCategoryIds().isEmpty()) {
+            spec = spec.and(ProductSpecification.hasCategories(filter.getCategoryIds()));
+        }
+        
+        // Apply price range filter
+        if (filter.getMinPrice() != null || filter.getMaxPrice() != null) {
+            spec = spec.and(ProductSpecification.priceInRange(filter.getMinPrice(), filter.getMaxPrice()));
+        }
+        
+        // Apply rating filter
+        if (filter.getMinRating() != null) {
+            spec = spec.and(ProductSpecification.ratingGreaterThanOrEqual(filter.getMinRating()));
+        }
+        
+        // Apply campaign filter
+        if (filter.getCampaignId() != null) {
+            spec = spec.and(ProductSpecification.hasCampaignId(filter.getCampaignId()));
+        }
+        
+        // Apply attributes filter
+        if (filter.getAttributes() != null && !filter.getAttributes().isEmpty()) {
+            spec = spec.and(ProductSpecification.hasAttributes(filter.getAttributes()));
+        }
+        
+        return spec;
+    }
+
     /**
      * Filter by product status
      */

@@ -149,11 +149,7 @@ public class PromotionServiceImpl implements PromotionService {
                     .campaignId(null)
                     .build();
         }
-        
-        // Lấy promotion đầu tiên (có thể cải thiện logic này nếu cần)
         Promotion promotion = activePromotions.get(0);
-        
-        // Tính giá sau khuyến mãi
         BigDecimal salePrice = request.getOriginalPrice();
         
         if ("PERCENTAGE".equals(promotion.getDiscountType().name())) {

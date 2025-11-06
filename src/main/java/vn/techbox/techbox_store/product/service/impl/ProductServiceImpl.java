@@ -9,6 +9,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.productDto.*;
+import vn.techbox.techbox_store.product.helpers.ProductFilterHelper;
+import vn.techbox.techbox_store.product.helpers.SortHelper;
 import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
 import vn.techbox.techbox_store.product.mapper.ProductMapper;
@@ -38,24 +40,24 @@ public class ProductServiceImpl implements ProductService {
     private final ProductVariationImageRepository productVariationImageRepository;
     private final ReviewRepository reviewRepository;
     private final PromotionRepository promotionRepository;
-    private final CategoryService categoryService;
     private final ProductMapper productMapper;
+    private final ProductFilterHelper productFilterHelper;
+    private final SortHelper sortHelper;
+    private final ProductSpecification productSpecification;
     
     @Override
     @Transactional(readOnly = true)
     public Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest) {
-        ProductFilterRequest filter = prepareFilter(filterRequest);
-        
-        // Build sort
-        Sort sort = buildSort(filter.getSortBy(), filter.getSortDirection());
-        
+        ProductFilterRequest filter = productFilterHelper.prepareFilter(filterRequest);
+
+        Sort sort = sortHelper.buildSort(filter.getSortBy(), filter.getSortDirection());
+
         // Build pageable
         int page = filter.getPage() != null ? filter.getPage() : 0;
         int size = filter.getSize() != null ? filter.getSize() : 20;
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        // Build specification from enriched filter
-        Specification<Product> spec = buildFilterSpecification(filter);
+        Specification<Product> spec = productSpecification.buildFilterSpecification(filter);
         
         // Query with specification
         Page<Product> productsPage = productRepository.findAll(spec, pageable);
@@ -285,69 +287,10 @@ public class ProductServiceImpl implements ProductService {
     
    
 
-    private ProductFilterRequest prepareFilter(ProductFilterRequest filter) {
-        ProductFilterRequest.ProductFilterRequestBuilder builder = filter.toBuilder();
-        
-        // mặc định là PUBLISHED cho API công khai
-        if (filter.getStatus() == null) {
-            builder.status(ProductStatus.PUBLISHED);
-        }
-        
-        // Lấy tất cả danh mục con từ categoryId được cung cấp
-        if (filter.getCategoryId() != null) {
-            List<Integer> allCategoryIds = categoryService.getAllChildCategoryIds(filter.getCategoryId());
-            builder.categoryIds(allCategoryIds);
-        }
-        
-        return builder.build();
-    }
+
     
    
-    private Specification<Product> buildFilterSpecification(ProductFilterRequest filter) {
-        Specification<Product> spec = Specification.where(null);
-        
-        // Apply status filter
-        if (filter.getStatus() != null) {
-            spec = spec.and(ProductSpecification.hasStatus(filter.getStatus()));
-        }
-        
-        // Apply name filter
-        if (filter.getName() != null && !filter.getName().trim().isEmpty()) {
-            spec = spec.and(ProductSpecification.nameLike(filter.getName()));
-        }
-        
-        // Apply brand filter
-        if (filter.getBrandId() != null) {
-            spec = spec.and(ProductSpecification.hasBrand(filter.getBrandId()));
-        }
-        
-        // Apply category filter
-        if (filter.getCategoryIds() != null && !filter.getCategoryIds().isEmpty()) {
-            spec = spec.and(ProductSpecification.hasCategories(filter.getCategoryIds()));
-        }
-        
-        // Apply price range filter
-        if (filter.getMinPrice() != null || filter.getMaxPrice() != null) {
-            spec = spec.and(ProductSpecification.priceInRange(filter.getMinPrice(), filter.getMaxPrice()));
-        }
-        
-        // Apply rating filter
-        if (filter.getMinRating() != null) {
-            spec = spec.and(ProductSpecification.ratingGreaterThanOrEqual(filter.getMinRating()));
-        }
-        
-        // Apply campaign filter
-        if (filter.getCampaignId() != null) {
-            spec = spec.and(ProductSpecification.hasCampaignId(filter.getCampaignId()));
-        }
-        
-        // Apply attributes filter
-        if (filter.getAttributes() != null && !filter.getAttributes().isEmpty()) {
-            spec = spec.and(ProductSpecification.hasAttributes(filter.getAttributes()));
-        }
-        
-        return spec;
-    }
+    
     
 
     
@@ -400,22 +343,6 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(product, categoryName, brandName);
     }
     
-    // Helper method to build Sort object
-    private Sort buildSort(String sortBy, String sortDirection) {
-        // Map sortBy field names
-        String field = switch (sortBy != null ? sortBy.toLowerCase() : "id") {
-            case "price" -> "displaySalePrice";
-            case "rating" -> "averageRating";
-            case "time"-> "createdAt";
-            case "name" -> "name";
-            default -> "id";
-        };
-
-        Sort.Direction direction = "desc".equalsIgnoreCase(sortDirection) 
-                ? Sort.Direction.DESC
-                : Sort.Direction.ASC;
-        
-        return Sort.by(direction, field);
-    }
+    
 }
 
