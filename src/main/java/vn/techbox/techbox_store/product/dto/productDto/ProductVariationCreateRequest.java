@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -35,4 +36,8 @@ public class ProductVariationCreateRequest {
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
+
+    private Integer stockQuantity;
+    private Integer reservedQuantity;
+    Map<Integer, String> variationAttributes;
 }

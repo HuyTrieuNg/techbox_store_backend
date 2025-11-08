@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationManagementResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
@@ -27,18 +28,42 @@ public class ProductVariationController {
     private final ProductVariationService productVariationService;
     private final CloudinaryService cloudinaryService;
     
-    @GetMapping
-    public ResponseEntity<List<ProductVariationResponse>> getAllProductVariations(
-            @RequestParam(defaultValue = "false") boolean includeDeleted) {
-        List<ProductVariationResponse> variations = includeDeleted 
-                ? productVariationService.getAllProductVariations() 
-                : productVariationService.getAllActiveProductVariations();
+    /**
+     * Get all variations by product ID
+     * Main API for fetching variations of a specific product
+     */
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<List<ProductVariationResponse>> getVariationsByProduct(@PathVariable Integer productId) {
+        List<ProductVariationResponse> variations = productVariationService.getVariationsByProductId(productId);
         return ResponseEntity.ok(variations);
     }
     
+    /**
+     * Get all variations for management by product ID with optional deleted filter
+     * Used for admin/management view and edit
+     * 
+     * @param productId The ID of the product
+     * @param deleted Optional filter:
+     *                - Not provided (null): return all variations
+     *                - ?deleted=false: return only active variations
+     *                - ?deleted=true: return only soft-deleted variations
+     * @return List of variations matching the filter criteria
+     */
+
+    // @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @GetMapping("/management/product/{productId}")
+    public ResponseEntity<List<ProductVariationManagementResponse>> getVariationsForManagement(
+            @PathVariable Integer productId,
+            @RequestParam(value = "deleted", required = false) Boolean deleted) {
+        List<ProductVariationManagementResponse> variations = productVariationService.getVariationsForManagement(productId, deleted);
+        return ResponseEntity.ok(variations);
+    }
+    
+    /**
+     * Get single variation by ID
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<ProductVariationResponse> getProductVariationById(
-            @PathVariable Integer id){
+    public ResponseEntity<ProductVariationResponse> getProductVariationById(@PathVariable Integer id){
         return  productVariationService.getActiveProductVariationById(id)
                 .map(variation -> ResponseEntity.ok(variation))
                 .orElse(ResponseEntity.notFound().build());
@@ -162,6 +187,16 @@ public class ProductVariationController {
         productVariationService.deleteProductVariation(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
+    @DeleteMapping("/hard/{id}")
+    public ResponseEntity<Void> deleteProductVariationHard(@PathVariable Integer id) {
+        productVariationService.deleteProductVariationHard(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    
     
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PatchMapping("/{id}/restore")
@@ -170,30 +205,10 @@ public class ProductVariationController {
         return ResponseEntity.ok().build();
     }
     
-    @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductVariationResponse>> getVariationsByProduct(@PathVariable Integer productId) {
-        List<ProductVariationResponse> variations = productVariationService.getVariationsByProductId(productId);
-        return ResponseEntity.ok(variations);
-    }
-    
-    @GetMapping("/in-stock")
-    public ResponseEntity<List<ProductVariationResponse>> getInStockVariations(
-            @RequestParam(required = false) Integer productId) {
-        List<ProductVariationResponse> variations = productId != null
-                ? productVariationService.getInStockVariationsByProductId(productId)
-                : productVariationService.getInStockVariations();
-        return ResponseEntity.ok(variations);
-    }
-    
-
-    @PreAuthorize("hasAuthority('PRODUCT:REPORT')")
-    @GetMapping("/low-stock")
-    public ResponseEntity<List<ProductVariationResponse>> getLowStockVariations(
-            @RequestParam(defaultValue = "10") Integer threshold) {
-        List<ProductVariationResponse> variations = productVariationService.getLowStockVariations(threshold);
-        return ResponseEntity.ok(variations);
-    }
-    
+    /**
+     * Get variation by SKU
+     * Useful for inventory management
+     */
     @GetMapping("/sku/{sku}")
     public ResponseEntity<ProductVariationResponse> getVariationBySku(@PathVariable String sku) {
         return productVariationService.getVariationBySku(sku)
@@ -201,6 +216,9 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    /**
+     * Update stock quantity
+     */
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PatchMapping("/{id}/stock")
     public ResponseEntity<ProductVariationResponse> updateStock(
@@ -208,16 +226,5 @@ public class ProductVariationController {
             @RequestParam Integer stockQuantity) {
         ProductVariationResponse updatedVariation = productVariationService.updateStock(id, stockQuantity);
         return ResponseEntity.ok(updatedVariation);
-    }
-    
-    @PreAuthorize("hasAuthority('PRODUCT:READ')")
-    @GetMapping("/exists")
-    public ResponseEntity<Boolean> checkSkuExists(
-            @RequestParam String sku,
-            @RequestParam(required = false) Integer excludeId) {
-        boolean exists = excludeId != null 
-                ? productVariationService.existsBySkuAndIdNot(sku, excludeId)
-                : productVariationService.existsBySku(sku);
-        return ResponseEntity.ok(exists);
     }
 }

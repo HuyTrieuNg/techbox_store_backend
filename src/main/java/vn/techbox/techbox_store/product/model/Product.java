@@ -37,7 +37,7 @@ public class Product {
     @Column(name = "SPU", nullable = false, unique = true)
     private String spu;
     
-    @Column(name = "image_url")
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
     
     @Column(name = "image_public_id")

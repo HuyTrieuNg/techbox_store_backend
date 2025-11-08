@@ -26,9 +26,22 @@ public interface ProductVariationRepository extends JpaRepository<ProductVariati
     @Query("SELECT pv FROM ProductVariation pv WHERE pv.id = :id AND pv.deletedAt IS NULL")
     Optional<ProductVariation> findActiveById(@Param("id") Integer id);
     
-    // Find variations by product id
+    // Find variations by product id (all including deleted)
+    @Query("SELECT pv FROM ProductVariation pv WHERE pv.productId = :productId")
+    List<ProductVariation> findAllByProductId(@Param("productId") Integer productId);
+    
+    // Find active variations by product id
     @Query("SELECT pv FROM ProductVariation pv WHERE pv.productId = :productId AND pv.deletedAt IS NULL")
     List<ProductVariation> findByProductId(@Param("productId") Integer productId);
+    
+    // Find deleted variations by product id
+    @Query("SELECT pv FROM ProductVariation pv WHERE pv.productId = :productId AND pv.deletedAt IS NOT NULL")
+    List<ProductVariation> findDeletedByProductId(@Param("productId") Integer productId);
+    
+    // Alias for clarity
+    default List<ProductVariation> findByProductIdAndDeletedAtIsNull(Integer productId) {
+        return findByProductId(productId);
+    }
     
     // Find in stock variations
     @Query("SELECT pv FROM ProductVariation pv WHERE pv.stockQuantity - COALESCE(pv.reservedQuantity, 0) > 0 AND pv.deletedAt IS NULL")

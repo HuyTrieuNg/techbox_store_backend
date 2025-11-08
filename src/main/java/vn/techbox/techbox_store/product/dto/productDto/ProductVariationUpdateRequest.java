@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -38,6 +39,8 @@ public class ProductVariationUpdateRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
 
+
+    private Map<Integer, String> variationAttributes; // Key-value pairs for variation attributes
     // Backwards-compatibility: support old builder method `quantity(...)` by mapping it to stockQuantity
     public static class ProductVariationUpdateRequestBuilder {
         public ProductVariationUpdateRequestBuilder quantity(Integer quantity) {

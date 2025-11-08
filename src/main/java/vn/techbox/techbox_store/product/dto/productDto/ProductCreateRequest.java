@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.techbox.techbox_store.product.model.ProductStatus;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,4 +36,6 @@ public class ProductCreateRequest {
     
     @Size(max = 255, message = "Image public ID must not exceed 255 characters")
     private String imagePublicId;
+
+    private Map<Integer, String> attributes; // Key-value pairs for product attributes
 }

@@ -86,4 +86,11 @@ public class CategoryController {
         boolean exists = categoryService.existsByName(name);
         return ResponseEntity.ok(exists);
     }
+    
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @GetMapping("/exists-for-update")
+    public ResponseEntity<Boolean> checkCategoryNameExistsForUpdate(@RequestParam String name, @RequestParam Integer id) {
+        boolean exists = categoryService.existsByNameAndIdNot(name, id);
+        return ResponseEntity.ok(exists);
+    }
 }
