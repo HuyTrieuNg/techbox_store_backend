@@ -10,6 +10,8 @@ import vn.techbox.techbox_store.order.dto.*;
 import vn.techbox.techbox_store.order.exception.OrderException;
 import vn.techbox.techbox_store.order.model.*;
 import vn.techbox.techbox_store.payment.model.Payment;
+import vn.techbox.techbox_store.payment.model.PaymentMethod;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 import vn.techbox.techbox_store.payment.repository.PaymentRepository;
 import vn.techbox.techbox_store.payment.service.factory.PaymentServiceFactory;
 import vn.techbox.techbox_store.order.repository.OrderRepository;
@@ -18,6 +20,8 @@ import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.UserRepository;
+import vn.techbox.techbox_store.inventory.service.InventoryReservationService;
+import vn.techbox.techbox_store.voucher.service.VoucherReservationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,6 +44,9 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMappingService orderMappingService;
     private final OrderShippingInfoRepository orderShippingInfoRepository;
     private final PaymentRepository payment;
+    private final InventoryReservationService inventoryReservationService;
+    private final VoucherReservationService voucherReservationService;
+    private final OrderConfirmationService orderConfirmationService;
 
     @Override
     @Transactional
@@ -66,6 +73,7 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         OrderShippingInfo savedShippingInfo = orderShippingInfoRepository.save(shippingInfo);
 
+        // Initialize payment entity
         Payment payment = paymentServiceFactory.getPaymentService(request.getPaymentMethod())
                 .initiatePayment(null);
         payment.setVoucherCode(request.getVoucherCode());
@@ -106,6 +114,29 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderItems(orderItems);
 
         Order savedOrder = orderRepository.save(order);
+
+        // Create reservations for VNPAY orders
+        if (request.getPaymentMethod() == PaymentMethod.VNPAY) {
+            try {
+                for (OrderItem orderItem : savedOrder.getOrderItems()) {
+                    inventoryReservationService.reserveInventory(
+                            savedOrder.getId().intValue(),
+                            orderItem.getProductVariation().getId(),
+                            orderItem.getQuantity()
+                    );
+                }
+                if (savedOrder.getVoucherCode() != null && !savedOrder.getVoucherCode().trim().isEmpty()) {
+                    voucherReservationService.reserveVoucherByCode(
+                            savedOrder.getId().intValue(),
+                            savedOrder.getVoucherCode(),
+                            savedOrder.getUserId()
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to create reservations for order {}: {}", savedOrder.getId(), e.getMessage(), e);
+                throw new OrderException("Failed to reserve inventory/voucher: " + e.getMessage());
+            }
+        }
 
         PaymentResponse paymentResponse = null;
         try {
@@ -165,7 +196,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> getUserOrders(Integer userId, Pageable pageable) {
-        Page<Order> orders = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
         return orders.map(orderMappingService::toOrderResponse);
     }
 
@@ -183,11 +214,15 @@ public class OrderServiceImpl implements OrderService {
 
         orderValidationService.validateStatusTransition(order.getStatus(), status);
 
+        if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.COD) {
+            Order confirmed = orderConfirmationService.confirmCodOrder(orderId.intValue());
+            log.info("Order {} confirmed (COD). Stock deducted and status persisted.", orderId);
+            return orderMappingService.toOrderResponse(confirmed);
+        }
+
         order.setStatus(status);
         Order savedOrder = orderRepository.save(order);
-
         log.info("Order {} status updated to: {}", orderId, status);
-
         return orderMappingService.toOrderResponse(savedOrder);
     }
 
@@ -204,6 +239,18 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderException("Cannot cancel order with status: " + order.getStatus());
         }
 
+        // If VNPAY and reservations exist, release them
+        if (order.getPaymentMethod() == PaymentMethod.VNPAY) {
+            try {
+                inventoryReservationService.releaseReservations(order.getId().intValue());
+                if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+                    voucherReservationService.releaseReservations(order.getId().intValue());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to release reservations for cancelled order {}: {}", orderId, e.getMessage());
+            }
+        }
+
         order.setStatus(OrderStatus.CANCELLED);
         order.setUpdatedAt(LocalDateTime.now());
 
@@ -212,41 +259,6 @@ public class OrderServiceImpl implements OrderService {
         log.info("Order {} cancelled successfully", orderId);
 
         return orderMappingService.toOrderResponse(savedOrder);
-    }
-
-    @Override
-    public PaymentResponse processPayment(PaymentRequest request) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new OrderException("Order not found"));
-
-        var processor = paymentServiceFactory.getPaymentService(request.getPaymentMethod());
-        PaymentResponse response = processor.generatePaymentUrl(request);
-
-        if ("PENDING".equals(response.getStatus()) || "SUCCESS".equals(response.getStatus())) {
-            order.getPaymentInfo().setPaymentTransactionId(response.getTransactionId());
-            orderRepository.save(order);
-        }
-
-        return response;
-    }
-
-    @Override
-    public boolean confirmPayment(Long orderId, String transactionId, String signature) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderException("Order not found"));
-
-        var processor = paymentServiceFactory.getPaymentService(order.getPaymentMethod());
-        boolean isValid = processor.verifyPayment(transactionId, signature);
-
-        if (isValid) {
-            order.getPaymentInfo().setPaymentStatus("PAID");
-            order.setStatus(OrderStatus.CONFIRMED);
-            orderRepository.save(order);
-
-            log.info("Payment confirmed for order: {}", orderId);
-        }
-
-        return isValid;
     }
 
     private String generateOrderCode() {

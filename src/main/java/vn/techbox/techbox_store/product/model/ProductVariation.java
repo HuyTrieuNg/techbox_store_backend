@@ -42,6 +42,10 @@ public class ProductVariation {
     @Builder.Default
     private Integer reservedQuantity = 0;
 
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     @Column(name = "avg_cost_price", precision = 10, scale = 2)
         private BigDecimal avgCostPrice;
 
@@ -101,7 +105,7 @@ public class ProductVariation {
         int stock = (stockQuantity != null ? stockQuantity : 0);
         int reserved = (reservedQuantity != null ? reservedQuantity : 0);
         int available = stock - reserved;
-        return available > 0 ? available : 0;
+        return Math.max(available, 0);
     }
     
     // Helper method to decrease quantity

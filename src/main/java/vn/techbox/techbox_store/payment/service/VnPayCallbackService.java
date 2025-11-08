@@ -4,13 +4,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import vn.techbox.techbox_store.inventory.service.InventoryReservationService;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 import vn.techbox.techbox_store.order.repository.OrderRepository;
 import vn.techbox.techbox_store.payment.model.Payment;
+import vn.techbox.techbox_store.payment.model.PaymentStatus;
 import vn.techbox.techbox_store.payment.model.VnpayPayment;
 import vn.techbox.techbox_store.payment.repository.PaymentRepository;
 import vn.techbox.techbox_store.payment.util.VnPayUtils;
+import vn.techbox.techbox_store.voucher.service.VoucherReservationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,6 +28,8 @@ public class VnPayCallbackService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final InventoryReservationService inventoryReservationService;
+    private final VoucherReservationService voucherReservationService;
 
     @Value("${vnpay.hash-secret:}")
     private String hashSecret;
@@ -72,7 +77,7 @@ public class VnPayCallbackService {
             return Map.of("RspCode", "04", "Message", "Invalid amount");
         }
 
-        if ("PAID".equalsIgnoreCase(payment.getPaymentStatus())) {
+        if (payment.getPaymentStatus() == PaymentStatus.PAID) {
             return Map.of("RspCode", "02", "Message", "Order already confirmed");
         }
 
@@ -93,14 +98,40 @@ public class VnPayCallbackService {
         }
 
         if ("00".equals(respCode)) {
-            payment.setPaymentStatus("PAID");
-            payment.setPaymentCompletedAt(LocalDateTime.now());
-            order.setStatus(OrderStatus.CONFIRMED);
+            // Payment successful - confirm reservations
+            try {
+                inventoryReservationService.confirmReservations(order.getId().intValue());
+                voucherReservationService.confirmReservations(order.getId().intValue());
+
+                payment.setPaymentStatus(PaymentStatus.PAID);
+                payment.setPaymentCompletedAt(LocalDateTime.now());
+                order.setStatus(OrderStatus.CONFIRMED);
+
+                log.info("Payment confirmed and reservations converted to actual usage for order: {}", order.getId());
+            } catch (Exception e) {
+                log.error("Failed to confirm reservations for order: {}", order.getId(), e);
+                // If reservation confirmation fails, we should still mark payment as paid
+                // but log the error for manual intervention
+                payment.setPaymentStatus(PaymentStatus.PAID);
+                payment.setPaymentCompletedAt(LocalDateTime.now());
+                order.setStatus(OrderStatus.CONFIRMED);
+            }
         } else {
-            payment.setPaymentStatus("FAILED");
-            payment.setPaymentFailedAt(LocalDateTime.now());
-            payment.setPaymentFailureReason("VNPay response: " + respCode);
-            order.setStatus(OrderStatus.CANCELLED);
+            // Payment failed - release reservations
+            try {
+                inventoryReservationService.releaseReservations(order.getId().intValue());
+                voucherReservationService.releaseReservations(order.getId().intValue());
+
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+                payment.setPaymentFailedAt(LocalDateTime.now());
+
+                log.info("Payment failed and reservations released for order: {}", order.getId());
+            } catch (Exception e) {
+                log.error("Failed to release reservations for failed payment, order: {}", order.getId(), e);
+                // Still mark payment as failed even if reservation release fails
+                payment.setPaymentStatus(PaymentStatus.FAILED);
+                payment.setPaymentFailedAt(LocalDateTime.now());
+            }
         }
         paymentRepository.save(payment);
         orderRepository.save(order);
