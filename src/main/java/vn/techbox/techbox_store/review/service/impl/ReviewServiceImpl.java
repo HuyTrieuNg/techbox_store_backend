@@ -53,14 +53,12 @@ public class ReviewServiceImpl implements ReviewService {
 
             review.restore();
             review.setRating(request.getRating());
-            review.setTitle(request.getTitle());
             review.setContent(request.getContent());
         } else {
             review = Review.builder()
                     .productId(productId)
                     .userId(user.getId())
                     .rating(request.getRating())
-                    .title(request.getTitle())
                     .content(request.getContent())
                     .build();
         }
@@ -92,9 +90,6 @@ public class ReviewServiceImpl implements ReviewService {
                 throw new IllegalArgumentException("Rating must be between 1 and 5");
             }
             review.setRating(request.getRating());
-        }
-        if (request.getTitle() != null) {
-            review.setTitle(request.getTitle());
         }
         if (request.getContent() != null) {
             review.setContent(request.getContent());
@@ -209,7 +204,6 @@ public class ReviewServiceImpl implements ReviewService {
                 .userId(review.getUserId())
                 .userFullName(fullName)
                 .rating(review.getRating())
-                .title(review.getTitle())
                 .content(review.getContent())
                 .createdAt(review.getCreatedAt())
                 .updatedAt(review.getUpdatedAt())

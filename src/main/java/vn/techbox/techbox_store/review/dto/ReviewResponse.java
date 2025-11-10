@@ -13,9 +13,7 @@ public class ReviewResponse {
     private Integer userId;
     private String userFullName;
     private Integer rating;
-    private String title;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-
