@@ -5,15 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.review.dto.*;
-import vn.techbox.techbox_store.review.dto.ReviewCreateRequest;
-import vn.techbox.techbox_store.review.dto.ReviewResponse;
-import vn.techbox.techbox_store.review.dto.ReviewSummaryResponse;
-import vn.techbox.techbox_store.review.dto.ReviewUpdateRequest;
 import vn.techbox.techbox_store.review.service.ReviewService;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 
 @RestController
 @RequestMapping("/products/{productId}/reviews")
@@ -22,34 +18,32 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    private String currentUserEmail() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("Unauthenticated");
-        }
-        return auth.getName();
-    }
-
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
-    public ResponseEntity<ReviewResponse> create(@PathVariable Integer productId,
-                                                 @Valid @RequestBody ReviewCreateRequest request) {
-        return ResponseEntity.ok(reviewService.createReview(productId, request, currentUserEmail()));
+    public ResponseEntity<ReviewResponse> create(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer productId,
+            @Valid @RequestBody ReviewCreateRequest request) {
+        return ResponseEntity.ok(reviewService.createReview(productId, request, userPrincipal.getUsername()));
     }
 
-    @PreAuthorize("isAuthenticated() and (@reviewService.isReviewOwner(#reviewId, principal.username) or hasAuthority('REVIEW:UPDATE'))")
+    @PreAuthorize("hasRole('CUSTOMER') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
     @PutMapping("/{reviewId}")
-    public ResponseEntity<ReviewResponse> update(@PathVariable Integer productId,
-                                                 @PathVariable Integer reviewId,
-                                                 @Valid @RequestBody ReviewUpdateRequest request) {
-        return ResponseEntity.ok(reviewService.updateReview(productId, reviewId, request, currentUserEmail()));
+    public ResponseEntity<ReviewResponse> update(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer productId,
+            @PathVariable Integer reviewId,
+            @Valid @RequestBody ReviewUpdateRequest request) {
+        return ResponseEntity.ok(reviewService.updateReview(productId, reviewId, request, userPrincipal.getUsername()));
     }
 
-    @PreAuthorize("isAuthenticated() and (@reviewService.isReviewOwner(#reviewId, principal.username) or hasAuthority('REVIEW:DELETE'))")
+    @PreAuthorize("hasRole('CUSTOMER') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> delete(@PathVariable Integer productId,
-                                       @PathVariable Integer reviewId) {
-        reviewService.deleteReview(productId, reviewId, currentUserEmail());
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer productId,
+            @PathVariable Integer reviewId) {
+        reviewService.deleteReview(productId, reviewId, userPrincipal.getUsername());
         return ResponseEntity.noContent().build();
     }
 
@@ -65,10 +59,11 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getSummary(productId));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/me")
-    public ResponseEntity<ReviewResponse> myReview(@PathVariable Integer productId) {
-        return ResponseEntity.ok(reviewService.getUserReview(productId, currentUserEmail()));
+    public ResponseEntity<ReviewResponse> myReview(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Integer productId) {
+        return ResponseEntity.ok(reviewService.getUserReview(productId, userPrincipal.getUsername()));
     }
 }
-
