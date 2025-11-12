@@ -2,8 +2,6 @@ package vn.techbox.techbox_store.config.seeder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import vn.techbox.techbox_store.product.model.Brand;
 import vn.techbox.techbox_store.product.repository.BrandRepository;
@@ -14,7 +12,6 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Profile({"dev", "development"})
 public class BrandSeeder implements DataSeeder {
 
     private final BrandRepository brandRepository;

@@ -14,7 +14,6 @@ import java.util.List;
  * Configuration for running data seeders
  * Only runs in development profile
  */
-@Profile({"dev", "development"}) // Only run in development
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
