@@ -39,9 +39,6 @@ public class Review {
     @Column(name = "rating", nullable = false)
     private Integer rating; // 1..5
 
-    @Column(name = "title", length = 150)
-    private String title;
-
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
@@ -84,4 +81,3 @@ public class Review {
     public void softDelete() { this.deletedAt = LocalDateTime.now(); }
     public void restore() { this.deletedAt = null; }
 }
-
