@@ -15,8 +15,10 @@ import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
 import vn.techbox.techbox_store.product.mapper.ProductMapper;
 import vn.techbox.techbox_store.product.service.ProductService;
+import vn.techbox.techbox_store.product.service.ProductVariationService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
 import vn.techbox.techbox_store.promotion.model.Promotion;
+import vn.techbox.techbox_store.promotion.model.PromotionType;
 import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 import vn.techbox.techbox_store.review.repository.ReviewRepository;
 
@@ -34,7 +36,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductAttributeRepository productAttributeRepository;
-    private final ProductVariationRepository productVariationRepository;
+    private final ProductVariationService productVariationService;
     private final VariationAttributeRepository variationAttributeRepository;
     private final ProductVariationImageRepository productVariationImageRepository;
     private final ReviewRepository reviewRepository;
@@ -43,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductFilterHelper productFilterHelper;
     private final SortHelper sortHelper;
     private final ProductSpecification productSpecification;
+    private final AttributeRepository attributeRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -65,6 +68,27 @@ public class ProductServiceImpl implements ProductService {
         return productsPage.map(productMapper::toListResponse);
     }
     
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductManagementListResponse> filterProductsForManagement(ProductFilterRequest filterRequest) {
+        ProductFilterRequest filter = productFilterHelper.prepareManagementFilter(filterRequest);
+
+        Sort sort = sortHelper.buildSort(filter.getSortBy(), filter.getSortDirection());
+
+        // Build pageable
+        int page = filter.getPage() != null ? filter.getPage() : 0;
+        int size = filter.getSize() != null ? filter.getSize() : 20;
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Specification<Product> spec = productSpecification.buildFilterSpecification(filter);
+        
+        // Query with specification
+        Page<Product> productsPage = productRepository.findAll(spec, pageable);
+        
+        // Map to response
+        return productsPage.map(productMapper::toManagementListResponse);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -92,9 +116,9 @@ public class ProductServiceImpl implements ProductService {
         List<ProductAttribute> productAttributes = 
                 productAttributeRepository.findByProductId(product.getId());
         
-        // Get all product variations
+        // Get all active product variations using variation service
         List<ProductVariation> productVariations = 
-                productVariationRepository.findByProductId(product.getId());
+                productVariationService.getActiveVariationEntitiesByProductId(product.getId());
         
         // Batch load all related data to avoid N+1 queries
         List<Integer> variationIds = productVariations.stream()
@@ -163,23 +187,42 @@ public class ProductServiceImpl implements ProductService {
         return Optional.of(response);
     }
     
+    /**
+     * Get full product details for management view
+     * Includes all information for admin to view and edit
+     * Does NOT filter soft deleted products
+     * Does NOT include variations (separate API)
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public ProductManagementDetailResponse getProductForManagement(Integer id) {
+        // Find product without filtering deleted (management can see deleted products)
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
+        
+        // Use mapper to convert to management detail response
+        return productMapper.toManagementDetailResponse(product);
+    }
+    
     
     @Override
+    @Transactional // Ensure all steps are in the same transaction
     public ProductResponse createProduct(ProductCreateRequest request) {
         if (existsByName(request.getName())) {
             throw new IllegalArgumentException("Product name already exists: " + request.getName());
         }
-        
+
         // Validate category exists if provided
         if (request.getCategoryId() != null && !categoryRepository.existsById(request.getCategoryId())) {
             throw new IllegalArgumentException("Category not found with id: " + request.getCategoryId());
         }
-        
+
         // Validate brand exists if provided
         if (request.getBrandId() != null && !brandRepository.existsById(request.getBrandId())) {
             throw new IllegalArgumentException("Brand not found with id: " + request.getBrandId());
         }
-        
+
+        // Create Product from DTO
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -187,11 +230,32 @@ public class ProductServiceImpl implements ProductService {
                 .brandId(request.getBrandId())
                 .imageUrl(request.getImageUrl())
                 .imagePublicId(request.getImagePublicId())
-                .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
+                .status(ProductStatus.DRAFT) // Default status is DRAFT
                 .warrantyMonths(request.getWarrantyMonths())
                 .build();
-        
+
+        // Add Attributes by building the relationship in memory
+        if (request.getAttributes() != null) {
+            for (AttributeRequest attrReq : request.getAttributes()) {
+                // Validate attribute existence
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+
+                // Create ProductAttribute entity
+                ProductAttribute productAttribute = ProductAttribute.builder()
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+                
+                // Use the helper method to establish the bidirectional link
+                product.addProductAttribute(productAttribute);
+            }
+        }
+
+        // Save the parent Product once. JPA will cascade the save to all linked ProductAttributes.
         Product savedProduct = productRepository.save(product);
+
+        // Return ProductResponse
         return convertToResponse(savedProduct);
     }
     
@@ -239,6 +303,34 @@ public class ProductServiceImpl implements ProductService {
             product.setWarrantyMonths(request.getWarrantyMonths());
         }
 
+
+        // Update attributes if provided
+        if (request.getAttributes() != null) {
+            // Clear existing attributes
+            productAttributeRepository.deleteByProductId(product.getId());
+            // Save new attributes
+            request.getAttributes().forEach((key, value) -> {
+                try {
+                    // Convert key to Integer
+                    Integer attributeId = Integer.valueOf(key);
+
+                    // Validate attribute existence
+                    Attribute attribute = attributeRepository.findById(attributeId)
+                            .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
+
+                    // Create and save ProductAttribute
+                    ProductAttribute productAttribute = ProductAttribute.builder()
+                            .productId(product.getId())
+                            .attributeId(attribute.getId())
+                            .value(value)
+                            .build();
+
+                    productAttributeRepository.save(productAttribute);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid attribute ID: " + key, e);
+                }
+            });
+        }
 
         Product updatedProduct = productRepository.save(product);
         return convertToResponse(updatedProduct);
@@ -310,6 +402,149 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
     
+    /**
+     * Publish product - Change status to PUBLISHED
+     * Requirements:
+     * - Product must exist
+     * - Product must NOT be DELETED (must go to DRAFT first)
+     * - Product must have at least 1 variation
+     * - Updates product's display prices based on lowest price variation
+     */
+    @Override
+    public ProductResponse publishProduct(Integer id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
+        
+        // Validate: Cannot publish DELETED product directly
+        if (product.getStatus() == ProductStatus.DELETED) {
+            throw new IllegalStateException("Cannot publish a deleted product. Please restore to draft first.");
+        }
+        
+        // Check if product has at least 1 active variation using variation service
+        int activeVariationsCount = productVariationService.countActiveVariationsByProductId(id);
+        if (activeVariationsCount == 0) {
+            throw new IllegalStateException("Cannot publish product without variations. Please add at least one product variation.");
+        }
+        
+        // Update status to PUBLISHED
+        product.setStatus(ProductStatus.PUBLISHED);
+        product.setDeletedAt(null); // Clear deleted timestamp if any (should already be null for DRAFT)
+        
+        // Update display prices based on lowest price variation with promotion
+        // Get active variations using service
+        List<ProductVariation> variations = productVariationService.getActiveVariationEntitiesByProductId(id);
+        updateProductDisplayPrices(product, variations);
+        
+        Product savedProduct = productRepository.save(product);
+        return convertToResponse(savedProduct);
+    }
+    
+    /**
+     * Draft product - Change status to DRAFT
+     * Can be used to:
+     * 1. Restore a deleted product (DELETED -> DRAFT)
+     * 2. Hide a published product (PUBLISHED -> DRAFT)
+     */
+    @Override
+    public ProductResponse draftProduct(Integer id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
+        
+        // Update status to DRAFT
+        product.setStatus(ProductStatus.DRAFT);
+        product.setDeletedAt(null); // Clear deleted timestamp if restoring from DELETED
+        
+        Product savedProduct = productRepository.save(product);
+        return convertToResponse(savedProduct);
+    }
+    
+    /**
+     * Soft delete product - Change status to DELETED
+     * Requirements:
+     * - Product must be in DRAFT or PUBLISHED status
+     * - Cannot delete a product that is already DELETED
+     */
+    @Override
+    public ProductResponse deleteProductSoft(Integer id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
+        
+        // Check if product is already deleted
+        if (product.getStatus() == ProductStatus.DELETED) {
+            throw new IllegalStateException("Product is already deleted");
+        }
+        
+        // Only allow deletion if product is DRAFT or PUBLISHED
+        if (product.getStatus() != ProductStatus.DRAFT && product.getStatus() != ProductStatus.PUBLISHED) {
+            throw new IllegalStateException("Cannot delete product with status: " + product.getStatus());
+        }
+        
+        // Update status to DELETED
+        product.setStatus(ProductStatus.DELETED);
+        product.setDeletedAt(java.time.LocalDateTime.now());
+        
+        Product savedProduct = productRepository.save(product);
+        return convertToResponse(savedProduct);
+    }
+    
+    /**
+     * Helper method to update product's display prices
+     * Calculates lowest price among all variations considering promotions
+     */
+    private void updateProductDisplayPrices(Product product, List<ProductVariation> variations) {
+        java.math.BigDecimal lowestOriginalPrice = null;
+        java.math.BigDecimal lowestSalePrice = null;
+        
+        for (ProductVariation variation : variations) {
+            java.math.BigDecimal originalPrice = variation.getPrice();
+            
+            // Find active promotion for this variation
+            Promotion activePromotion = promotionRepository
+                    .findActivePromotionsByProductVariationId(variation.getId(), java.time.LocalDateTime.now())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            
+            java.math.BigDecimal salePrice = originalPrice;
+            if (activePromotion != null) {
+                salePrice = calculateSalePrice(originalPrice, activePromotion);
+            }
+            
+            // Track lowest prices
+            if (lowestOriginalPrice == null || originalPrice.compareTo(lowestOriginalPrice) < 0) {
+                lowestOriginalPrice = originalPrice;
+            }
+            
+            if (lowestSalePrice == null || salePrice.compareTo(lowestSalePrice) < 0) {
+                lowestSalePrice = salePrice;
+            }
+        }
+        
+        // Update product's display prices (these are not stored in Product entity but calculated)
+        // Note: If you want to store these, add fields to Product entity
+        // For now, we don't need to store them as they're calculated on-the-fly in ProductMapper
+    }
+    
+    /**
+     * Helper method to calculate sale price with promotion
+     */
+    private java.math.BigDecimal calculateSalePrice(java.math.BigDecimal originalPrice, Promotion promotion) {
+        if (promotion == null) {
+            return originalPrice;
+        }
+        
+        java.math.BigDecimal discount;
+        if (promotion.getDiscountType() == PromotionType.PERCENTAGE) {
+            discount = originalPrice.multiply(promotion.getDiscountValue())
+                    .divide(java.math.BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        } else {
+            discount = promotion.getDiscountValue();
+        }
+        
+        java.math.BigDecimal salePrice = originalPrice.subtract(discount);
+        return salePrice.max(java.math.BigDecimal.ZERO);
+    }
+    
 
     
 
@@ -328,7 +563,35 @@ public class ProductServiceImpl implements ProductService {
         // Use mapper to convert to response
         return productMapper.toResponse(product, categoryName, brandName);
     }
-    
-    
-}
 
+    @Override
+    public void deleteProductHard(Integer id) {
+        if (!productRepository.existsById(id)) {
+            throw new IllegalArgumentException("Product not found with id: " + id);
+        }
+        productRepository.deleteById(id);            
+    }
+
+    // New method to add attributes to a product
+    @Override
+    public void addAttributesToProduct(Integer productId, Map<Integer, String> attributeRequests) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        for (Map.Entry<Integer, String> entry : attributeRequests.entrySet()) {
+            Integer attributeId = entry.getKey();
+            String value = entry.getValue();
+
+            // Validate attribute existence
+            Attribute attribute = attributeRepository.findById(attributeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
+            // Create ProductAttribute entity
+            ProductAttribute productAttribute = ProductAttribute.builder()
+                    .attributeId(attribute.getId())
+                    .value(value)
+                    .build();
+            // Use the helper method to establish the bidirectional link
+            product.addProductAttribute(productAttribute);
+        }
+        productRepository.save(product);
+    }
+}

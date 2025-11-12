@@ -32,11 +32,7 @@ public class PromotionSeeder implements DataSeeder {
 
     @Override
     public boolean shouldSkip() {
-        long count = promotionRepository.count();
-        if (count > 0) {
-            log.info("Promotions already exist ({} found), skipping seeder", count);
-            return true;
-        }
+        // Always run this seeder to ensure data is fresh
         return false;
     }
 
@@ -44,6 +40,9 @@ public class PromotionSeeder implements DataSeeder {
     @Transactional
     public void seed() {
         log.info("Starting Promotion seeding...");
+        
+        // Clean up existing data to ensure idempotency
+        promotionRepository.deleteAllInBatch();
         
         List<Campaign> campaigns = campaignRepository.findAll();
         List<ProductVariation> variations = productVariationRepository.findAll();
@@ -61,70 +60,54 @@ public class PromotionSeeder implements DataSeeder {
         List<Promotion> promotions = new ArrayList<>();
         
         // Get campaigns
-        Campaign megaSale = campaigns.get(0); // Mega Sale 12.12
-        Campaign blackFriday = campaigns.size() > 2 ? campaigns.get(2) : campaigns.get(0); // Black Friday
-        Campaign audioWeek = campaigns.size() > 4 ? campaigns.get(4) : campaigns.get(0); // Audio Week
+        Campaign megaSale = campaigns.stream().filter(c -> c.getName().equals("Mega Sale 12.12")).findFirst().orElse(null);
+        Campaign blackFriday = campaigns.stream().filter(c -> c.getName().equals("Black Friday Tech Sale")).findFirst().orElse(null);
+        Campaign audioWeek = campaigns.stream().filter(c -> c.getName().equals("Audio Week")).findFirst().orElse(null);
+
+        if (megaSale == null || blackFriday == null || audioWeek == null) {
+            log.warn("Could not find all required campaigns, promotion seeding might be incomplete.");
+            return;
+        }
         
         // Promotion cho iPhone 15 Pro Max - Giảm 10%
-        if (variations.size() > 0) {
-            promotions.add(createPromotion(
-                megaSale,
-                variations.get(0).getId(),
-                PromotionType.PERCENTAGE,
-                new BigDecimal("10.00")
-            ));
-        }
+        productVariationRepository.findBySku("IP15PM-256-TN").ifPresent(v -> promotions.add(createPromotion(
+            megaSale,
+            v.getId(),
+            PromotionType.PERCENTAGE,
+            new BigDecimal("10.00")
+        )));
         
         // Promotion cho Samsung S24 Ultra - Giảm 15%
-        if (variations.size() > 9) {
-            promotions.add(createPromotion(
-                megaSale,
-                variations.get(9).getId(),
-                PromotionType.PERCENTAGE,
-                new BigDecimal("15.00") // Max giảm 5 triệu
-            ));
-        }
+        productVariationRepository.findBySku("S24U-256-TX").ifPresent(v -> promotions.add(createPromotion(
+            megaSale,
+            v.getId(),
+            PromotionType.PERCENTAGE,
+            new BigDecimal("15.00")
+        )));
         
         // Promotion cho MacBook - Giảm cố định 5 triệu
-        if (variations.size() > 16) {
-            promotions.add(createPromotion(
-                blackFriday,
-                
-                variations.get(16).getId(),
-                PromotionType.FIXED,
-                new BigDecimal("5000000")
-            ));
-        }
+        productVariationRepository.findBySku("MBP-M3-16-512-SG").ifPresent(v -> promotions.add(createPromotion(
+            blackFriday,
+            v.getId(),
+            PromotionType.FIXED,
+            new BigDecimal("5000000")
+        )));
         
         // Promotion cho tai nghe AirPods - Giảm 20%
-        if (variations.size() > 22) {
-            promotions.add(createPromotion(
-                audioWeek,
-                variations.get(22).getId(),
-                PromotionType.PERCENTAGE,
-                new BigDecimal("20.00")
-            ));
-        }
+        productVariationRepository.findBySku("APP2-USBC").ifPresent(v -> promotions.add(createPromotion(
+            audioWeek,
+            v.getId(),
+            PromotionType.PERCENTAGE,
+            new BigDecimal("20.00")
+        )));
         
         // Promotion cho Sony headphone - Giảm 25%
-        if (variations.size() > 24) {
-            promotions.add(createPromotion(
-                audioWeek,
-                variations.get(24).getId(),
-                PromotionType.PERCENTAGE,
-                new BigDecimal("25.00") // Max giảm 2 triệu
-            ));
-        }
-        
-        // Promotion mua nhiều - Mua 2 giảm 30%
-        if (variations.size() > 5) {
-            promotions.add(createPromotion(
-                blackFriday,
-                variations.get(5).getId(),
-                PromotionType.PERCENTAGE,
-                new BigDecimal("30.00")
-            ));
-        }
+        productVariationRepository.findBySku("WH1000XM5-BLACK").ifPresent(v -> promotions.add(createPromotion(
+            audioWeek,
+            v.getId(),
+            PromotionType.PERCENTAGE,
+            new BigDecimal("25.00")
+        )));
         
         promotionRepository.saveAll(promotions);
         log.info("✓ Created {} promotions", promotions.size());

@@ -32,4 +32,15 @@ public class ProductFilterHelper {
         
         return builder.build();
     }
+
+    public ProductFilterRequest prepareManagementFilter(ProductFilterRequest filter) {
+        ProductFilterRequest.ProductFilterRequestBuilder builder = filter.toBuilder();
+        
+        if (filter.getCategoryId() != null) {
+            List<Integer> allCategoryIds = categoryService.getAllChildCategoryIds(filter.getCategoryId());
+            builder.categoryIds(allCategoryIds);
+        }
+        
+        return builder.build();
+    }
 }
