@@ -1,9 +1,12 @@
 package vn.techbox.techbox_store.config.seeder;
 
+import org.springframework.context.annotation.Profile;
+
 /**
  * Interface for all data seeders
  * Each seeder should implement this interface and define its execution order
  */
+@Profile({"dev", "development"}) // Only run in development
 public interface DataSeeder {
     
     /**

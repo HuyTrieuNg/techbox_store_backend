@@ -1,0 +1,43 @@
+test_id,test_name,description,preconditions,expected_code,expected_error,expected_message
+TC_BE_CREVOU_001,Valid PERCENTAGE,Tạo voucher thành công với voucherType PERCENTAGE,Dữ liệu seed: không có voucher nào, hoặc EXISTINGCODE đã tồn tại nhưng test tạo code khác,201,,,
+TC_BE_CREVOU_002,Valid minOrderAmount positive,Tạo voucher thành công với minOrderAmount dương,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_003,Valid manager token,Tạo voucher thành công với token manager hợp lệ,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_004,All valid fields,Tạo voucher thành công với tất cả trường hợp lệ,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_005,Missing code,Thiếu code bắt buộc,Không có dữ liệu seed liên quan,400,,code: Voucher code is required
+TC_BE_CREVOU_006,Valid code min length,Code độ dài tối thiểu (3 ký tự),Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_007,Valid code max length,Code độ dài tối đa (50 ký tự),Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_008,Boundary FIXED_AMOUNT max,Value biên trên cho FIXED_AMOUNT,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_009,Boundary PERCENTAGE min,Value biên dưới cho PERCENTAGE,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_010,Boundary PERCENTAGE max,Value biên trên cho PERCENTAGE,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_011,Valid usageLimit min,UsageLimit biên dưới,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_012,Valid usageLimit max,UsageLimit biên trên,Không có dữ liệu seed liên quan,201,,,
+TC_BE_CREVOU_013,Invalid code lowercase,Code chứa chữ thường,Dữ liệu seed: user admin@techbox.vn,400,,code: Voucher code can only contain uppercase letters, numbers, underscores and hyphens
+TC_BE_CREVOU_014,Invalid code special chars,Code chứa ký tự đặc biệt không cho phép,Không có dữ liệu seed liên quan,400,,code: Voucher code can only contain uppercase letters, numbers, underscores and hyphens
+TC_BE_CREVOU_015,Invalid code too short,Code quá ngắn,Không có dữ liệu seed liên quan,400,,code: Voucher code must be between 3 and 50 characters
+TC_BE_CREVOU_016,Invalid code too long,Code quá dài,Không có dữ liệu seed liên quan,400,,code: Voucher code must be between 3 and 50 characters
+TC_BE_CREVOU_017,Duplicate code,Code đã tồn tại,Dữ liệu seed: voucher EXISTINGCODE,409,,Voucher with code 'EXISTINGCODE' already exists
+TC_BE_CREVOU_018,Invalid voucherType,VoucherType không hợp lệ,Không có dữ liệu seed liên quan,400,,voucherType: Invalid voucher type
+TC_BE_CREVOU_019,Missing voucherType,Thiếu voucherType,Không có dữ liệu seed liên quan,400,,voucherType: Voucher type is required
+TC_BE_CREVOU_020,Invalid FIXED_AMOUNT decimal,Value thập phân cho FIXED_AMOUNT,Không có dữ liệu seed liên quan,400,,fixedAmountValueInteger: For fixed amount vouchers, value must not have decimal places
+TC_BE_CREVOU_021,Invalid PERCENTAGE <1,Value <1 cho PERCENTAGE,Không có dữ liệu seed liên quan,400,,percentageValueValid: For percentage vouchers, value must be between 1 and 100
+TC_BE_CREVOU_022,Invalid PERCENTAGE >100,Value >100 cho PERCENTAGE,Không có dữ liệu seed liên quan,400,,percentageValueValid: For percentage vouchers, value must be between 1 and 100
+TC_BE_CREVOU_023,Invalid value negative,Value âm,Không có dữ liệu seed liên quan,400,,value: Value must be greater than 0
+TC_BE_CREVOU_024,Invalid value zero,Value bằng 0,Không có dữ liệu seed liên quan,400,,value: Value must be greater than 0
+TC_BE_CREVOU_025,Invalid value too large,Value quá lớn,Không có dữ liệu seed liên quan,400,,value: Value must be less than 10,000,000
+TC_BE_CREVOU_026,Missing value,Thiếu value,Không có dữ liệu seed liên quan,400,,value: Value is required
+TC_BE_CREVOU_027,Invalid minOrderAmount negative,MinOrderAmount âm,Không có dữ liệu seed liên quan,400,,minOrderAmount: Minimum order amount must be non-negative
+TC_BE_CREVOU_028,Missing minOrderAmount,Thiếu minOrderAmount,Không có dữ liệu seed liên quan,400,,minOrderAmount: Minimum order amount is required
+TC_BE_CREVOU_029,Invalid usageLimit <1,UsageLimit <1,Không có dữ liệu seed liên quan,400,,usageLimit: Usage limit must be at least 1
+TC_BE_CREVOU_030,Invalid usageLimit >1000000,UsageLimit >1000000,Không có dữ liệu seed liên quan,400,,usageLimit: Usage limit must be less than 1,000,001
+TC_BE_CREVOU_031,Missing usageLimit,Thiếu usageLimit,Không có dữ liệu seed liên quan,400,,usageLimit: Usage limit is required
+TC_BE_CREVOU_032,Invalid validFrom past,ValidFrom trong quá khứ,Không có dữ liệu seed liên quan,400,,validFrom: Valid from date must be in the future
+TC_BE_CREVOU_033,Missing validFrom,Thiếu validFrom,Không có dữ liệu seed liên quan,400,,validFrom: Valid from date is required
+TC_BE_CREVOU_034,Invalid validUntil before validFrom,ValidUntil trước validFrom,Không có dữ liệu seed liên quan,400,,validUntilAfterValidFrom: Valid until must be after valid from
+TC_BE_CREVOU_035,Invalid validUntil equal validFrom,ValidUntil bằng validFrom,Không có dữ liệu seed liên quan,400,,validUntilAfterValidFrom: Valid until must be after valid from
+TC_BE_CREVOU_036,Invalid validUntil past,ValidUntil trong quá khứ,Không có dữ liệu seed liên quan,400,,validUntil: Valid until date must be in the future
+TC_BE_CREVOU_037,Missing validUntil,Thiếu validUntil,Không có dữ liệu seed liên quan,400,,validUntil: Valid until date is required
+TC_BE_CREVOU_038,No authorization header,Không có header Authorization,Không có dữ liệu seed liên quan,401,,Authentication failed. Please check your credentials.
+TC_BE_CREVOU_039,Invalid token,Token không hợp lệ,Không có dữ liệu seed liên quan,401,,Authentication failed. Please check your credentials.
+TC_BE_CREVOU_040,Customer token,Token customer,Dữ liệu seed: user testCustomer@techbox.vn,403,,Access denied. You don't have permission to access this resource.
+TC_BE_CREVOU_041,Staff token,Token staff,Dữ liệu seed: user staff1@techbox.vn,403,,Access denied. You don't have permission to access this resource.
+TC_BE_CREVOU_042,Extra fields in payload,Trường lạ trong payload,Không có dữ liệu seed liên quan,201,,,

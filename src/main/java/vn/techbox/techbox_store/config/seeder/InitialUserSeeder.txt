@@ -4,6 +4,7 @@ import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -13,11 +14,13 @@ import vn.techbox.techbox_store.user.repository.AccountRepository;
 import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Locale;
 
-@Component
+@Component("testInitialUserSeeder")
 @Order(2)
+@Profile({"test", "fortest"})
 public class InitialUserSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(InitialUserSeeder.class);
 
@@ -25,7 +28,7 @@ public class InitialUserSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Faker faker = new Faker(new Locale("vi-VN"));
+    private final Faker faker = new Faker(Locale.of("vi", "VN"));
 
 
     public InitialUserSeeder(UserRepository userRepository,
@@ -61,6 +64,14 @@ public class InitialUserSeeder implements CommandLineRunner {
         createSingleRoleUser("staff1@techbox.vn", "staff123", "Staff", "One", UserRole.ROLE_STAFF);
         createSingleRoleUser("staff2@techbox.vn", "staff123", "Staff", "Two", UserRole.ROLE_STAFF);
 
+        // Specific customer account for testing
+        createSingleRoleUser("testcustomer@techbox.vn", "customer123", "Customer", "Test", UserRole.ROLE_CUSTOMER);
+
+        // Test accounts for different scenarios
+        createTestUser("locked@techbox.vn", "locked123", "Locked", "User", UserRole.ROLE_CUSTOMER, false, true, false);
+        createTestUser("disabled@techbox.vn", "disabled123", "Disabled", "User", UserRole.ROLE_CUSTOMER, false, false, false);
+        createTestUser("deleted@techbox.vn", "deleted123", "Deleted", "User", UserRole.ROLE_CUSTOMER, false, false, true);
+
         // Customer demo accounts
         log.info("Seeding 50 random customer accounts...");
         for (int i = 0; i < 50; i++) {
@@ -73,6 +84,11 @@ public class InitialUserSeeder implements CommandLineRunner {
     }
 
     private void createSingleRoleUser(String email, String rawPassword, String firstName, String lastName, UserRole roleEnum) {
+        createTestUser(email, rawPassword, firstName, lastName, roleEnum, true, false, false);
+    }
+
+    private void createTestUser(String email, String rawPassword, String firstName, String lastName, UserRole roleEnum,
+                               boolean isActive, boolean isLocked, boolean isDeleted) {
         if (accountRepository.existsByEmail(email)) {
             log.debug("Account with email {} already exists", email);
             return;
@@ -85,8 +101,8 @@ public class InitialUserSeeder implements CommandLineRunner {
         var account = Account.builder()
                 .email(email)
                 .passwordHash(passwordEncoder.encode(rawPassword))
-                .isActive(true)
-                .isLocked(false)
+                .isActive(isActive)
+                .isLocked(isLocked)
                 .build();
 
         var user = User.builder()
@@ -95,9 +111,15 @@ public class InitialUserSeeder implements CommandLineRunner {
                 .account(account)
                 .roles(new HashSet<>())
                 .build();
+
+        if (isDeleted) {
+            user.setDeletedAt(LocalDateTime.now());
+        }
+
         var saved = userRepository.save(user);
         saved.getRoles().add(roleOpt.get());
         userRepository.save(saved);
-        log.info("Created user {} with role {}", email, roleEnum.getRoleName());
+        log.info("Created user {} with role {} (active: {}, locked: {}, deleted: {})",
+                email, roleEnum.getRoleName(), isActive, isLocked, isDeleted);
     }
 }

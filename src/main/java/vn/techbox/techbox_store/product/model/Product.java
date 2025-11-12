@@ -96,8 +96,9 @@ public class Product {
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ProductVariation> productVariations;
     
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ProductAttribute> productAttributes;
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true )
+    @Builder.Default
+    private List<ProductAttribute> productAttributes = new java.util.ArrayList<>();
     
     @PrePersist
     protected void onCreate() {
@@ -137,4 +138,15 @@ public class Product {
         this.deletedAt = null;
         this.status = ProductStatus.DRAFT;
     }
+
+
+    public void addProductAttribute(ProductAttribute attribute) {
+        this.productAttributes.add(attribute);
+        attribute.setProduct(this);
+    }
+    public void removeProductAttribute(ProductAttribute attribute) {
+        this.productAttributes.remove(attribute);
+        attribute.setProduct(null);
+    }
+    
 }

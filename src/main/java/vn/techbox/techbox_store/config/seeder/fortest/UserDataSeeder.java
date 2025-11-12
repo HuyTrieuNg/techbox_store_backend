@@ -1,9 +1,10 @@
-package vn.techbox.techbox_store.config.seeder;
+package vn.techbox.techbox_store.config.seeder.fortest;
 
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import vn.techbox.techbox_store.user.model.Permission;
@@ -97,7 +98,7 @@ public class UserDataSeeder implements CommandLineRunner {
         switch (userRole) {
             case ROLE_ADMIN -> permissions.addAll(permissionRepository.findAll());
             case ROLE_STAFF -> {
-                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN")));
+                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "INVENTORY", "CUSTOMER")));
                 permissions.removeIf(p -> p.getAction().equals("DELETE"));
             }
             case ROLE_CUSTOMER -> permissions.addAll(getPermissionsByModulesAndActions(Set.of("PRODUCT", "ORDER"), Set.of("READ")));

@@ -18,6 +18,7 @@ import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
 import vn.techbox.techbox_store.promotion.model.Promotion;
+import vn.techbox.techbox_store.promotion.model.PromotionType;
 import vn.techbox.techbox_store.promotion.repository.PromotionRepository;
 import vn.techbox.techbox_store.review.repository.ReviewRepository;
 
@@ -221,7 +222,7 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("Brand not found with id: " + request.getBrandId());
         }
 
-        // Create Product
+        // Create Product from DTO
         Product product = Product.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -233,33 +234,26 @@ public class ProductServiceImpl implements ProductService {
                 .warrantyMonths(request.getWarrantyMonths())
                 .build();
 
-        // Save Product and get ID
-        Product savedProduct = productRepository.save(product);
-
-        // Add Attributes
+        // Add Attributes by building the relationship in memory
         if (request.getAttributes() != null) {
-            request.getAttributes().forEach((key, value) -> {
-                try {
-                    // Convert key to Integer
-                    Integer attributeId = Integer.valueOf(key);
+            for (AttributeRequest attrReq : request.getAttributes()) {
+                // Validate attribute existence
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
 
-                    // Validate attribute existence
-                    Attribute attribute = attributeRepository.findById(attributeId)
-                            .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
-
-                    // Create and save ProductAttribute
-                    ProductAttribute productAttribute = ProductAttribute.builder()
-                            .productId(savedProduct.getId()) // Use the saved product ID
-                            .attributeId(attribute.getId())
-                            .value(value)
-                            .build();
-
-                    productAttributeRepository.save(productAttribute);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid attribute ID: " + key, e);
-                }
-            });
+                // Create ProductAttribute entity
+                ProductAttribute productAttribute = ProductAttribute.builder()
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+                
+                // Use the helper method to establish the bidirectional link
+                product.addProductAttribute(productAttribute);
+            }
         }
+
+        // Save the parent Product once. JPA will cascade the save to all linked ProductAttributes.
+        Product savedProduct = productRepository.save(product);
 
         // Return ProductResponse
         return convertToResponse(savedProduct);
@@ -540,7 +534,7 @@ public class ProductServiceImpl implements ProductService {
         }
         
         java.math.BigDecimal discount;
-        if (promotion.getDiscountType() == vn.techbox.techbox_store.promotion.model.PromotionType.PERCENTAGE) {
+        if (promotion.getDiscountType() == PromotionType.PERCENTAGE) {
             discount = originalPrice.multiply(promotion.getDiscountValue())
                     .divide(java.math.BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
         } else {
@@ -571,33 +565,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void addAttributesToProduct(Integer productId, Map<String, String> attributes) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
-
-        attributes.forEach((key, value) -> {
-            try {
-                Integer attributeId = Integer.parseInt(key);
-
-                ProductAttribute attribute = new ProductAttribute();
-                attribute.setProduct(product);
-                attribute.setAttributeId(attributeId);
-                attribute.setValue(value); // Value remains as String
-                productAttributeRepository.save(attribute);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Invalid attribute key. Key must be an integer. Key: " + key);
-            }
-        });
-    }
-
-    @Override
     public void deleteProductHard(Integer id) {
         if (!productRepository.existsById(id)) {
             throw new IllegalArgumentException("Product not found with id: " + id);
         }
         productRepository.deleteById(id);            
     }
-    
-    
-}
 
+    // New method to add attributes to a product
+    @Override
+    public void addAttributesToProduct(Integer productId, Map<Integer, String> attributeRequests) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        for (Map.Entry<Integer, String> entry : attributeRequests.entrySet()) {
+            Integer attributeId = entry.getKey();
+            String value = entry.getValue();
+
+            // Validate attribute existence
+            Attribute attribute = attributeRepository.findById(attributeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
+            // Create ProductAttribute entity
+            ProductAttribute productAttribute = ProductAttribute.builder()
+                    .attributeId(attribute.getId())
+                    .value(value)
+                    .build();
+            // Use the helper method to establish the bidirectional link
+            product.addProductAttribute(productAttribute);
+        }
+        productRepository.save(product);
+    }
+}

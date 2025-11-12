@@ -1,5 +1,6 @@
 package vn.techbox.techbox_store.product.dto.productDto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VariationAttributeRequest {
-    private String attributeKey;
-    private String attributeValue;
+    @NotNull(message = "Attribute ID cannot be null")
+    private Integer attributeId;
+    private String value;
 }

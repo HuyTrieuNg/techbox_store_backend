@@ -1,6 +1,9 @@
 package vn.techbox.techbox_store.user.controller;
 
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,10 +12,13 @@ import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
+import vn.techbox.techbox_store.user.exception.UserAccountLockedException;
+import vn.techbox.techbox_store.user.exception.UserInvalidCredentialsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -27,14 +33,29 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody UserLoginRequest req) {
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginRequest req) {
         try {
             TokenResponse tokenResponse = userService.verify(req);
             logger.info("User {} logged in successfully", req.email());
             return ResponseEntity.ok(tokenResponse);
+        } catch (UserInvalidCredentialsException e) {
+            logger.warn("Invalid credentials for user: {}", req.email());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "error", "INVALID_CREDENTIALS",
+                            "message", "Invalid email or password"
+                    ));
+        } catch (UserAccountLockedException e) {
+            logger.warn("Account locked for user: {}", req.email());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "error", "ACCOUNT_LOCKED",
+                            "message", "Account is locked"
+                    ));
         } catch (Exception e) {
             logger.error("Login failed for user {}: {}", req.email(), e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR) // <- Nên là 500
+                    .body(Map.of("error", "INTERNAL_ERROR"));
         }
     }
 

@@ -69,117 +69,97 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<?> createProductVariation(
-        @RequestParam(value = "variationName", required = false) String variationName,
-        @RequestParam("productId") Integer productId,
-        @RequestParam("price") BigDecimal price,
-        @RequestParam(value = "sku", required = false) String sku,
-        @RequestParam(value = "images", required = false) MultipartFile[] images) {
+    // @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
+    // @PostMapping(consumes = {"multipart/form-data"})
+    // public ResponseEntity<?> createProductVariation(
+    //         @RequestParam("variationData") String variationDataJson,
+    //         @RequestParam(value = "images", required = false) MultipartFile[] images) {
         
-        try {
-        ProductVariationCreateRequest request = ProductVariationCreateRequest.builder()
-            .variationName(variationName)
-            .productId(productId)
-            .price(price)
-            .sku(sku)
-            .build();
+    //     try {
+    //         ObjectMapper objectMapper = new ObjectMapper();
+    //         ProductVariationCreateRequest request = objectMapper.readValue(variationDataJson, ProductVariationCreateRequest.class);
             
-            // Upload images to Cloudinary if provided
-            List<String> imageUrls = new ArrayList<>();
-            List<String> imagePublicIds = new ArrayList<>();
+    //         // Upload images to Cloudinary if provided
+    //         List<String> imageUrls = new ArrayList<>();
+    //         List<String> imagePublicIds = new ArrayList<>();
             
-            if (images != null && images.length > 0) {
-                for (MultipartFile image : images) {
-                    if (!image.isEmpty()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
-                        imageUrls.add((String) uploadResult.get("secure_url"));
-                        imagePublicIds.add((String) uploadResult.get("public_id"));
-                    }
-                }
-            }
+    //         if (images != null && images.length > 0) {
+    //             for (MultipartFile image : images) {
+    //                 if (!image.isEmpty()) {
+    //                     @SuppressWarnings("unchecked")
+    //                     Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
+    //                     imageUrls.add((String) uploadResult.get("secure_url"));
+    //                     imagePublicIds.add((String) uploadResult.get("public_id"));
+    //                 }
+    //             }
+    //         }
             
-            request.setImageUrls(imageUrls);
-            request.setImagePublicIds(imagePublicIds);
+    //         request.setImageUrls(imageUrls);
+    //         request.setImagePublicIds(imagePublicIds);
             
-            ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
+    //         ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
+    //         return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
             
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to upload images: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to create product variation: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        }
-    }
+    //     } catch (IOException e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(Map.of("error", "Failed to process request or upload images: " + e.getMessage()));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body(Map.of("error", "Failed to create product variation: " + e.getMessage()));
+    //     }
+    // }
     
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
-    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
-    public ResponseEntity<?> updateProductVariation(
-            @PathVariable Integer id,
-            @RequestParam(value = "variationName", required = false) String variationName,
-            @RequestParam(value = "price", required = false) BigDecimal price,
-            @RequestParam(value = "sku", required = false) String sku,
-            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-            @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
-            @RequestParam(value = "deleteImageIds", required = false) List<String> deleteImageIds) {
+    // @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
+    // @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
+    // public ResponseEntity<?> updateProductVariation(
+    //         @PathVariable Integer id,
+    //         @RequestParam("variationData") String variationDataJson,
+    //         @RequestParam(value = "newImages", required = false) MultipartFile[] newImages) {
         
-        try {
-        ProductVariationUpdateRequest request = ProductVariationUpdateRequest.builder()
-                    .variationName(variationName)
-                    .price(price)
-                    .sku(sku)
-                    .deleteImageIds(deleteImageIds)
-                    .build();
+    //     try {
+    //         ObjectMapper objectMapper = new ObjectMapper();
+    //         ProductVariationUpdateRequest request = objectMapper.readValue(variationDataJson, ProductVariationUpdateRequest.class);
+
+    //         // Handle new image uploads
+    //         List<String> newImageUrls = new ArrayList<>();
+    //         List<String> newImagePublicIds = new ArrayList<>();
+    //         if (newImages != null && newImages.length > 0) {
+    //             for (MultipartFile image : newImages) {
+    //                 if (!image.isEmpty()) {
+    //                     @SuppressWarnings("unchecked")
+    //                     Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
+    //                     newImageUrls.add((String) uploadResult.get("secure_url"));
+    //                     newImagePublicIds.add((String) uploadResult.get("public_id"));
+    //                 }
+    //             }
+    //         }
+    //         request.setImageUrls(newImageUrls);
+    //         request.setImagePublicIds(newImagePublicIds);
             
-            // Upload new images to Cloudinary if provided
-            List<String> newImageUrls = new ArrayList<>();
-            List<String> newImagePublicIds = new ArrayList<>();
+    //         // The service layer will handle deletion of old images based on deleteImageIds from the JSON
+    //         // and orphanRemoval. We still need to delete the files from Cloudinary.
+    //         if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
+    //             for (String publicId : request.getDeleteImageIds()) {
+    //                 try {
+    //                     cloudinaryService.deleteFile(publicId);
+    //                 } catch (IOException e) {
+    //                     // Log the error but don't fail the whole request
+    //                     System.err.println("Failed to delete image from Cloudinary: " + publicId + " - " + e.getMessage());
+    //                 }
+    //             }
+    //         }
             
-            if (newImages != null && newImages.length > 0) {
-                for (MultipartFile image : newImages) {
-                    if (!image.isEmpty()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
-                        newImageUrls.add((String) uploadResult.get("secure_url"));
-                        newImagePublicIds.add((String) uploadResult.get("public_id"));
-                    }
-                }
-            }
+    //         ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
+    //         return ResponseEntity.ok(updatedVariation);
             
-            request.setImageUrls(newImageUrls);
-            request.setImagePublicIds(newImagePublicIds);
-            
-            // Delete specified images from Cloudinary
-            if (deleteImageIds != null && !deleteImageIds.isEmpty()) {
-                for (String publicId : deleteImageIds) {
-                    try {
-                        cloudinaryService.deleteFile(publicId);
-                    } catch (IOException e) {
-                        // Log error but continue with update
-                        System.err.println("Failed to delete image from Cloudinary: " + publicId);
-                    }
-                }
-            }
-            
-            ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
-            return ResponseEntity.ok(updatedVariation);
-            
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to process images: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to update product variation: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-        }
-    }
+    //     } catch (IOException e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(Map.of("error", "Failed to process request or images: " + e.getMessage()));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body(Map.of("error", "Failed to update product variation: " + e.getMessage()));
+    //     }
+    // }
     
     @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")

@@ -2,6 +2,8 @@ package vn.techbox.techbox_store.config.seeder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
@@ -9,6 +11,7 @@ import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Profile({"dev", "development"}) //
 public class PriceUpdateSeeder implements DataSeeder {
 
     private final ProductPriceUpdateService productPriceUpdateService;

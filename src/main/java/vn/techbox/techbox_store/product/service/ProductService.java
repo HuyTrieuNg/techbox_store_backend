@@ -19,6 +19,9 @@ public interface ProductService {
     
     Page<ProductManagementListResponse> filterProductsForManagement(ProductFilterRequest filterRequest);
 
+    void addAttributesToProduct(Integer productId, Map<Integer, String> attributes);
+    
+
 
 
 
@@ -47,12 +50,5 @@ public interface ProductService {
     // Internal use
     Optional<ProductResponse> getProductById(Integer id);
     
-    /**
-     * Add attributes to a product.
-     * @param productId The ID of the product.
-     * @param attributes A map of attribute key-value pairs.
-     */
-    void addAttributesToProduct(Integer productId, Map<String, String> attributes);
-
     void deleteProductHard(Integer id);
 }

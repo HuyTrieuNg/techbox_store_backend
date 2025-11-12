@@ -96,6 +96,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse createCategory(CategoryCreateRequest request) {
+        // Trim the name to remove leading/trailing spaces
+        String trimmedName = request.getName().trim();
+        
         // Validate parent category exists if provided
         if (request.getParentCategoryId() != null) {
             if (!categoryRepository.existsById(request.getParentCategoryId())) {
@@ -104,12 +107,12 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         // Check if category name already exists
-        if (categoryRepository.existsByName(request.getName())) {
-            throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
+        if (categoryRepository.existsByName(trimmedName)) {
+            throw new RuntimeException("Category with name '" + trimmedName + "' already exists");
         }
 
         Category category = Category.builder()
-                .name(request.getName())
+                .name(trimmedName)
                 .parentCategoryId(request.getParentCategoryId())
                 .build();
 
@@ -126,6 +129,9 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
+        // Trim the name to remove leading/trailing spaces
+        String trimmedName = request.getName().trim();
+
         // Validate parent category exists if provided
         if (request.getParentCategoryId() != null) {
             if (!categoryRepository.existsById(request.getParentCategoryId())) {
@@ -139,8 +145,8 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         // Check if category name already exists (excluding current category)
-        if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
-            throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
+        if (categoryRepository.existsByNameAndIdNot(trimmedName, id)) {
+            throw new RuntimeException("Category with name '" + trimmedName + "' already exists");
         }
 
         // Remove from old parent if parentCategoryId is changed
@@ -148,7 +154,7 @@ public class CategoryServiceImpl implements CategoryService {
             removeChildFromParent(category.getParentCategoryId(), category);
         }
 
-        category.setName(request.getName());
+        category.setName(trimmedName);
         category.setParentCategoryId(request.getParentCategoryId());
 
         Category updatedCategory = categoryRepository.save(category);

@@ -243,39 +243,28 @@ public class ProductController {
      * POST /admin/products
      */
     @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
-    @PostMapping(consumes = {"multipart/form-data"})
+    @PostMapping(consumes = { "multipart/form-data" })
     public ResponseEntity<?> createProduct(
             @RequestParam("name") String name,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(value = "brandId", required = false) Integer brandId,
-            @RequestParam(value = "attributes", required = false) String attributesJson,
+            @RequestParam(value = "spu", required = false) String spu,
+            @RequestParam(value = "attributes", required = false) String attributes,
             @RequestParam(value = "warrantyMonths", required = false) Integer warrantyMonths,
             @RequestParam(value = "image", required = false) MultipartFile image) {
 
         try {
-            // Parse attributes JSON
-            Map<String, String> attributes = new HashMap<>();
-            if (attributesJson != null && !attributesJson.isEmpty()) {
-                try {
-                    attributes = new ObjectMapper().readValue(attributesJson, new TypeReference<>() {});
-                } catch (IOException e) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body(Map.of("error", "Invalid attributes JSON: " + e.getMessage()));
-                }
-            }
-
-            // Build product request
             ProductCreateRequest request = ProductCreateRequest.builder()
                     .name(name)
                     .description(description)
                     .categoryId(categoryId)
                     .brandId(brandId)
                     .warrantyMonths(warrantyMonths)
-                    .status(ProductStatus.DRAFT) // Default status to DRAFT
-                    .build();
+                    .attributes(null)
+                    .build(); 
 
-            // Upload image to Cloudinary if provided
+            // Handle image upload if a file is provided
             if (image != null && !image.isEmpty()) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_images");
@@ -283,20 +272,17 @@ public class ProductController {
                 request.setImagePublicId((String) uploadResult.get("public_id"));
             }
 
-            // Save product first
+            // Single call to the refactored service method
             ProductResponse createdProduct = productService.createProduct(request);
-
-            // Add attributes after product is created
-            if (!attributes.isEmpty()) {
-                productService.addAttributesToProduct(createdProduct.getId(), attributes);
-            }
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
 
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to upload image: " + e.getMessage()));
+            // This can be thrown by ObjectMapper or CloudinaryService
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Failed to process request data or upload image: " + e.getMessage()));
         } catch (Exception e) {
+            // Catches validation errors from the service layer
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Failed to create product: " + e.getMessage()));
         }
@@ -380,7 +366,7 @@ public class ProductController {
     @PostMapping("/{id}/attributes")
     public ResponseEntity<?> addAttributesToProduct(
             @PathVariable Integer id,
-            @RequestBody Map<String, String> attributes) {
+            @RequestBody Map<Integer, String> attributes) {
         try {
             productService.addAttributesToProduct(id, attributes);
             return ResponseEntity.ok(Map.of("message", "Attributes added successfully"));
@@ -388,6 +374,7 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
+
 
     // end of management endpoints
     // ============================================
