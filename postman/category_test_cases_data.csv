@@ -1,0 +1,23 @@
+testCaseId,testCaseName,name,parentCategoryId,expectedStatus,expectedError,expectedMessage,role,description
+TC_BE_CRECAT_001,Valid root category,Books,,201,,,ADMIN,Tạo category gốc thành công
+TC_BE_CRECAT_002,Valid child category,Laptops,1,201,,,ADMIN,Tạo category con thành công với parent tồn tại
+TC_BE_CRECAT_003,Category with max length name,ThisIsExactlyFiftyCharactersLongNameForTesting,,201,,,ADMIN,Tạo category với tên dài tối đa (50 ký tự)
+TC_BE_CRECAT_004,Parent category null,Tablets,null,201,,,ADMIN,Tạo category với parentCategoryId = null
+TC_BE_CRECAT_005,Minimum name length,AB,,201,,,ADMIN,Tên category tối thiểu (2 ký tự)
+TC_BE_CRECAT_006,Name with special characters,Electronics & Gadgets,,201,,,ADMIN,Tên category chứa ký tự đặc biệt
+TC_BE_CRECAT_007,Name with unicode,Điện tử,,201,,,ADMIN,Tên category chứa ký tự unicode
+TC_BE_CRECAT_008,Name with numbers,Electronics123,,201,,,ADMIN,Tên category chứa số
+TC_BE_CRECAT_009,Deep nested category,Gaming,1,201,,,ADMIN,Tạo category nested sâu
+TC_BE_CRECAT_010,Category with spaces,Home Appliances,,201,,,ADMIN,Tên category chứa khoảng trắng
+TC_BE_CRECAT_011,Case sensitive duplicate,electronics,,201,,,ADMIN,Tên category phân biệt hoa thường (không trùng với Electronics)
+TC_BE_CRECAT_012,Missing name,,1,400,Bad Request,Category name is required,ADMIN,Thiếu trường name bắt buộc
+TC_BE_CRECAT_013,Whitespace only name,"                     ",1,400,Bad Request,Category name is required,ADMIN,Name chỉ chứa khoảng trắng
+TC_BE_CRECAT_014,Name too long,ThisNameIsDefinitelyLongerThanFiftyCharactersAndShouldFail,,400,Bad Request,Category name must be at least 2 characters and not exceed 50 characters,ADMIN,Name quá dài (>50 ký tự)
+TC_BE_CRECAT_015,Name too short,A,,400,Bad Request,Category name must be at least 2 characters and not exceed 50 characters,ADMIN,Name quá ngắn (<2 ký tự)
+TC_BE_CRECAT_016,Control characters,Category\x00Name,,400,Bad Request,Category name contains invalid characters,ADMIN,Name chứa ký tự điều khiển
+TC_BE_CRECAT_017,Duplicate name,Electronics,,400,Bad Request,Category with name 'Electronics' already exists,ADMIN,Tên category đã tồn tại
+TC_BE_CRECAT_018,Parent category not found,Laptops,999,400,Bad Request,Parent category not found with id: 999,ADMIN,Parent category không tồn tại
+TC_BE_CRECAT_019,Parent category ,Monitors negative parent,-1,400,Bad Request,Parent category not found with id: -1,ADMIN,Parent category id = -1 (không hợp lệ)
+TC_BE_CRECAT_020,Unauthorized request - STAFF,StaffNoAccessCategory,,403,Forbidden,Access denied. You don't have permission to access this resource.,STAFF,Staff không có quyền PRODUCT:WRITE
+TC_BE_CRECAT_021,Unauthorized request - CUSTOMER,CustomerNoAccessCategory,,403,Forbidden,Access denied. You don't have permission to access this resource.,CUSTOMER,Customer không có quyền PRODUCT:WRITE
+TC_BE_CRECAT_022,Unauthorized request - UNAUTHENTICATED,NoAuthCategory,,401,Unauthorized,Access denied. You don't have permission to access this resource.,UNAUTHENTICATED,Không đăng nhập

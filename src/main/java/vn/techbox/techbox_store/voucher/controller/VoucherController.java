@@ -112,20 +112,13 @@ public class VoucherController {
         return ResponseEntity.ok(response);
     }
 
-
-
-
     @PreAuthorize("hasAuthority('VOUCHER:DELETE')")
     @DeleteMapping("/{code}")
     @Operation(summary = "Delete a voucher", description = "Soft delete a voucher by ID")
     public ResponseEntity<Void> deleteVoucher(
             @Parameter(description = "Voucher code") @PathVariable String code) {
-        try {
-            voucherService.deleteVoucherByCode(code);
-            return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        voucherService.deleteVoucherByCode(code);
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasAuthority('VOUCHER:UPDATE')")
@@ -133,12 +126,8 @@ public class VoucherController {
     @Operation(summary = "Restore a deleted voucher", description = "Restore a soft-deleted voucher by ID")
     public ResponseEntity<Void> restoreVoucher(
             @Parameter(description = "Voucher code") @PathVariable String code) {
-        try {
-            voucherService.restoreVoucherByCode(code);
-            return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        voucherService.restoreVoucherByCode(code);
+        return ResponseEntity.ok().build();
     }
     
     // Voucher Validation and Usage
@@ -157,12 +146,8 @@ public class VoucherController {
     @Operation(summary = "Use a voucher", description = "Mark a voucher as used for an order")
     public ResponseEntity<String> useVoucher(
             @Valid @RequestBody VoucherUseRequest request) {
-        try {
-            voucherService.useVoucher(request);
-            return ResponseEntity.ok("Voucher used successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        voucherService.useVoucher(request);
+        return ResponseEntity.ok("Voucher used successfully");
     }
     
     // Reporting and Analytics

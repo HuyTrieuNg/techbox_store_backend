@@ -13,8 +13,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vn.techbox.techbox_store.order.exception.OrderException;
-import vn.techbox.techbox_store.voucher.exception.VoucherValidationException;
-import vn.techbox.techbox_store.voucher.dto.VoucherErrorResponse;
+import vn.techbox.techbox_store.voucher.exception.*;
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -79,6 +79,47 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    // ===== VOUCHER EXCEPTIONS =====
+    @ExceptionHandler(VoucherValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleVoucherValidationException(VoucherValidationException ex) {
+        logger.warn("Voucher validation exception: {}", ex.getMessage());
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Voucher Validation Error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(VoucherNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleVoucherNotFoundException(VoucherNotFoundException ex) {
+        logger.warn("Voucher not found: {}", ex.getMessage());
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Voucher Not Found", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(VoucherAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleVoucherAlreadyExistsException(VoucherAlreadyExistsException ex) {
+        logger.warn("Voucher already exists: {}", ex.getMessage());
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Voucher Already Exists", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(VoucherSystemException.class)
+    public ResponseEntity<ApiErrorResponse> handleVoucherSystemException(VoucherSystemException ex) {
+        logger.error("Voucher system exception: {}", ex.getMessage(), ex);
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Voucher System Error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(VoucherException.class)
+    public ResponseEntity<ApiErrorResponse> handleVoucherException(VoucherException ex) {
+        logger.error("Voucher exception: {}", ex.getMessage(), ex);
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("Voucher Error", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
     // ===== VALIDATION EXCEPTIONS =====
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -108,21 +149,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
-    // ===== VOUCHER VALIDATION EXCEPTIONS =====
-    @ExceptionHandler(VoucherValidationException.class)
-    public ResponseEntity<VoucherErrorResponse> handleVoucherValidationException(
-            VoucherValidationException ex, WebRequest request) {
-        logger.warn("Voucher validation failed: {} - Code: {} - Type: {}",
-                   ex.getMessage(), ex.getVoucherCode(), ex.getErrorType());
 
-        VoucherErrorResponse errorResponse = VoucherErrorResponse.of(
-            ex.getMessage(),
-            ex.getVoucherCode(),
-            ex.getErrorType()
-        );
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
 
     // ===== GENERIC EXCEPTION =====
     @ExceptionHandler(Exception.class)

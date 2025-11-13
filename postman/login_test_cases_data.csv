@@ -1,0 +1,30 @@
+testCaseId,testCaseName,email,password,expectedStatus,expectedError,expectedMessage,description
+TC_BE_LOGIN_001,Valid customer login,testCustomer123@techbox.vn,@Customer123,200,,,Kiểm tra đăng nhập thành công với tài khoản customer có tài khoản chứa kí tự in hoa và mật khẩu mạnh
+TC_BE_LOGIN_002,Valid admin login,admin@techbox.vn,admin123,200,,,Kiểm tra đăng nhập thành công với tài khoản admin.
+TC_BE_LOGIN_003,Valid staff login,staff1@techbox.vn,staff123,200,,,Kiểm tra đăng nhập thành công với tài khoản staff.
+TC_BE_LOGIN_004,Account locked,locked@techbox.vn,locked123,401,ACCOUNT_LOCKED,Account is locked,Kiểm tra từ chối đăng nhập với tài khoản bị khóa.
+TC_BE_LOGIN_005,Account disabled,disabled@techbox.vn,disabled123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với tài khoản bị vô hiệu hóa.
+TC_BE_LOGIN_006,Invalid email,nonexistent@techbox.vn,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email không tồn tại.
+TC_BE_LOGIN_007,Invalid password,testCustomer@techbox.vn,wrongpassword,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với mật khẩu sai.
+TC_BE_LOGIN_008,Non-existent email with numbers,testcustomer123@techbox.vn,customer123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email có số nhưng không tồn tại.
+TC_BE_LOGIN_009,Missing email field,,customer123,400,,email: Email is required,Kiểm tra từ chối đăng nhập khi thiếu trường email.
+TC_BE_LOGIN_010,Missing password field,testCustomer@techbox.vn,,400,,password: Password is required,Kiểm tra từ chối đăng nhập khi thiếu trường password.
+TC_BE_LOGIN_011,Empty email string,,customer123,400,,email: Email is required,Kiểm tra từ chối đăng nhập với email rỗng.
+TC_BE_LOGIN_012,Empty password string,testCustomer@techbox.vn,,400,,password: Password is required,Kiểm tra từ chối đăng nhập với password rỗng.
+TC_BE_LOGIN_013,Whitespace email,"                              ",customer123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email chỉ có khoảng trắng.
+TC_BE_LOGIN_014,Whitespace password,testCustomer@techbox.vn,"                ",401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với password chỉ có khoảng trắng.
+TC_BE_LOGIN_015,Email without @,invalidemail,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email thiếu @.
+TC_BE_LOGIN_016,Email without domain,test@,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email thiếu domain.
+TC_BE_LOGIN_017,Email with spaces," test@techbox.vn             ",password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email có khoảng trắng.
+TC_BE_LOGIN_018,Email uppercase,TESTCUSTOMER@TECHBOX.VN,customer123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email viết hoa vài chữ cái so với tài khoản thật.
+TC_BE_LOGIN_019,Email with special chars,user+test@techbox.vn,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email có ký tự đặc biệt.
+TC_BE_LOGIN_020,Email with unicode,测试@techbox.vn,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email có unicode.
+TC_BE_LOGIN_021,Email with subdomain,user@sub.techbox.vn,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email có subdomain.
+TC_BE_LOGIN_022,Password with special chars,testCustomer@techbox.vn,pass@#$%word,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với mật khẩu có ký tự đặc biệt.
+TC_BE_LOGIN_023,Password with unicode,testCustomer@techbox.vn,パスワード123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với mật khẩu có unicode.
+TC_BE_LOGIN_024,Password exactly 5 chars,testCustomer@techbox.vn,12345,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với mật khẩu 5 ký tự (boundary min - 1).
+TC_BE_LOGIN_025,Password exactly 129 chars,testCustomer@techbox.vn,verylongpasswordthatshouldfailthevalidationandismorethan128characterslongverylongpasswordthatshouldfailthevalidationandismorethan128characterslong,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với mật khẩu 129 ký tự (boundary max + 1).
+TC_BE_LOGIN_026,Email exactly 255 chars,verylongemailaddressthatshouldfailvalidationandismorethan254characterslongverylongemailaddressthatshouldfailvalidationandismorethan254characterslongverylongemailaddressthatshouldfailvalidationandismorethan254characterslong@test.com,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra từ chối đăng nhập với email 255 ký tự (boundary max + 1).
+TC_BE_LOGIN_027,Password exactly 6 chars,testCustomer@techbox.vn,123456,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra validation pass nhưng credentials không tồn tại với mật khẩu đúng 6 ký tự (boundary min).
+TC_BE_LOGIN_028,Password exactly 128 chars,testCustomer@techbox.vn,verylongpasswordthatshouldpassthevalidationandisequalto128characterslongverylongpasswordthatshouldpassthevalidationandisequalto128characters,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra validation pass nhưng credentials không tồn tại với mật khẩu đúng 128 ký tự (boundary max).
+TC_BE_LOGIN_029,Email exactly 254 chars,verylongemailaddressthatshouldpassvalidationandisequalto254characterslongverylongemailaddressthatshouldpassvalidationandisequalto254characterslongverylongemailaddressthatshouldpassvalidationandisequalto254characterslong@test.com,password123,401,INVALID_CREDENTIALS,Invalid email or password,Kiểm tra validation pass nhưng credentials không tồn tại với email đúng 254 ký tự (boundary max).

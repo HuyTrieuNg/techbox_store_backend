@@ -4,18 +4,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationManagementResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.mapper.ProductVariationMapper;
+import vn.techbox.techbox_store.product.model.Attribute;
+import vn.techbox.techbox_store.product.repository.AttributeRepository;
+import vn.techbox.techbox_store.product.dto.productDto.VariationAttributeRequest;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
+import vn.techbox.techbox_store.product.model.VariationAttribute;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.product.repository.VariationAttributeRepository;
 import vn.techbox.techbox_store.product.repository.ProductVariationImageRepository;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -23,11 +30,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class ProductVariationServiceImpl implements ProductVariationService {
-    
+
+    private final VariationAttributeRepository variationAttributeRepository;
     private final ProductVariationRepository productVariationRepository;
     private final ProductRepository productRepository;
     private final ProductVariationImageRepository productVariationImageRepository;
     private final ProductVariationMapper productVariationMapper;
+    private final AttributeRepository attributeRepository;
     
     @Override
     @Transactional(readOnly = true)
@@ -66,37 +75,56 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         if (request.getSku() != null && existsBySku(request.getSku())) {
             throw new IllegalArgumentException("SKU already exists: " + request.getSku());
         }
-        
-        // Verify product exists and is active
+
+        // Ensure the parent product exists and is active
         Product product = productRepository.findActiveById(request.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Active product not found with id: " + request.getProductId()));
-        
-        // Check if this is the first variation for the product
-        List<ProductVariation> existingVariations = productVariationRepository.findByProductId(request.getProductId());
-        boolean isFirstVariation = existingVariations.isEmpty();
 
+        // Build the ProductVariation entity from the request
         ProductVariation productVariation = ProductVariation.builder()
             .variationName(request.getVariationName())
             .productId(request.getProductId())
             .price(request.getPrice())
             .sku(request.getSku())
             .avgCostPrice(request.getAvgCostPrice())
+            .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0)
+            .reservedQuantity(request.getReservedQuantity() != null ? request.getReservedQuantity() : 0)
             .build();
-        
-        ProductVariation savedVariation = productVariationRepository.save(productVariation);
-        
-        // Update product display price if this is the first variation
-        if (isFirstVariation && request.getPrice() != null) {
-            product.setDisplayOriginalPrice(request.getPrice());
-            // Note: displaySalePrice will be updated by promotion logic
-            productRepository.save(product);
+
+        // Add variation attributes to the entity
+        if (request.getVariationAttributes() != null && !request.getVariationAttributes().isEmpty()) {
+            for (VariationAttributeRequest attrReq : request.getVariationAttributes()) {
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+                
+                VariationAttribute variationAttribute = VariationAttribute.builder()
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+                
+                productVariation.addVariationAttribute(variationAttribute);
+            }
         }
-        
-        // Save images if provided
+
+        // Add images to the entity
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            saveProductVariationImages(savedVariation.getId(), request.getImageUrls(), request.getImagePublicIds());
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                String publicId = (request.getImagePublicIds() != null && i < request.getImagePublicIds().size()) ? request.getImagePublicIds().get(i) : null;
+                ProductVariationImage image = ProductVariationImage.builder()
+                        .imageUrl(request.getImageUrls().get(i))
+                        .imagePublicId(publicId)
+                        .build();
+                // Assuming a helper method addImage exists in ProductVariation
+                // productVariation.addImage(image); 
+                // If not, we need to set the back-reference manually
+                image.setProductVariation(productVariation);
+                productVariation.getImages().add(image);
+            }
         }
-        
+
+        // Save the parent entity once. All children will be saved via cascade.
+        ProductVariation savedVariation = productVariationRepository.save(productVariation);
+
         return productVariationMapper.toResponse(savedVariation);
     }
     
@@ -104,35 +132,22 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     public ProductVariationResponse updateProductVariation(Integer id, ProductVariationUpdateRequest request) {
         ProductVariation variation = productVariationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product variation not found with id: " + id));
-        
+
         if (request.getVariationName() != null) {
             variation.setVariationName(request.getVariationName());
         }
-        
+
         if (request.getPrice() != null) {
             variation.setPrice(request.getPrice());
         }
-        
+
         if (request.getSku() != null) {
             if (existsBySkuAndIdNot(request.getSku(), id)) {
                 throw new IllegalArgumentException("SKU already exists: " + request.getSku());
             }
             variation.setSku(request.getSku());
         }
-        
-        // Handle image operations
-        if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
-            // Delete specified images by public ID
-            for (String publicId : request.getDeleteImageIds()) {
-                productVariationImageRepository.deleteByImagePublicId(publicId);
-            }
-        }
-        
-        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            // Add new images
-            saveProductVariationImages(id, request.getImageUrls(), request.getImagePublicIds());
-        }
-        
+
         if (request.getStockQuantity() != null) {
             variation.setStockQuantity(request.getStockQuantity());
         }
@@ -145,8 +160,42 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setAvgCostPrice(request.getAvgCostPrice());
         }
 
+        // Efficiently update variation attributes using orphanRemoval
+        if (request.getVariationAttributes() != null) {
+            // Clear the existing collection. orphanRemoval=true will delete the old attributes.
+            variation.getVariationAttributes().clear();
+            // Add the new attributes
+            for (VariationAttributeRequest attrReq : request.getVariationAttributes()) {
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+                
+                VariationAttribute variationAttribute = VariationAttribute.builder()
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+                
+                variation.addVariationAttribute(variationAttribute);
+            }
+        }
 
-        
+        // Handle image deletions using orphanRemoval by removing them from the collection
+        if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
+            variation.getImages().removeIf(image -> request.getDeleteImageIds().contains(image.getImagePublicId()));
+        }
+
+        // Handle new image additions
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                String publicId = (request.getImagePublicIds() != null && i < request.getImagePublicIds().size()) ? request.getImagePublicIds().get(i) : null;
+                ProductVariationImage image = ProductVariationImage.builder()
+                        .imageUrl(request.getImageUrls().get(i))
+                        .imagePublicId(publicId)
+                        .build();
+                image.setProductVariation(variation);
+                variation.getImages().add(image);
+            }
+        }
+
         ProductVariation updatedVariation = productVariationRepository.save(variation);
         return productVariationMapper.toResponse(updatedVariation);
     }
@@ -173,6 +222,15 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     @Transactional(readOnly = true)
     public List<ProductVariationResponse> getVariationsByProductId(Integer productId) {
         return productVariationRepository.findByProductId(productId)
+                .stream()
+                .map(productVariationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductVariationResponse> getActiveVariationsByProductId(Integer productId) {
+        return productVariationRepository.findByProductIdAndDeletedAtIsNull(productId)
                 .stream()
                 .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
@@ -233,16 +291,69 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         return productVariationRepository.existsBySkuAndIdNot(sku, id);
     }
     
-    // Helper methods for image handling
-    private void saveProductVariationImages(Integer variationId, List<String> imageUrls, List<String> imagePublicIds) {
-        for (int i = 0; i < imageUrls.size(); i++) {
-            String publicId = (imagePublicIds != null && i < imagePublicIds.size()) ? imagePublicIds.get(i) : null;
-            ProductVariationImage image = ProductVariationImage.builder()
-                    .productVariationId(variationId)
-                    .imageUrl(imageUrls.get(i))
-                    .imagePublicId(publicId)
-                    .build();
-            productVariationImageRepository.save(image);
+    /**
+     * Internal method for service-to-service communication
+     * Returns entities to avoid N+1 query issues
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductVariation> getActiveVariationEntitiesByProductId(Integer productId) {
+        return productVariationRepository.findByProductIdAndDeletedAtIsNull(productId);
+    }
+    
+    /**
+     * Count active variations for a product
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public int countActiveVariationsByProductId(Integer productId) {
+        return productVariationRepository.findByProductIdAndDeletedAtIsNull(productId).size();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int countTotalVariationsByProductId(Integer productId) {
+        return productVariationRepository.findAllByProductId(productId).size();
+    }
+
+    
+    /**
+     * Get all variations for management with optional deleted filter
+     * Used for admin/management view and edit
+     * 
+     * @param productId The ID of the product
+     * @param deleted Filter parameter:
+     *                - null (default): return all variations
+     *                - false: return only active variations (deletedAt IS NULL)
+     *                - true: return only soft-deleted variations (deletedAt IS NOT NULL)
+     * @return List of variations matching the filter criteria
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductVariationManagementResponse> getVariationsForManagement(Integer productId, Boolean deleted) {
+        List<ProductVariation> variations;
+        
+        if (deleted == null) {
+            // Return all variations (no filter)
+            variations = productVariationRepository.findAllByProductId(productId);
+        } else if (deleted) {
+            // Return only soft-deleted variations (deletedAt IS NOT NULL)
+            variations = productVariationRepository.findDeletedByProductId(productId);
+        } else {
+            // Return only active variations (deletedAt IS NULL)
+            variations = productVariationRepository.findByProductId(productId);
         }
+        
+        // Map to management response using ProductVariationMapper
+        return variations.stream()
+                .map(productVariationMapper::toManagementResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public void deleteProductVariationHard(Integer id) {
+        productVariationRepository.findById(id).ifPresent(variation -> {
+            productVariationRepository.delete(variation);
+        });
     }
 }

@@ -31,8 +31,6 @@ public class VoucherResponse {
     private boolean hasUsageLeft;
     
     // Helper fields for UI
-    private String displayValue;
-    private String displayValidityPeriod;
     private String status;
     
     public static VoucherResponse fromEntity(vn.techbox.techbox_store.voucher.model.Voucher voucher) {
@@ -56,18 +54,6 @@ public class VoucherResponse {
         // Calculate used count
         int usedCount = voucher.getUserVouchers() != null ? voucher.getUserVouchers().size() : 0;
         builder.usedCount(usedCount);
-        
-        // Set display value
-        String displayValue;
-        if (voucher.getVoucherType() == VoucherType.FIXED_AMOUNT) {
-            displayValue = "$" + voucher.getValue().toPlainString();
-        } else {
-            displayValue = voucher.getValue().toPlainString() + "%";
-        }
-        builder.displayValue(displayValue);
-        
-        // Set validity period
-        builder.displayValidityPeriod(voucher.getValidFrom() + " - " + voucher.getValidUntil());
         
         // Set status with proper logic
         String status;
