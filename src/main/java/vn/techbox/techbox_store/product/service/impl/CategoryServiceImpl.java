@@ -76,92 +76,55 @@ public class CategoryServiceImpl implements CategoryService {
         return result;
     }
     
-    private void updateParentChildCategories(Integer parentCategoryId, Category childCategory) {
-        if (parentCategoryId != null) {
-            Category parentCategory = categoryRepository.findById(parentCategoryId)
-                    .orElseThrow(() -> new RuntimeException("Parent category not found with id: " + parentCategoryId));
-            parentCategory.getChildCategories().add(childCategory);
-            categoryRepository.save(parentCategory);
-        }
-    }
-
-    private void removeChildFromParent(Integer parentCategoryId, Category childCategory) {
-        if (parentCategoryId != null) {
-            Category parentCategory = categoryRepository.findById(parentCategoryId)
-                    .orElseThrow(() -> new RuntimeException("Parent category not found with id: " + parentCategoryId));
-            parentCategory.getChildCategories().remove(childCategory);
-            categoryRepository.save(parentCategory);
-        }
-    }
-
     @Override
     public CategoryResponse createCategory(CategoryCreateRequest request) {
-        // Trim the name to remove leading/trailing spaces
-        String trimmedName = request.getName().trim();
+        // Validate parent category exists if provided
+        if (request.getParentCategoryId() != null) {
+            if (!categoryRepository.existsById(request.getParentCategoryId())) {
+                throw new RuntimeException("Parent category not found with id: " + request.getParentCategoryId());
+            }
+        }
+        
+        // Check if category name already exists
+        if (categoryRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
+        }
+        
+        Category category = Category.builder()
+                .name(request.getName())
+                .parentCategoryId(request.getParentCategoryId())
+                .build();
+        
+        Category savedCategory = categoryRepository.save(category);
+        return categoryMapper.toResponse(savedCategory);
+    }
+    
+    @Override
+    public CategoryResponse updateCategory(Integer id, CategoryUpdateRequest request) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
         
         // Validate parent category exists if provided
         if (request.getParentCategoryId() != null) {
             if (!categoryRepository.existsById(request.getParentCategoryId())) {
                 throw new RuntimeException("Parent category not found with id: " + request.getParentCategoryId());
             }
-        }
-
-        // Check if category name already exists
-        if (categoryRepository.existsByName(trimmedName)) {
-            throw new RuntimeException("Category with name '" + trimmedName + "' already exists");
-        }
-
-        Category category = Category.builder()
-                .name(trimmedName)
-                .parentCategoryId(request.getParentCategoryId())
-                .build();
-
-        Category savedCategory = categoryRepository.save(category);
-
-        // Update parent category's child list
-        updateParentChildCategories(request.getParentCategoryId(), savedCategory);
-
-        return categoryMapper.toResponse(savedCategory);
-    }
-
-    @Override
-    public CategoryResponse updateCategory(Integer id, CategoryUpdateRequest request) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
-
-        // Trim the name to remove leading/trailing spaces
-        String trimmedName = request.getName().trim();
-
-        // Validate parent category exists if provided
-        if (request.getParentCategoryId() != null) {
-            if (!categoryRepository.existsById(request.getParentCategoryId())) {
-                throw new RuntimeException("Parent category not found with id: " + request.getParentCategoryId());
-            }
-
+            
             // Prevent circular reference (category cannot be its own parent)
             if (request.getParentCategoryId().equals(id)) {
                 throw new RuntimeException("Category cannot be its own parent");
             }
         }
-
+        
         // Check if category name already exists (excluding current category)
-        if (categoryRepository.existsByNameAndIdNot(trimmedName, id)) {
-            throw new RuntimeException("Category with name '" + trimmedName + "' already exists");
+        if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
+            throw new RuntimeException("Category with name '" + request.getName() + "' already exists");
         }
-
-        // Remove from old parent if parentCategoryId is changed
-        if (!request.getParentCategoryId().equals(category.getParentCategoryId())) {
-            removeChildFromParent(category.getParentCategoryId(), category);
-        }
-
-        category.setName(trimmedName);
+        
+        category.setName(request.getName());
         category.setParentCategoryId(request.getParentCategoryId());
-
+        
         Category updatedCategory = categoryRepository.save(category);
-
-        // Update new parent's child list
-        updateParentChildCategories(request.getParentCategoryId(), updatedCategory);
-
         return categoryMapper.toResponse(updatedCategory);
     }
     

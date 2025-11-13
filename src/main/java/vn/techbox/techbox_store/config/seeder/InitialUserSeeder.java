@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.config.seeder;
 
-import com.github.javafaker.Faker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -14,7 +13,6 @@ import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.util.HashSet;
-import java.util.Locale;
 
 @Component
 @Order(2)
@@ -25,8 +23,6 @@ public class InitialUserSeeder implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Faker faker = new Faker(new Locale("vi-VN"));
-
 
     public InitialUserSeeder(UserRepository userRepository,
                              AccountRepository accountRepository,
@@ -58,16 +54,12 @@ public class InitialUserSeeder implements CommandLineRunner {
         createSingleRoleUser("admin@techbox.vn", "admin123", "Admin", "System", UserRole.ROLE_ADMIN);
 
         // Staff accounts
-        createSingleRoleUser("staff1@techbox.vn", "staff123", "Staff", "One", UserRole.ROLE_STAFF);
+            createSingleRoleUser("staff1@techbox.vn", "staff123", "Staff", "One", UserRole.ROLE_STAFF);
         createSingleRoleUser("staff2@techbox.vn", "staff123", "Staff", "Two", UserRole.ROLE_STAFF);
 
         // Customer demo accounts
-        log.info("Seeding 50 random customer accounts...");
-        for (int i = 0; i < 50; i++) {
-            String firstName = faker.name().firstName();
-            String lastName = faker.name().lastName();
-            String email = faker.internet().safeEmailAddress(firstName.toLowerCase() + "." + lastName.toLowerCase());
-            createSingleRoleUser(email, "customer123", firstName, lastName, UserRole.ROLE_CUSTOMER);
+        for (int i = 1; i <= 5; i++) {
+            createSingleRoleUser("customer" + i + "@techbox.vn", "customer123", "Customer", "#" + i, UserRole.ROLE_CUSTOMER);
         }
         log.info("Default user seeding done");
     }

@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.product.dto.productDto;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -36,10 +35,4 @@ public class ProductVariationCreateRequest {
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;
-
-    private Integer stockQuantity;
-    private Integer reservedQuantity;
-
-    @Valid
-    private List<VariationAttributeRequest> variationAttributes;
 }

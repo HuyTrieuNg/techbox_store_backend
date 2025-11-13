@@ -8,8 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.techbox.techbox_store.product.model.ProductStatus;
 
-import java.util.Map;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,5 +35,4 @@ public class ProductUpdateRequest {
     @PositiveOrZero(message = "Base price must be zero or positive")
     private Integer warrantyMonths;
 
-    private Map<String, String> attributes; // Key-value pairs for product attributes
 }

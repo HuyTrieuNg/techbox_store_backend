@@ -2,7 +2,6 @@ package vn.techbox.techbox_store.product.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import vn.techbox.techbox_store.product.dto.productDto.ProductVariationManagementResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
@@ -118,78 +117,5 @@ public class ProductVariationMapper {
                 .stream()
                 .map(ProductVariationImage::getImageUrl)
                 .collect(Collectors.toList());
-    }
-    
-    /**
-     * Convert ProductVariation entity to ProductVariationManagementResponse DTO
-     * Includes all information for management view (soft-deleted items included)
-     * Used for admin/management APIs
-     */
-    public ProductVariationManagementResponse toManagementResponse(ProductVariation variation) {
-        if (variation == null) return null;
-        
-        ProductVariationManagementResponse response = ProductVariationManagementResponse.builder()
-                .id(variation.getId())
-                .productId(variation.getProductId())
-                .sku(variation.getSku())
-                .variationName(variation.getVariationName())
-                .price(variation.getPrice())
-                .stock(variation.getStockQuantity())
-                .reservedQuantity(variation.getReservedQuantity())
-                .build();
-        
-        // Calculate available quantity
-        int availableQuantity = (variation.getStockQuantity() != null ? variation.getStockQuantity() : 0) - 
-                               (variation.getReservedQuantity() != null ? variation.getReservedQuantity() : 0);
-        response.setAvailableQuantity(availableQuantity);
-        
-        // Map images
-        if (variation.getImages() != null && !variation.getImages().isEmpty()) {
-            List<ProductVariationManagementResponse.ImageDetail> images = variation.getImages().stream()
-                    .map(img -> ProductVariationManagementResponse.ImageDetail.builder()
-                            .id(img.getId())
-                            .imageUrl(img.getImageUrl())
-                            .imagePublicId(img.getImagePublicId())
-                            .build())
-                    .collect(Collectors.toList());
-            response.setImages(images);
-        }
-        
-        // Map variation attributes (value field, not attributeValue)
-        if (variation.getVariationAttributes() != null && !variation.getVariationAttributes().isEmpty()) {
-            List<ProductVariationManagementResponse.AttributeDetail> attributes = variation.getVariationAttributes().stream()
-                    .map(va -> ProductVariationManagementResponse.AttributeDetail.builder()
-                            .attributeId(va.getAttribute() != null ? va.getAttribute().getId() : null)
-                            .attributeName(va.getAttribute() != null ? va.getAttribute().getName() : null)
-                            .attributeValue(va.getValue())
-                            .build())
-                    .collect(Collectors.toList());
-            response.setAttributes(attributes);
-        }
-        
-        // Map promotion information if active promotion exists (List<Promotion>, not single Promotion)
-        if (variation.getPromotions() != null && !variation.getPromotions().isEmpty()) {
-            // Get first active promotion
-            Promotion promo = variation.getPromotions().get(0);
-            response.setPromotionId(promo.getId());
-            response.setPromotionName(promo.getCampaign() != null ? promo.getCampaign().getName() : null);
-            response.setDiscountType(promo.getDiscountType());
-            response.setDiscountValue(promo.getDiscountValue());
-            response.setPromotionStartDate(promo.getStartDate());
-            response.setPromotionEndDate(promo.getEndDate());
-            
-            // Calculate sale price
-            BigDecimal salePrice = calculateSalePrice(variation.getPrice(), promo);
-            response.setSalePrice(salePrice);
-        } else {
-            response.setSalePrice(variation.getPrice());  // No promotion, sale price = original price
-        }
-        
-        // Metadata
-        response.setCreatedAt(variation.getCreatedAt());
-        response.setUpdatedAt(variation.getUpdatedAt());
-        response.setDeletedAt(variation.getDeletedAt());
-        
-        return response;
     }
 }

@@ -25,7 +25,11 @@ public class CampaignSeeder implements DataSeeder {
 
     @Override
     public boolean shouldSkip() {
-        // Always run this seeder to ensure data is fresh
+        long count = campaignRepository.count();
+        if (count > 0) {
+            log.info("Campaigns already exist ({} found), skipping seeder", count);
+            return true;
+        }
         return false;
     }
 
@@ -34,9 +38,6 @@ public class CampaignSeeder implements DataSeeder {
     public void seed() {
         log.info("Starting Campaign seeding...");
         
-        // Clean up existing data to ensure idempotency
-        campaignRepository.deleteAllInBatch();
-        
         LocalDateTime now = LocalDateTime.now();
         List<Campaign> campaigns = new ArrayList<>();
         
@@ -44,7 +45,7 @@ public class CampaignSeeder implements DataSeeder {
         campaigns.add(Campaign.builder()
                 .name("Mega Sale 12.12")
                 .description("Khuyến mãi khủng trong ngày 12/12 - Giảm giá mạnh cho tất cả sản phẩm điện tử")
-                .startDate(now.minusMinutes(1))
+                .startDate(now.minusDays(5))
                 .endDate(now.plusDays(25))
                 .build());
         

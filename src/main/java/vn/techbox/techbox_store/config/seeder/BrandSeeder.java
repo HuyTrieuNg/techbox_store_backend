@@ -36,8 +36,7 @@ public class BrandSeeder implements DataSeeder {
                 Brand.builder().name("Anker").build(),
                 Brand.builder().name("Belkin").build(),
                 Brand.builder().name("LG").build(),
-                Brand.builder().name("Google").build(),
-                Brand.builder().name("Keychron").build()
+                Brand.builder().name("Google").build()
         );
 
         brandRepository.saveAll(brands);

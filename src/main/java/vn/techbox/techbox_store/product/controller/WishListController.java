@@ -14,7 +14,7 @@ import vn.techbox.techbox_store.product.dto.wishListDto.CheckWishlistRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
 import vn.techbox.techbox_store.product.dto.wishListDto.WishListRequest;
 import vn.techbox.techbox_store.product.service.WishListService;
-import vn.techbox.techbox_store.user.security.UserPrincipal;
+import vn.techbox.techbox_store.user.model.User;
 
 import java.util.Map;
 
@@ -37,8 +37,8 @@ public class WishListController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDirection) {
         
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Integer userId = userPrincipal.id();
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
         
         Sort.Direction direction = sortDirection.equalsIgnoreCase("DESC") 
                 ? Sort.Direction.DESC 
@@ -58,8 +58,8 @@ public class WishListController {
             @Valid @RequestBody WishListRequest request,
             Authentication authentication) {
         
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Integer userId = userPrincipal.id();
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
         
         ProductListResponse response = wishListService.addToWishList(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -74,8 +74,8 @@ public class WishListController {
             @PathVariable Integer productId,
             Authentication authentication) {
         
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Integer userId = userPrincipal.id();
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
         
         WishListRequest request = new WishListRequest();
         request.setProductId(productId);
@@ -94,8 +94,8 @@ public class WishListController {
             @Valid @RequestBody CheckWishlistRequest request,
             Authentication authentication) {
         
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Integer userId = userPrincipal.id();
+        User user = (User) authentication.getPrincipal();
+        Integer userId = user.getId();
         
         Map<Integer, Boolean> result = wishListService.checkInWishlist(userId, request.getProductIds());
         return ResponseEntity.ok(result);

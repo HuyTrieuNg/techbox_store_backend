@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.user.dto.AddressCreateRequest;
 import vn.techbox.techbox_store.user.model.Address;
 import vn.techbox.techbox_store.user.model.User;
-import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 import vn.techbox.techbox_store.user.service.UserAddressService;
 
@@ -171,7 +170,7 @@ public class AddressSeeder implements CommandLineRunner {
                     email, addressReq.streetAddress(), addressReq.ward(),
                     addressReq.district(), addressReq.city());
             } catch (Exception e) {
-                log.error("Failed to create address for customer {}: {}", user.getAccount().getEmail(), e.getMessage());
+                log.error("Failed to create address for customer {}: {}", email, e.getMessage());
             }
         }
         log.info("Created {} addresses for customer {}", addressCount, email);

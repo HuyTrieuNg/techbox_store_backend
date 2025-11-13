@@ -6,10 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.validation.Valid;
 import vn.techbox.techbox_store.product.model.ProductStatus;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -32,10 +29,9 @@ public class ProductCreateRequest {
 
     private Integer warrantyMonths; // in months
     
+    @Size(max = 255, message = "Image URL must not exceed 255 characters")
     private String imageUrl;
     
+    @Size(max = 255, message = "Image public ID must not exceed 255 characters")
     private String imagePublicId;
-
-    @Valid
-    private List<AttributeRequest> attributes; // List of product attributes
 }
