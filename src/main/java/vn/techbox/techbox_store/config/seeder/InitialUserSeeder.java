@@ -61,6 +61,7 @@ public class InitialUserSeeder implements CommandLineRunner {
         createSingleRoleUser("staff1@techbox.vn", "staff123", "Staff", "One", UserRole.ROLE_STAFF);
         createSingleRoleUser("staff2@techbox.vn", "staff123", "Staff", "Two", UserRole.ROLE_STAFF);
 
+        createSingleRoleUser("customer1@techbox.vn", "customer123", "Customer", "One", UserRole.ROLE_CUSTOMER);
         // Customer demo accounts
         log.info("Seeding 50 random customer accounts...");
         for (int i = 0; i < 50; i++) {
