@@ -242,7 +242,12 @@ public class VoucherServiceImpl implements VoucherService {
         
         userVoucherRepository.save(userVoucher);
         
-        log.info("Voucher used successfully: {} by user: {}", request.getCode(), request.getUserId());
+        // IMPORTANT: Increase used count instead of decreasing usage limit
+        voucher.setUsedCount(voucher.getUsedCount() + 1);
+        voucherRepository.save(voucher);
+
+        log.info("Voucher used successfully: {} by user: {}. Used count: {}/{}",
+                request.getCode(), request.getUserId(), voucher.getUsedCount(), voucher.getUsageLimit());
     }
     
     // Reporting and Analytics

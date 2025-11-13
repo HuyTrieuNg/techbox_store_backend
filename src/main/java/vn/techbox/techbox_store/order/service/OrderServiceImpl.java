@@ -56,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new OrderException("User not found"));
 
-        orderValidationService.validateCreateOrderRequest(request);
+        orderValidationService.validateCreateOrderRequest(request, userId);
 
         OrderShippingInfo shippingInfo = OrderShippingInfo.builder()
                 .shippingName(request.getShippingName())
@@ -69,6 +69,7 @@ public class OrderServiceImpl implements OrderService {
                 .shippingPostalCode(request.getShippingPostalCode())
                 .shippingCountry(request.getShippingCountry())
                 .shippingMethod(request.getShippingMethod())
+                .estimatedDeliveryDate(java.time.LocalDate.now().plusDays(3))
                 .deliveryInstructions(request.getDeliveryInstructions())
                 .build();
         OrderShippingInfo savedShippingInfo = orderShippingInfoRepository.save(shippingInfo);
@@ -208,6 +209,34 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getAllOrders(Pageable pageable) {
+        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+        return orders.map(orderMappingService::toOrderResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getAllOrdersByStatus(OrderStatus status, Pageable pageable) {
+        Page<Order> orders = orderRepository.findByStatus(status, pageable);
+        return orders.map(orderMappingService::toOrderResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrdersByUserId(Integer userId, Pageable pageable) {
+        Page<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
+        return orders.map(orderMappingService::toOrderResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> getOrdersByUserIdAndStatus(Integer userId, OrderStatus status, Pageable pageable) {
+        Page<Order> orders = orderRepository.findByUserIdAndStatusOrderByCreatedAtDesc(userId, status, pageable);
+        return orders.map(orderMappingService::toOrderResponse);
+    }
+
+    @Override
     public OrderResponse updateOrderStatus(Long orderId, OrderStatus status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderException("Order not found"));
@@ -218,6 +247,26 @@ public class OrderServiceImpl implements OrderService {
             Order confirmed = orderConfirmationService.confirmCodOrder(orderId.intValue());
             log.info("Order {} confirmed (COD). Stock deducted and status persisted.", orderId);
             return orderMappingService.toOrderResponse(confirmed);
+        }
+
+        // Nếu trạng thái chuyển sang DELIVERED, lưu ngày giao thực tế
+        if (status == OrderStatus.DELIVERED) {
+            if (order.getShippingInfo() != null) {
+                order.getShippingInfo().setActualDeliveryDate(LocalDateTime.now());
+                orderShippingInfoRepository.save(order.getShippingInfo());
+                log.info("Order {} delivered. Actual delivery date saved: {}", orderId, LocalDateTime.now());
+            }
+
+            // Nếu là COD thì tự động chuyển payment status thành PAID
+            if (order.getPaymentMethod() == PaymentMethod.COD) {
+                Payment paymentInfo = order.getPaymentInfo();
+                if (paymentInfo != null) {
+                    paymentInfo.setPaymentStatus(PaymentStatus.PAID);
+                    paymentInfo.setPaymentCompletedAt(LocalDateTime.now());
+                    payment.save(paymentInfo);
+                    log.info("Order {} is COD and delivered. Payment status updated to PAID.", orderId);
+                }
+            }
         }
 
         order.setStatus(status);

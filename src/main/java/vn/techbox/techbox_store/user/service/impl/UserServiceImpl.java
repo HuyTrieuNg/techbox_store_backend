@@ -136,6 +136,14 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAllWithAddresses(pageable);
     }
 
+    @Override
+    public Page<User> getAllUsersWithPagination(Pageable pageable, boolean includeDeleted) {
+        if (includeDeleted) {
+            return userRepository.findAllWithAddressesIncludingDeleted(pageable);
+        }
+        return userRepository.findAllWithAddresses(pageable);
+    }
+
     public Optional<User> getUserById(Integer id) {
         return Optional.ofNullable(userRepository.findByIdWithRoles(id));
     }
@@ -239,12 +247,8 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User not found with id: " + id);
         }
 
-        user.setDeletedAt(LocalDateTime.now());
-        user.getAccount().setDeletedAt(LocalDateTime.now());
+        // Chỉ set isActive = false, không động đến deletedAt
         user.getAccount().setIsActive(false);
-
-        // Soft delete all addresses
-        user.getAddresses().forEach(addr -> addr.setDeletedAt(LocalDateTime.now()));
 
         userRepository.save(user);
     }
@@ -253,16 +257,12 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdIncludingDeleted(id)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-        if (user.getDeletedAt() == null) {
+        if (user.getAccount().getIsActive()) {
             throw new RuntimeException("User is not deleted");
         }
 
-        user.setDeletedAt(null);
-        user.getAccount().setDeletedAt(null);
+        // Restore bằng cách set isActive = true
         user.getAccount().setIsActive(true);
-
-        // Restore addresses
-        user.getAddresses().forEach(addr -> addr.setDeletedAt(null));
 
         userRepository.save(user);
     }
@@ -282,5 +282,18 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new RuntimeException("Login failed: " + e.getMessage());
         }
+    }
+
+    @Override
+    public Page<User> getUsersByRole(String roleName, Pageable pageable) {
+        return userRepository.findByRoleName(roleName, pageable);
+    }
+
+    @Override
+    public Page<User> getUsersByRole(String roleName, Pageable pageable, boolean includeDeleted) {
+        if (includeDeleted) {
+            return userRepository.findByRoleNameIncludingDeleted(roleName, pageable);
+        }
+        return userRepository.findByRoleName(roleName, pageable);
     }
 }

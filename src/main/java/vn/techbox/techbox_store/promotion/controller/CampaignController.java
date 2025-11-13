@@ -1,5 +1,11 @@
 package vn.techbox.techbox_store.promotion.controller;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,12 +25,6 @@ import vn.techbox.techbox_store.promotion.model.Campaign;
 import vn.techbox.techbox_store.promotion.repository.CampaignRepository;
 import vn.techbox.techbox_store.promotion.service.CampaignService;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/campaigns")
 @RequiredArgsConstructor
@@ -34,6 +34,12 @@ public class CampaignController {
     private final CampaignService campaignService;
     private final CloudinaryService cloudinaryService;
     private final CampaignRepository campaignRepository;
+
+    // Simple UTC datetime parser - just convert Z format to LocalDateTime
+    private LocalDateTime parseUtcDateTime(String dateTimeString) {
+        if (dateTimeString == null) return null;
+        return OffsetDateTime.parse(dateTimeString).toLocalDateTime();
+    }
 
     @PreAuthorize("hasAuthority('CAMPAIGN:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
@@ -45,13 +51,13 @@ public class CampaignController {
             @RequestParam(value = "image", required = false) MultipartFile image) {
         
         log.info("REST request to create campaign: {}", name);
-        
+
         try {
             CampaignCreateRequest request = CampaignCreateRequest.builder()
                     .name(name)
                     .description(description)
-                    .startDate(LocalDateTime.parse(startDate))
-                    .endDate(LocalDateTime.parse(endDate))
+                    .startDate(parseUtcDateTime(startDate))
+                    .endDate(parseUtcDateTime(endDate))
                     .build();
             
             // Upload image to Cloudinary if provided
@@ -65,11 +71,8 @@ public class CampaignController {
             CampaignResponse response = campaignService.createCampaign(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to upload image: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         } catch (Exception e) {
+            log.error("Failed to create campaign: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to create campaign: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -95,8 +98,8 @@ public class CampaignController {
             CampaignUpdateRequest request = CampaignUpdateRequest.builder()
                     .name(name)
                     .description(description)
-                    .startDate(startDate != null ? LocalDateTime.parse(startDate) : null)
-                    .endDate(endDate != null ? LocalDateTime.parse(endDate) : null)
+                    .startDate(startDate != null ? parseUtcDateTime(startDate) : null)
+                    .endDate(endDate != null ? parseUtcDateTime(endDate) : null)
                     .build();
             
             // Handle image replacement - if new image provided, replace the old one
@@ -116,15 +119,8 @@ public class CampaignController {
             CampaignResponse response = campaignService.updateCampaign(id, request);
             return ResponseEntity.ok(response);
             
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to process image: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Campaign not found: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         } catch (Exception e) {
+            log.error("Failed to update campaign: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Failed to update campaign: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);

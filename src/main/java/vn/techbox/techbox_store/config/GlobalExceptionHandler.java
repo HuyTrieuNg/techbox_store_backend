@@ -13,6 +13,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import vn.techbox.techbox_store.order.exception.OrderException;
+import vn.techbox.techbox_store.voucher.exception.VoucherValidationException;
+import vn.techbox.techbox_store.voucher.dto.VoucherErrorResponse;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -104,6 +106,22 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse errorResponse = new ApiErrorResponse("Invalid Argument", ex.getMessage());
         return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    // ===== VOUCHER VALIDATION EXCEPTIONS =====
+    @ExceptionHandler(VoucherValidationException.class)
+    public ResponseEntity<VoucherErrorResponse> handleVoucherValidationException(
+            VoucherValidationException ex, WebRequest request) {
+        logger.warn("Voucher validation failed: {} - Code: {} - Type: {}",
+                   ex.getMessage(), ex.getVoucherCode(), ex.getErrorType());
+
+        VoucherErrorResponse errorResponse = VoucherErrorResponse.of(
+            ex.getMessage(),
+            ex.getVoucherCode(),
+            ex.getErrorType()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     // ===== GENERIC EXCEPTION =====
