@@ -42,7 +42,7 @@ public class Voucher {
     @Column(name = "used_count", nullable = false)
     @Builder.Default
     private Integer usedCount = 0;
-
+    
     @Column(name = "reserved_quantity", nullable = false)
     @Builder.Default
     private Integer reservedQuantity = 0;
