@@ -10,7 +10,13 @@ import vn.techbox.techbox_store.inventory.model.Supplier;
 import vn.techbox.techbox_store.inventory.repository.StockImportItemRepository;
 import vn.techbox.techbox_store.inventory.repository.StockImportRepository;
 import vn.techbox.techbox_store.inventory.repository.SupplierRepository;
+import vn.techbox.techbox_store.product.model.Brand;
+import vn.techbox.techbox_store.product.model.Category;
+import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductVariation;
+import vn.techbox.techbox_store.product.repository.BrandRepository;
+import vn.techbox.techbox_store.product.repository.CategoryRepository;
+import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 
 import java.math.BigDecimal;
@@ -18,6 +24,10 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -28,173 +38,152 @@ public class InventorySeeder implements DataSeeder {
     private final StockImportRepository stockImportRepository;
     private final StockImportItemRepository stockImportItemRepository;
     private final ProductVariationRepository productVariationRepository;
+    private final ProductRepository productRepository;
+    private final BrandRepository brandRepository;
+    private final CategoryRepository categoryRepository;
+    private final Random random = new Random();
 
     @Override
     @Transactional
     public void seed() {
         // Create suppliers
-        List<Supplier> suppliers = createSuppliers();
-        suppliers = supplierRepository.saveAll(suppliers);
+        Map<String, Supplier> suppliers = createSuppliers().stream()
+                .collect(Collectors.toMap(Supplier::getName, Function.identity()));
+        supplierRepository.saveAll(suppliers.values());
         log.info("✓ Created {} suppliers", suppliers.size());
 
-        // Create stock imports
+        // Pre-fetch all necessary data
         List<ProductVariation> allVariations = productVariationRepository.findAll();
         if (allVariations.isEmpty()) {
-            log.warn("⚠️  No product variations found. Skipping inventory seeding.");
+            log.warn("⚠️ No product variations found. Skipping inventory seeding.");
             return;
         }
+        Map<Integer, Product> productMap = productRepository.findAllById(allVariations.stream()
+                        .map(ProductVariation::getProductId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toMap(Product::getId, Function.identity()));
+        Map<Integer, Brand> brandMap = brandRepository.findAll().stream()
+                .collect(Collectors.toMap(Brand::getId, Function.identity()));
+        Map<Integer, Category> categoryMap = categoryRepository.findAll().stream()
+                .collect(Collectors.toMap(Category::getId, Function.identity()));
 
-        List<StockImport> imports = new ArrayList<>();
-        List<StockImportItem> items = new ArrayList<>();
+        // Create stock imports for each major supplier
+        Map<String, StockImport> imports = createStockImports(suppliers);
+        stockImportRepository.saveAll(imports.values());
 
-        // Import 1: Large initial stock for iPhones and Samsungs
-        StockImport import1 = createStockImport(1, suppliers.get(0).getSupplierId(), 
-                LocalDateTime.now().minusDays(30), "Nhập hàng iPhone và Samsung tháng 9");
-        imports.add(import1);
-
-        // Import 2: Xiaomi and accessories
-        StockImport import2 = createStockImport(1, suppliers.get(1).getSupplierId(), 
-                LocalDateTime.now().minusDays(25), "Nhập hàng Xiaomi và phụ kiện");
-        imports.add(import2);
-
-        // Import 3: Laptops
-        StockImport import3 = createStockImport(1, suppliers.get(2).getSupplierId(), 
-                LocalDateTime.now().minusDays(20), "Nhập hàng laptop");
-        imports.add(import3);
-
-        // Import 4: Audio devices
-        StockImport import4 = createStockImport(1, suppliers.get(3).getSupplierId(), 
-                LocalDateTime.now().minusDays(15), "Nhập hàng tai nghe và loa");
-        imports.add(import4);
-
-        // Save imports
-        imports = stockImportRepository.saveAll(imports);
-
-        // Create import items and update stock
+        List<StockImportItem> allItems = new ArrayList<>();
+        
         for (ProductVariation variation : allVariations) {
-            StockImport targetImport;
-            int quantity;
-            BigDecimal costPrice;
+            Product product = productMap.get(variation.getProductId());
+            if (product == null) continue;
 
-            // Determine which import and quantities based on product category
-            String sku = variation.getSku();
-            if (sku.startsWith("IP15") || sku.startsWith("S24")) {
-                // Premium phones - lower quantity, higher cost
-                targetImport = imports.get(0);
-                quantity = 30;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.75")); // 75% of retail price
-            } else if (sku.startsWith("IP14")) {
-                // Mid-range phones
-                targetImport = imports.get(0);
-                quantity = 50;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.70"));
-            } else if (sku.startsWith("X14P")) {
-                // Xiaomi
-                targetImport = imports.get(1);
-                quantity = 40;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.65"));
-            } else if (sku.startsWith("MBP") || sku.startsWith("XPS")) {
-                // Laptops - lower quantity, premium pricing
-                targetImport = imports.get(2);
-                quantity = 15;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.80"));
-            } else if (sku.startsWith("APP") || sku.startsWith("WH")) {
-                // Audio devices
-                targetImport = imports.get(3);
-                quantity = 60;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.60"));
-            } else {
-                // Default
-                targetImport = imports.get(0);
-                quantity = 25;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.70"));
+            Brand brand = brandMap.get(product.getBrandId());
+            Category category = categoryMap.get(product.getCategoryId());
+            if (brand == null || category == null) continue;
+
+            // Determine supplier, quantity, and cost based on rules
+            StockingRule rule = determineStockingRule(brand, category);
+            Supplier supplier = suppliers.get(rule.supplierName);
+            StockImport stockImport = imports.get(rule.supplierName);
+
+            if (supplier == null || stockImport == null) {
+                log.warn("Could not find supplier or import for brand '{}'. Skipping variation '{}'.", brand.getName(), variation.getSku());
+                continue;
             }
+
+            int quantity = random.nextInt(rule.maxQuantity - rule.minQuantity + 1) + rule.minQuantity;
+            BigDecimal costPrice = variation.getPrice().multiply(rule.costMultiplier)
+                    .setScale(0, RoundingMode.HALF_UP);
 
             // Create import item
             StockImportItem item = StockImportItem.builder()
-                    .stockImport(targetImport)
+                    .stockImport(stockImport)
                     .productVariation(variation)
                     .quantity(quantity)
-                    .costPrice(costPrice.setScale(0, RoundingMode.HALF_UP))
+                    .costPrice(costPrice)
                     .build();
-            items.add(item);
+            allItems.add(item);
 
-            // Update product variation stock using weighted average
-            variation.setStockQuantity(variation.getStockQuantity() + quantity);
-            
-            // Calculate weighted average cost price
-            BigDecimal currentAvg = variation.getAvgCostPrice() != null ? 
-                    variation.getAvgCostPrice() : BigDecimal.ZERO;
-            int currentQty = variation.getStockQuantity() - quantity; // Old quantity
-            
-            if (currentQty == 0) {
-                variation.setAvgCostPrice(costPrice);
-            } else {
-                BigDecimal totalOldValue = currentAvg.multiply(BigDecimal.valueOf(currentQty));
-                BigDecimal newValue = costPrice.multiply(BigDecimal.valueOf(quantity));
-                BigDecimal newAvg = totalOldValue.add(newValue)
-                        .divide(BigDecimal.valueOf(variation.getStockQuantity()), 2, RoundingMode.HALF_UP);
-                variation.setAvgCostPrice(newAvg);
-            }
+            // Update product variation stock
+            updateVariationStock(variation, quantity, costPrice);
         }
 
-        // Update import totals
-        for (StockImport imp : imports) {
-            BigDecimal total = items.stream()
+        // Update import total cost values
+        imports.values().forEach(imp -> {
+            BigDecimal total = allItems.stream()
                     .filter(item -> item.getStockImport().getId().equals(imp.getId()))
                     .map(StockImportItem::getTotalValue)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             imp.setTotalCostValue(total);
-        }
+        });
 
-        stockImportItemRepository.saveAll(items);
+        stockImportItemRepository.saveAll(allItems);
         productVariationRepository.saveAll(allVariations);
-        stockImportRepository.saveAll(imports);
-        
-        log.info("✓ Created {} stock imports with {} items", imports.size(), items.size());
+        stockImportRepository.saveAll(imports.values());
+
+        log.info("✓ Created {} stock imports with {} items", imports.size(), allItems.size());
         log.info("✓ Updated stock quantities for {} product variations", allVariations.size());
+    }
+
+    private void updateVariationStock(ProductVariation variation, int newQuantity, BigDecimal newCostPrice) {
+        BigDecimal currentAvgCost = variation.getAvgCostPrice() != null ? variation.getAvgCostPrice() : BigDecimal.ZERO;
+        int currentStock = variation.getStockQuantity() != null ? variation.getStockQuantity() : 0;
+
+        if (currentStock + newQuantity > 0) {
+            BigDecimal totalOldValue = currentAvgCost.multiply(BigDecimal.valueOf(currentStock));
+            BigDecimal totalNewValue = newCostPrice.multiply(BigDecimal.valueOf(newQuantity));
+            BigDecimal newAvgCost = totalOldValue.add(totalNewValue)
+                    .divide(BigDecimal.valueOf(currentStock + newQuantity), 2, RoundingMode.HALF_UP);
+            variation.setAvgCostPrice(newAvgCost);
+        } else {
+            variation.setAvgCostPrice(BigDecimal.ZERO);
+        }
+        
+        variation.setStockQuantity(currentStock + newQuantity);
+    }
+
+    private StockingRule determineStockingRule(Brand brand, Category category) {
+        String brandName = brand.getName();
+        String categoryName = category.getName();
+
+        return switch (brandName) {
+            case "Apple" -> new StockingRule("FPT Trading (Apple)", 10, 40, new BigDecimal("0.80"));
+            case "Samsung" -> new StockingRule("Digiworld (Samsung)", 15, 50, new BigDecimal("0.75"));
+            case "Xiaomi" -> new StockingRule("Digiworld (Xiaomi)", 30, 80, new BigDecimal("0.65"));
+            case "Dell", "Asus", "HP", "Lenovo", "Acer", "MSI" -> new StockingRule("FPT Trading (Laptops)", 5, 25, new BigDecimal("0.78"));
+            case "Sony", "JBL" -> new StockingRule("Phuc Giang (PGI)", 20, 60, new BigDecimal("0.60"));
+            case "Anker", "Belkin", "Keychron" -> new StockingRule("Petrosetco (PSD)", 25, 100, new BigDecimal("0.55"));
+            default -> new StockingRule("Digiworld (Xiaomi)", 10, 30, new BigDecimal("0.70")); // Default rule
+        };
     }
 
     private List<Supplier> createSuppliers() {
         return List.of(
-                Supplier.builder()
-                        .name("Công ty TNHH Apple Việt Nam")
-                        .phone("0901234567")
-                        .email("apple.vn@supplier.com")
-                        .address("123 Lê Lợi, Q.1, TP.HCM")
-                        .build(),
-                
-                Supplier.builder()
-                        .name("Nhà phân phối Xiaomi chính hãng")
-                        .phone("0902345678")
-                        .email("xiaomi.vn@supplier.com")
-                        .address("456 Nguyễn Huệ, Q.1, TP.HCM")
-                        .build(),
-                
-                Supplier.builder()
-                        .name("Dell Technologies Vietnam")
-                        .phone("0903456789")
-                        .email("dell.vn@supplier.com")
-                        .address("789 Hai Bà Trưng, Q.1, TP.HCM")
-                        .build(),
-                
-                Supplier.builder()
-                        .name("Sony Electronics Vietnam")
-                        .phone("0904567890")
-                        .email("sony.vn@supplier.com")
-                        .address("321 Võ Văn Tần, Q.3, TP.HCM")
-                        .build(),
-                
-                Supplier.builder()
-                        .name("Samsung Vietnam Mobile")
-                        .phone("0905678901")
-                        .email("samsung.vn@supplier.com")
-                        .address("654 Trần Hưng Đạo, Q.5, TP.HCM")
-                        .build()
+                createSupplier("FPT Trading (Apple)", "0901111111", "contact@fpt-trading.com.vn", "Khu chế xuất Tân Thuận, Q.7, TP.HCM"),
+                createSupplier("Digiworld (Samsung)", "0902222222", "samsung.dist@digiworld.com.vn", "195-197 Nguyễn Thái Bình, Q.1, TP.HCM"),
+                createSupplier("Digiworld (Xiaomi)", "0903333333", "xiaomi.dist@digiworld.com.vn", "195-197 Nguyễn Thái Bình, Q.1, TP.HCM"),
+                createSupplier("FPT Trading (Laptops)", "0904444444", "laptops.dist@fpt-trading.com.vn", "Khu chế xuất Tân Thuận, Q.7, TP.HCM"),
+                createSupplier("Phuc Giang (PGI)", "0905555555", "info@pgi.com.vn", "10 Trịnh Văn Cấn, Q.1, TP.HCM"),
+                createSupplier("Petrosetco (PSD)", "0906666666", "accessories@psd.com.vn", "Tòa nhà PetroVietnam, 1-5 Lê Duẩn, Q.1, TP.HCM")
         );
     }
 
-    private StockImport createStockImport(Integer userId, Integer supplierId, 
+    private Supplier createSupplier(String name, String phone, String email, String address) {
+        return Supplier.builder().name(name).phone(phone).email(email).address(address).build();
+    }
+
+    private Map<String, StockImport> createStockImports(Map<String, Supplier> suppliers) {
+        return suppliers.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> createStockImport(1, entry.getValue().getSupplierId(),
+                                LocalDateTime.now().minusDays(random.nextInt(10) + 5),
+                                "Initial stock import for " + entry.getKey())
+                ));
+    }
+
+
+
+    private StockImport createStockImport(Integer userId, Integer supplierId,
                                          LocalDateTime importDate, String note) {
         return StockImport.builder()
                 .userId(userId)
@@ -214,4 +203,7 @@ public class InventorySeeder implements DataSeeder {
     public boolean shouldSkip() {
         return supplierRepository.count() > 0 || stockImportRepository.count() > 0;
     }
+    
+    // Helper record for stocking rules
+    private record StockingRule(String supplierName, int minQuantity, int maxQuantity, BigDecimal costMultiplier) {}
 }

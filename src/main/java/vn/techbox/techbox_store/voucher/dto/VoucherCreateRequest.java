@@ -25,8 +25,8 @@ public class VoucherCreateRequest {
     private VoucherType voucherType;
     
     @NotNull(message = "Value is required")
-    @DecimalMin(value = "0.01", message = "Value must be greater than 0")
-    @DecimalMax(value = "999999.99", message = "Value must be less than 1,000,000")
+    @DecimalMin(value = "1", message = "Value must be greater than 0")
+    @DecimalMax(value = "9999999.99", message = "Value must be less than 10,000,000")
     private BigDecimal value;
     
     @NotNull(message = "Minimum order amount is required")
@@ -61,6 +61,17 @@ public class VoucherCreateRequest {
         }
         if (voucherType == VoucherType.PERCENTAGE) {
             return value.compareTo(BigDecimal.ONE) >= 0 && value.compareTo(BigDecimal.valueOf(100)) <= 0;
+        }
+        return true;
+    }
+
+    @AssertTrue(message = "For fixed amount vouchers, value must not have decimal places")
+    private boolean isFixedAmountValueInteger() {
+        if (voucherType == null || value == null) {
+            return true;
+        }
+        if (voucherType == VoucherType.FIXED_AMOUNT) {
+            return value.stripTrailingZeros().scale() <= 0;
         }
         return true;
     }

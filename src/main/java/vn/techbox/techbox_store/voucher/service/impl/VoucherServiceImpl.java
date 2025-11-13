@@ -2,13 +2,16 @@ package vn.techbox.techbox_store.voucher.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.voucher.dto.*;
+import vn.techbox.techbox_store.voucher.exception.*;
 import vn.techbox.techbox_store.voucher.model.UserVoucher;
 import vn.techbox.techbox_store.voucher.model.Voucher;
+import vn.techbox.techbox_store.voucher.model.VoucherType;
 import vn.techbox.techbox_store.voucher.repository.UserVoucherRepository;
 import vn.techbox.techbox_store.voucher.repository.VoucherRepository;
 import vn.techbox.techbox_store.voucher.service.VoucherService;
@@ -34,76 +37,167 @@ public class VoucherServiceImpl implements VoucherService {
     public VoucherResponse createVoucher(VoucherCreateRequest request) {
         log.info("Creating voucher with code: {}", request.getCode());
         
-        // Check if voucher code already exists
-        if (voucherRepository.existsByCodeAndNotDeleted(request.getCode(), null)) {
-            throw new RuntimeException("Voucher with code '" + request.getCode() + "' already exists");
+        try {
+            // Check if voucher code already exists
+            if (voucherRepository.existsByCodeAndNotDeleted(request.getCode(), null)) {
+                throw new VoucherAlreadyExistsException("Voucher with code '" + request.getCode() + "' already exists");
+            }
+            
+            // Additional business logic validation
+            validateVoucherBusinessRules(request);
+            
+            Voucher voucher = Voucher.builder()
+                    .code(request.getCode())
+                    .voucherType(request.getVoucherType())
+                    .value(request.getValue())
+                    .minOrderAmount(request.getMinOrderAmount())
+                    .usageLimit(request.getUsageLimit())
+                    .validFrom(request.getValidFrom())
+                    .validUntil(request.getValidUntil())
+                    .build();
+            
+            voucher = voucherRepository.save(voucher);
+            log.info("Voucher created successfully with ID: {}", voucher.getId());
+            
+            return VoucherResponse.fromEntity(voucher);
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while creating voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to create voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while creating voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to create voucher due to unexpected error", e);
+        }
+    }
+    
+    private void validateVoucherBusinessRules(VoucherCreateRequest request) {
+        // Validate date range (defensive check, DTO validation should catch this first)
+        if (request.getValidFrom() != null && request.getValidUntil() != null) {
+            if (request.getValidUntil().isBefore(request.getValidFrom()) || 
+                request.getValidUntil().isEqual(request.getValidFrom())) {
+                throw new VoucherValidationException("Valid until date must be after valid from date");
+            }
         }
         
-        Voucher voucher = Voucher.builder()
-                .code(request.getCode())
-                .voucherType(request.getVoucherType())
-                .value(request.getValue())
-                .minOrderAmount(request.getMinOrderAmount())
-                .usageLimit(request.getUsageLimit())
-                .validFrom(request.getValidFrom())
-                .validUntil(request.getValidUntil())
-                .build();
-        
-        voucher = voucherRepository.save(voucher);
-        log.info("Voucher created successfully with ID: {}", voucher.getId());
-        
-        return VoucherResponse.fromEntity(voucher);
+        // Validate percentage voucher value (defensive check, DTO validation should catch this first)
+        if (request.getVoucherType() != null && request.getValue() != null) {
+            if (request.getVoucherType() == VoucherType.PERCENTAGE) {
+                if (request.getValue().compareTo(BigDecimal.ONE) < 0 || 
+                    request.getValue().compareTo(BigDecimal.valueOf(100)) > 0) {
+                    throw new VoucherValidationException("Percentage voucher value must be between 1 and 100");
+                }
+            }
+            
+            // Validate fixed amount voucher
+            if (request.getVoucherType() == VoucherType.FIXED_AMOUNT) {
+                if (request.getValue().compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new VoucherValidationException("Fixed amount voucher value must be greater than 0");
+                }
+            }
+        }
     }
     
     @Override
     public VoucherResponse updateVoucher(String code, VoucherUpdateRequest request) {
         log.info("Updating voucher with code: {}", code);
 
-        Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
-                .orElseThrow(() -> new RuntimeException("Voucher not found with code: " + code));
+        try {
+            Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
+                    .orElseThrow(() -> new VoucherNotFoundException("Voucher not found with code: " + code));
+            
+            // Check if new code already exists (excluding current voucher)
+            if (request.getCode() != null && 
+                !request.getCode().equals(code) &&
+                voucherRepository.existsByCodeAndNotDeleted(request.getCode(), null)) {
+                throw new VoucherAlreadyExistsException("Voucher with code '" + request.getCode() + "' already exists");
+            }
+            
+            // Validate update request
+            validateUpdateRequest(request, voucher);
+            
+            // Update fields if provided
+            if (request.getCode() != null) {
+                voucher.setCode(request.getCode());
+            }
+            if (request.getVoucherType() != null) {
+                voucher.setVoucherType(request.getVoucherType());
+            }
+            if (request.getValue() != null) {
+                voucher.setValue(request.getValue());
+            }
+            if (request.getMinOrderAmount() != null) {
+                voucher.setMinOrderAmount(request.getMinOrderAmount());
+            }
+            if (request.getUsageLimit() != null) {
+                voucher.setUsageLimit(request.getUsageLimit());
+            }
+            if (request.getValidFrom() != null) {
+                voucher.setValidFrom(request.getValidFrom());
+            }
+            if (request.getValidUntil() != null) {
+                voucher.setValidUntil(request.getValidUntil());
+            }
+            
+            voucher = voucherRepository.save(voucher);
+            log.info("Voucher updated successfully with code: {}", voucher.getCode());
+            
+            return VoucherResponse.fromEntity(voucher);
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while updating voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to update voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while updating voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to update voucher due to unexpected error", e);
+        }
+    }
+    
+    private void validateUpdateRequest(VoucherUpdateRequest request, Voucher voucher) {
+        LocalDateTime validFrom = request.getValidFrom() != null ? request.getValidFrom() : voucher.getValidFrom();
+        LocalDateTime validUntil = request.getValidUntil() != null ? request.getValidUntil() : voucher.getValidUntil();
         
-        // Check if new code already exists (excluding current voucher)
-        if (request.getCode() != null && 
-            voucherRepository.existsByCodeAndNotDeleted(request.getCode(), null)) {
-            throw new RuntimeException("Voucher with code '" + request.getCode() + "' already exists");
+        // Validate date range
+        if (validUntil.isBefore(validFrom) || validUntil.isEqual(validFrom)) {
+            throw new VoucherValidationException("Valid until date must be after valid from date");
         }
         
-        // Update fields if provided
-        if (request.getCode() != null) {
-            voucher.setCode(request.getCode());
-        }
-        if (request.getVoucherType() != null) {
-            voucher.setVoucherType(request.getVoucherType());
-        }
-        if (request.getValue() != null) {
-            voucher.setValue(request.getValue());
-        }
-        if (request.getMinOrderAmount() != null) {
-            voucher.setMinOrderAmount(request.getMinOrderAmount());
-        }
-        if (request.getUsageLimit() != null) {
-            voucher.setUsageLimit(request.getUsageLimit());
-        }
-        if (request.getValidFrom() != null) {
-            voucher.setValidFrom(request.getValidFrom());
-        }
-        if (request.getValidUntil() != null) {
-            voucher.setValidUntil(request.getValidUntil());
+        // Validate percentage voucher value
+        VoucherType voucherType = request.getVoucherType() != null ? request.getVoucherType() : voucher.getVoucherType();
+        BigDecimal value = request.getValue() != null ? request.getValue() : voucher.getValue();
+        
+        if (voucherType == VoucherType.PERCENTAGE) {
+            if (value.compareTo(BigDecimal.ONE) < 0 || value.compareTo(BigDecimal.valueOf(100)) > 0) {
+                throw new VoucherValidationException("Percentage voucher value must be between 1 and 100");
+            }
         }
         
-        voucher = voucherRepository.save(voucher);
-    log.info("Voucher updated successfully with code: {}", voucher.getCode());
-        
-        return VoucherResponse.fromEntity(voucher);
+        // Validate fixed amount voucher
+        if (voucherType == VoucherType.FIXED_AMOUNT) {
+            if (value.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new VoucherValidationException("Fixed amount voucher value must be greater than 0");
+            }
+        }
     }
     
     @Override
     @Transactional(readOnly = true)
     public VoucherResponse getVoucherByCode(String code) {
-        Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
-                .orElseThrow(() -> new RuntimeException("Voucher not found with code: " + code));
+        try {
+            Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
+                    .orElseThrow(() -> new VoucherNotFoundException("Voucher not found with code: " + code));
 
-        return VoucherResponse.fromEntity(voucher);
+            return VoucherResponse.fromEntity(voucher);
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while getting voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to get voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while getting voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to get voucher due to unexpected error", e);
+        }
     }
     
     @Override
@@ -126,33 +220,53 @@ public class VoucherServiceImpl implements VoucherService {
     public void deleteVoucherByCode(String code) {
         log.info("Soft deleting voucher with code: {}", code);
 
-        Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
-                .orElseThrow(() -> new RuntimeException("Voucher not found with code: " + code));
+        try {
+            Voucher voucher = voucherRepository.findByCodeAndNotDeleted(code)
+                    .orElseThrow(() -> new VoucherNotFoundException("Voucher not found with code: " + code));
 
-        voucher.delete();
-        voucherRepository.save(voucher);
+            voucher.delete();
+            voucherRepository.save(voucher);
 
-        log.info("Voucher soft deleted successfully with code: {}", code);
+            log.info("Voucher soft deleted successfully with code: {}", code);
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while deleting voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to delete voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while deleting voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to delete voucher due to unexpected error", e);
+        }
     }
     
     @Override
     public void restoreVoucherByCode(String code) {
         log.info("Restoring voucher with code: {}", code);
 
-        Optional<Voucher> voucherOpt = voucherRepository.findByCode(code);
-        if (voucherOpt.isEmpty()) {
-            throw new RuntimeException("Voucher not found with code: " + code);
-        }
+        try {
+            Optional<Voucher> voucherOpt = voucherRepository.findByCode(code);
+            if (voucherOpt.isEmpty()) {
+                throw new VoucherNotFoundException("Voucher not found with code: " + code);
+            }
 
-        Voucher voucher = voucherOpt.get();
-        if (!voucher.isDeleted()) {
-            throw new RuntimeException("Voucher is not deleted, cannot restore");
+            Voucher voucher = voucherOpt.get();
+            if (!voucher.isDeleted()) {
+                throw new VoucherValidationException("Voucher is not deleted, cannot restore");
+            }
+            
+            voucher.restore();
+            voucherRepository.save(voucher);
+            
+            log.info("Voucher restored successfully with code: {}", voucher.getCode());
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while restoring voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to restore voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while restoring voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to restore voucher due to unexpected error", e);
         }
-        
-        voucher.restore();
-        voucherRepository.save(voucher);
-        
-        log.info("Voucher restored successfully with code: {}", voucher.getCode());
     }
     
     // Voucher Validation and Usage
@@ -211,25 +325,14 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Using voucher with code: {} for user: {} and order: {}", 
                 request.getCode(), request.getUserId(), request.getOrderId());
         
-        // Find voucher by code
-        Voucher voucher = voucherRepository.findByCodeAndNotDeleted(request.getCode())
-                .orElseThrow(() -> new RuntimeException("Voucher not found or expired"));
-        
-        // Check if voucher is valid
-        if (!voucher.isValid()) {
-            throw new RuntimeException("Voucher has expired");
-        }
-        
-        // Check if voucher has usage left
-        if (!voucher.hasUsageLeft()) {
-            throw new RuntimeException("Voucher usage limit exceeded");
-        }
-        
-        // Check if user has already used this voucher
-        Optional<UserVoucher> existingUsage = userVoucherRepository
-            .findByUserIdAndVoucherCode(request.getUserId(), voucher.getCode());
-            if (existingUsage.isPresent()) {
-                throw new RuntimeException("You have already used this voucher");
+        try {
+            // Find voucher by code
+            Voucher voucher = voucherRepository.findByCodeAndNotDeleted(request.getCode())
+                    .orElseThrow(() -> new VoucherNotFoundException("Voucher not found with code: " + request.getCode()));
+            
+            // Check if voucher is valid
+            if (!voucher.isValid()) {
+                throw new VoucherValidationException("Voucher has expired");
             }
         
         // Create voucher usage record

@@ -1,0 +1,30 @@
+test_id,test_name,description,preconditions,expected_code,expected_error,expected_message
+TC_BE_LOGIN_001,Valid customer login,Kiểm tra đăng nhập thành công với tài khoản customer có email và password hợp lệ,Dữ liệu seed: user testCustomer123@techbox.vn với password @Customer123,200,,
+TC_BE_LOGIN_002,Valid admin login,Kiểm tra đăng nhập thành công với tài khoản admin,Dữ liệu seed: user admin@techbox.vn với password admin123,200,,
+TC_BE_LOGIN_003,Valid staff login,Kiểm tra đăng nhập thành công với tài khoản staff,Dữ liệu seed: user staff1@techbox.vn với password staff123,200,,
+TC_BE_LOGIN_004,Account locked,Kiểm tra từ chối đăng nhập với tài khoản bị khóa,Dữ liệu seed: user locked@techbox.vn với password locked123," trạng thái locked",401,ACCOUNT_LOCKED,Account is locked
+TC_BE_LOGIN_005,Account disabled,Kiểm tra từ chối đăng nhập với tài khoản bị vô hiệu hóa,Dữ liệu seed: user disabled@techbox.vn với password disabled123," trạng thái disabled",401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_006,Invalid email,Kiểm tra từ chối đăng nhập với email không tồn tại,Không có dữ liệu seed liên quan,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_007,Invalid password,Kiểm tra từ chối đăng nhập với password sai,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_008,Non-existent email with numbers,Kiểm tra từ chối đăng nhập với email không tồn tại,Không có dữ liệu seed liên quan,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_009,Missing email field,Kiểm tra từ chối đăng nhập khi thiếu email,Không có dữ liệu seed liên quan,400,,email: Email is required
+TC_BE_LOGIN_010,Missing password field,Kiểm tra từ chối đăng nhập khi thiếu password,Dữ liệu seed: user testCustomer@techbox.vn,400,,password: Password is required
+TC_BE_LOGIN_011,Empty email string,Kiểm tra từ chối đăng nhập với email rỗng,Không có dữ liệu seed liên quan,400,,email: Email is required
+TC_BE_LOGIN_012,Empty password string,Kiểm tra từ chối đăng nhập với password rỗng,Dữ liệu seed: user testCustomer@techbox.vn,400,,password: Password is required
+TC_BE_LOGIN_013,Whitespace email,Kiểm tra từ chối đăng nhập với email chỉ có khoảng trắng,Không có dữ liệu seed liên quan,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_014,Whitespace password,Kiểm tra từ chối đăng nhập với password chỉ có khoảng trắng,Dữ liệu seed: user testCustomer@techbox.vn,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_015,Email without @,Kiểm tra từ chối đăng nhập với email thiếu @,Dữ liệu seed: user invalidemail với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_016,Email without domain,Kiểm tra từ chối đăng nhập với email thiếu domain,Dữ liệu seed: user test@ với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_017,Email with spaces,Kiểm tra từ chối đăng nhập với email có khoảng trắng,"Dữ liệu seed: user "" test@techbox.vn "" với password somepassword",401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_018,Email uppercase,Kiểm tra từ chối đăng nhập với email viết hoa,Dữ liệu seed: user TESTCUSTOMER@TECHBOX.VN với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_019,Email with special chars,Kiểm tra từ chối đăng nhập với email có ký tự đặc biệt,Dữ liệu seed: user user+test@techbox.vn với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_020,Email with unicode,Kiểm tra từ chối đăng nhập với email có unicode,Dữ liệu seed: user 测试@techbox.vn với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_021,Email with subdomain,Kiểm tra từ chối đăng nhập với email có subdomain,Dữ liệu seed: user user@sub.techbox.vn với password somepassword,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_022,Password with special chars,Kiểm tra từ chối đăng nhập với password có ký tự đặc biệt,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_023,Password with unicode,Kiểm tra từ chối đăng nhập với password có unicode,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_024,Password exactly 5 chars,Kiểm tra từ chối đăng nhập với password 5 ký tự,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_025,Password exactly 129 chars,Kiểm tra từ chối đăng nhập với password 129 ký tự,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_026,Email exactly 255 chars,Kiểm tra từ chối đăng nhập với email 255 ký tự,Không có dữ liệu seed liên quan,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_027,Password exactly 6 chars,Kiểm tra validation pass nhưng credentials sai,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_028,Password exactly 128 chars,Kiểm tra validation pass nhưng credentials sai,Dữ liệu seed: user testCustomer@techbox.vn với password customer123,401,INVALID_CREDENTIALS,Invalid email or password
+TC_BE_LOGIN_029,Email exactly 254 chars,Kiểm tra validation pass nhưng credentials sai,Không có dữ liệu seed liên quan,401,INVALID_CREDENTIALS,Invalid email or password
