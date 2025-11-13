@@ -18,6 +18,7 @@ public record UserResponse(
     LocalDateTime dateOfBirth,
     Set<String> roles,
     Boolean isActive,
+    Boolean isLocked,
     LocalDateTime createdAt
 ) {
     public static UserResponse from(User u) {
@@ -34,6 +35,7 @@ public record UserResponse(
             u.getDateOfBirth(),
             u.getRoles().stream().map(Role::getName).collect(Collectors.toSet()),
             u.getAccount().getIsActive(),
+            u.getAccount().getIsLocked(),
             u.getCreatedAt()
         );
     }

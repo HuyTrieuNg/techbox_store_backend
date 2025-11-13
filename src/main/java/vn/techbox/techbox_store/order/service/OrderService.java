@@ -13,10 +13,6 @@ public interface OrderService {
     OrderResponse getOrderByCode(String orderCode, Integer userId);
     Page<OrderResponse> getUserOrders(Integer userId, Pageable pageable);
     Page<OrderResponse> getUserOrdersByStatus(Integer userId, OrderStatus status, Pageable pageable);
-    Page<OrderResponse> getAllOrders(Pageable pageable);
-    Page<OrderResponse> getAllOrdersByStatus(OrderStatus status, Pageable pageable);
-    Page<OrderResponse> getOrdersByUserId(Integer userId, Pageable pageable);
-    Page<OrderResponse> getOrdersByUserIdAndStatus(Integer userId, OrderStatus status, Pageable pageable);
     OrderResponse updateOrderStatus(Long orderId, OrderStatus status);
     OrderResponse cancelOrder(Long orderId, Integer userId);
 }

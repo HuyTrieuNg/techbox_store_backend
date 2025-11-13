@@ -59,9 +59,8 @@ public class OrderShippingInfo {
     @Column(name = "tracking_number", length = 100)
     private String trackingNumber;
 
-    @Builder.Default
     @Column(name = "carrier", length = 50)
-    private String carrier = "GHN";
+    private String carrier;
 
     @Column(name = "delivery_instructions", columnDefinition = "TEXT")
     private String deliveryInstructions;

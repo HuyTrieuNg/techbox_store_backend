@@ -334,23 +334,39 @@ public class VoucherServiceImpl implements VoucherService {
             if (!voucher.isValid()) {
                 throw new VoucherValidationException("Voucher has expired");
             }
-        
-        // Create voucher usage record
-        UserVoucher userVoucher = UserVoucher.builder()
-                .userId(request.getUserId())
-                .voucherCode(voucher.getCode())
-                .orderId(request.getOrderId())
-                .usedAt(LocalDateTime.now())
-                .build();
-        
-        userVoucherRepository.save(userVoucher);
-        
-        // IMPORTANT: Increase used count instead of decreasing usage limit
-        voucher.setUsedCount(voucher.getUsedCount() + 1);
-        voucherRepository.save(voucher);
-        
-        log.info("Voucher used successfully: {} by user: {}. Used count: {}/{}", 
-                request.getCode(), request.getUserId(), voucher.getUsedCount(), voucher.getUsageLimit());
+            
+            // Check if voucher has usage left
+            if (!voucher.hasUsageLeft()) {
+                throw new VoucherValidationException("Voucher usage limit exceeded");
+            }
+            
+            // Check if user has already used this voucher
+            Optional<UserVoucher> existingUsage = userVoucherRepository
+                .findByUserIdAndVoucherCode(request.getUserId(), voucher.getCode());
+                if (existingUsage.isPresent()) {
+                    throw new VoucherValidationException("You have already used this voucher");
+                }
+            
+            // Create voucher usage record
+            UserVoucher userVoucher = UserVoucher.builder()
+                    .userId(request.getUserId())
+                    .voucherCode(voucher.getCode())
+                    .orderId(request.getOrderId())
+                    .usedAt(LocalDateTime.now())
+                    .build();
+            
+            userVoucherRepository.save(userVoucher);
+            
+            log.info("Voucher used successfully: {} by user: {}", request.getCode(), request.getUserId());
+        } catch (VoucherException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            log.error("Database error while using voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to use voucher due to database error", e);
+        } catch (Exception e) {
+            log.error("Unexpected error while using voucher: {}", e.getMessage(), e);
+            throw new VoucherSystemException("Failed to use voucher due to unexpected error", e);
+        }
     }
     
     // Reporting and Analytics

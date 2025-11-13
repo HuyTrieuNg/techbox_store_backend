@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,11 +17,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Optional<Order> findByOrderCode(String orderCode);
 
+    List<Order> findByUser_IdOrderByCreatedAtDesc(Integer userId);
+
     Page<Order> findByUser_IdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
 
-    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+    List<Order> findByStatus(OrderStatus status);
 
-    Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
 
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId AND o.status = :status ORDER BY o.createdAt DESC")
     Page<Order> findByUserIdAndStatusOrderByCreatedAtDesc(@Param("userId") Integer userId, @Param("status") OrderStatus status, Pageable pageable);

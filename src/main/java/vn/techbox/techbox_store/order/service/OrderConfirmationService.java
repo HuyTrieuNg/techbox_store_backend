@@ -71,11 +71,6 @@ public class OrderConfirmationService {
                 Voucher voucher = voucherRepository.findByCodeAndNotDeleted(order.getVoucherCode())
                         .orElseThrow(() -> new IllegalArgumentException("Voucher not found: " + order.getVoucherCode()));
 
-                // Check if voucher has usage left
-                if (!voucher.hasUsageLeft()) {
-                    throw new IllegalArgumentException("Voucher usage limit exceeded");
-                }
-
                 UserVoucher userVoucher = UserVoucher.builder()
                         .userId(order.getUserId())
                         .voucherCode(order.getVoucherCode())
@@ -84,12 +79,7 @@ public class OrderConfirmationService {
                         .build();
 
                 userVoucherRepository.save(userVoucher);
-
-                voucher.setUsedCount(voucher.getUsedCount() + 1);
-                voucherRepository.save(voucher);
-
-                log.info("Marked voucher {} as used for user {}. Used count: {}/{}",
-                        order.getVoucherCode(), order.getUserId(), voucher.getUsedCount(), voucher.getUsageLimit());
+                log.info("Marked voucher {} as used for user {}", order.getVoucherCode(), order.getUserId());
             }
 
             // Update order status
