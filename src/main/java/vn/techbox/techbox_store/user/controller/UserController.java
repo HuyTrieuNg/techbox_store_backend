@@ -34,12 +34,35 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(defaultValue = "false") boolean includeDeleted) {
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<User> userPage = userService.getAllUsersWithPagination(pageable);
+        Page<User> userPage = userService.getAllUsersWithPagination(pageable, includeDeleted);
+        Page<UserResponse> userResponsePage = userPage.map(UserResponse::from);
+
+        return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
+    }
+
+    @GetMapping("/by-role/{roleName}")
+    @PreAuthorize("hasAuthority('USER:READ')")
+    public ResponseEntity<PagedUserResponse> getUsersByRole(
+            @PathVariable String roleName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(defaultValue = "false") boolean includeDeleted) {
+
+        // Tự động thêm ROLE_ prefix nếu chưa có
+        String normalizedRoleName = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<User> userPage = userService.getUsersByRole(normalizedRoleName, pageable, includeDeleted);
         Page<UserResponse> userResponsePage = userPage.map(UserResponse::from);
 
         return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
@@ -142,7 +165,7 @@ public class UserController {
 
         // Lấy role từ authorities
         Set<String> roles = userPrincipal.getAuthorities().stream()
-                .map(auth -> auth.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .filter(auth -> auth.startsWith("ROLE_"))
                 .collect(Collectors.toSet());
 

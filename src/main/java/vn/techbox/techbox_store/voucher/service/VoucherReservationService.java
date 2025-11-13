@@ -120,12 +120,16 @@ public class VoucherReservationService {
                     .orderId(orderId)
                     .build();
 
-            // Update voucher reserved quantity
+            // Update voucher quantities
             voucher.setReservedQuantity(voucher.getReservedQuantity() - reservation.getQuantity());
+            voucher.setUsedCount(voucher.getUsedCount() + reservation.getQuantity());
 
             userVoucherRepository.save(userVoucher);
             voucherRepository.save(voucher);
             voucherReservationRepository.save(reservation);
+
+            log.info("Confirmed voucher reservation for voucher: {}. Used count: {}/{}",
+                    voucher.getCode(), voucher.getUsedCount(), voucher.getUsageLimit());
         }
     }
 

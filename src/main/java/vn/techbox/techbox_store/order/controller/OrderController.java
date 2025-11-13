@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,6 +29,42 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all orders", description = "Get paginated list of all orders with optional status filter")
+    public ResponseEntity<Page<OrderResponse>> getAllOrders(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) OrderStatus status) {
+        Page<OrderResponse> response;
+
+        if (status != null) {
+            response = orderService.getAllOrdersByStatus(status, pageable);
+        } else {
+            response = orderService.getAllOrders(pageable);
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get orders by user ID", description = "Get paginated list of orders for a specific user (Admin only)")
+    public ResponseEntity<Page<OrderResponse>> getOrdersByUserId(
+            @PathVariable Integer userId,
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) OrderStatus status) {
+
+        Page<OrderResponse> response;
+
+        if (status != null) {
+            response = orderService.getOrdersByUserIdAndStatus(userId, status, pageable);
+        } else {
+            response = orderService.getOrdersByUserId(userId, pageable);
+        }
+
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
