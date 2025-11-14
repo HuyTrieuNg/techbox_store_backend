@@ -1,5 +1,7 @@
 package vn.techbox.techbox_store.promotion.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,16 @@ import java.util.List;
 public interface CampaignRepository extends JpaRepository<Campaign, Integer> {
     boolean existsByName(String name);
     
+    /**
+     * Return a paged list of campaigns that are not soft-deleted
+     */
+    Page<Campaign> findByDeletedAtIsNull(Pageable pageable);
+
+    /**
+     * Return a list of campaigns that are not soft-deleted
+     */
+    List<Campaign> findByDeletedAtIsNull();
+
     /**
      * Tìm các campaigns có startDate hoặc endDate trong khoảng thời gian
      */
