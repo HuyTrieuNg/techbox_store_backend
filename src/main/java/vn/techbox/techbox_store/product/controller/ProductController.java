@@ -238,46 +238,6 @@ public class ProductController {
     }
 
     /**
-     * Create a new product with attributes in a single transaction
-     * POST /admin/products
-     * This endpoint ensures atomicity: either product + attributes are created together, or nothing
-     */
-    // @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
-    // @PostMapping(consumes = {"multipart/form-data"})
-    // public ResponseEntity<?> createProduct(
-    //         @RequestParam("productData") String productDataJson,
-    //         @RequestParam(value = "image", required = false) MultipartFile image) {
-
-    //     try {
-    //         // Parse product data JSON
-    //         ProductWithAttributesRequest request = objectMapper.readValue(productDataJson, ProductWithAttributesRequest.class);
-
-    //         // Handle image upload if a file is provided
-    //         if (image != null && !image.isEmpty()) {
-    //             @SuppressWarnings("unchecked")
-    //             Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_images");
-    //             request.setImageUrl((String) uploadResult.get("secure_url"));
-    //             request.setImagePublicId((String) uploadResult.get("public_id"));
-    //         }
-
-    //         // Create product with attributes in single transaction
-    //         ProductResponse createdProduct = productService.createProductWithAttributes(request);
-
-    //         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
-
-    //     } catch (IOException e) {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .body(Map.of("error", "Failed to process request data or upload image: " + e.getMessage()));
-    //     } catch (IllegalArgumentException e) {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .body(Map.of("error", e.getMessage()));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(Map.of("error", "Failed to create product with attributes: " + e.getMessage()));
-    //     }
-    // }
-
-    /**
      * Create a new product with attributes using JSON (alternative to multipart endpoint)
      * POST /admin/products/json
      * Image URLs and public IDs must be pre-uploaded to Cloudinary
@@ -302,6 +262,9 @@ public class ProductController {
 
     /**
      * Update an existing product
+     * PUT /api/products/{id}
+     * Supports partial updates - only provided fields will be updated
+     */
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(

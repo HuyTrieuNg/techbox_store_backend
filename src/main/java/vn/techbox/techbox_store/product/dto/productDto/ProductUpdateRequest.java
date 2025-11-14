@@ -6,9 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import vn.techbox.techbox_store.product.model.ProductStatus;
+import jakarta.validation.Valid;
 
-import java.util.Map;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -32,10 +32,9 @@ public class ProductUpdateRequest {
     @Size(max = 255, message = "Image public ID must not exceed 255 characters")
     private String imagePublicId;
 
-    private ProductStatus status; // PUBLISHED, DRAFT, ARCHIVED
-
     @PositiveOrZero(message = "Base price must be zero or positive")
     private Integer warrantyMonths;
 
-    private Map<String, String> attributes; // Key-value pairs for product attributes
+    @Valid
+    private List<AttributeRequest> attributes; // List of product attributes
 }

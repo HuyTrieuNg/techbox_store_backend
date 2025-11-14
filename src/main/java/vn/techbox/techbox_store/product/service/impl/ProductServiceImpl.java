@@ -321,6 +321,7 @@ public class ProductServiceImpl implements ProductService {
         // Return ProductResponse
         return convertToResponse(savedProduct);
     }    @Override
+    @Transactional
     public ProductResponse updateProduct(Integer id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
@@ -356,41 +357,29 @@ public class ProductServiceImpl implements ProductService {
             product.setImagePublicId(request.getImagePublicId());
         }
 
-        if (request.getStatus() != null) {
-            product.setStatus(request.getStatus());
-        }
-
         if (request.getWarrantyMonths() != null) {
             product.setWarrantyMonths(request.getWarrantyMonths());
         }
-
 
         // Update attributes if provided
         if (request.getAttributes() != null) {
             // Clear existing attributes
             productAttributeRepository.deleteByProductId(product.getId());
             // Save new attributes
-            request.getAttributes().forEach((key, value) -> {
-                try {
-                    // Convert key to Integer
-                    Integer attributeId = Integer.valueOf(key);
+            for (AttributeRequest attrReq : request.getAttributes()) {
+                // Validate attribute existence
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
 
-                    // Validate attribute existence
-                    Attribute attribute = attributeRepository.findById(attributeId)
-                            .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
+                // Create and save ProductAttribute
+                ProductAttribute productAttribute = ProductAttribute.builder()
+                        .productId(product.getId())
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
 
-                    // Create and save ProductAttribute
-                    ProductAttribute productAttribute = ProductAttribute.builder()
-                            .productId(product.getId())
-                            .attributeId(attribute.getId())
-                            .value(value)
-                            .build();
-
-                    productAttributeRepository.save(productAttribute);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid attribute ID: " + key, e);
-                }
-            });
+                productAttributeRepository.save(productAttribute);
+            }
         }
 
         Product updatedProduct = productRepository.save(product);

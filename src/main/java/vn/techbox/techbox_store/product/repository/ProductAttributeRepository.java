@@ -1,6 +1,7 @@
 package vn.techbox.techbox_store.product.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,7 @@ public interface ProductAttributeRepository extends JpaRepository<ProductAttribu
     @Query("SELECT pa FROM ProductAttribute pa WHERE pa.attributeId = :attributeId")
     List<ProductAttribute> findByAttributeId(@Param("attributeId") Integer attributeId);
     
+    @Modifying
     @Query("DELETE FROM ProductAttribute pa WHERE pa.productId = :productId")
     void deleteByProductId(@Param("productId") Integer productId);
 }

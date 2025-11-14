@@ -23,7 +23,6 @@ import vn.techbox.techbox_store.product.service.ProductVariationService;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -154,24 +153,13 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setPrice(request.getPrice());
         }
 
-        if (request.getSku() != null) {
-            if (existsBySkuAndIdNot(request.getSku(), id)) {
-                throw new IllegalArgumentException("SKU already exists: " + request.getSku());
-            }
-            variation.setSku(request.getSku());
-        }
-
-        if (request.getStockQuantity() != null) {
-            variation.setStockQuantity(request.getStockQuantity());
-        }
-
-        if (request.getReservedQuantity() != null) {
-            variation.setReservedQuantity(request.getReservedQuantity());
-        }
-
-        if (request.getAvgCostPrice() != null) {
-            variation.setAvgCostPrice(request.getAvgCostPrice());
-        }
+        // SKU cannot be updated
+        // if (request.getSku() != null) {
+        //     if (existsBySkuAndIdNot(request.getSku(), id)) {
+        //         throw new IllegalArgumentException("SKU already exists: " + request.getSku());
+        //     }
+        //     variation.setSku(request.getSku());
+        // }
 
         // Efficiently update variation attributes using orphanRemoval
         if (request.getVariationAttributes() != null) {

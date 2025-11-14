@@ -91,22 +91,26 @@ public class ProductVariation {
     public void addVariationAttribute(VariationAttribute attribute) {
         variationAttributes.add(attribute);
         attribute.setProductVariation(this);
+        attribute.setProductVariationId(this.getId());
     }
 
     public void removeVariationAttribute(VariationAttribute attribute) {
         variationAttributes.remove(attribute);
         attribute.setProductVariation(null);
+        attribute.setProductVariationId(null);
     }
     
     // Helper methods for managing the bidirectional relationship with ProductVariationImage
     public void addImage(ProductVariationImage image) {
         images.add(image);
         image.setProductVariation(this);
+        image.setProductVariationId(this.getId());
     }
 
     public void removeImage(ProductVariationImage image) {
         images.remove(image);
         image.setProductVariation(null);
+        image.setProductVariationId(null);
     }
     
     // Helper method to check if product variation is deleted (soft delete)
