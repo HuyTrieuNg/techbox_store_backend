@@ -1,5 +1,6 @@
 package vn.techbox.techbox_store.product.dto.productDto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,23 +16,26 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductVariationCreateRequest {
-    
+public class ProductVariationWithImagesRequest {
+
     @Size(max = 255, message = "Variation name must not exceed 255 characters")
     private String variationName;
-    
+
     @NotNull(message = "Product ID is required")
     private Integer productId;
-    
+
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
-    
+
     @Size(max = 255, message = "SKU must not exceed 255 characters")
     private String sku;
-    
-    private List<String> imageUrls; // List of image URLs
-    private List<String> imagePublicIds; // List of Cloudinary public IDs
+
+    @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
+    private BigDecimal avgCostPrice;
+
+    private Integer stockQuantity;
+    private Integer reservedQuantity;
 
     @Valid
     private List<VariationAttributeRequest> variationAttributes;

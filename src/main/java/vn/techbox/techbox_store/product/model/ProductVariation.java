@@ -31,7 +31,7 @@ public class ProductVariation {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     
-    @Column(name = "sku", unique = true)
+    @Column(name = "sku", unique = true, length = 35)
     private String sku;
     
     @Column(name = "stock_quantity", nullable = false)
@@ -47,7 +47,7 @@ public class ProductVariation {
     private Integer version;
 
     @Column(name = "avg_cost_price", precision = 10, scale = 2)
-        private BigDecimal avgCostPrice;
+    private BigDecimal avgCostPrice;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -67,7 +67,8 @@ public class ProductVariation {
     private List<VariationAttribute> variationAttributes;
     
     @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductVariationImage> images;
+    @Builder.Default
+    private List<ProductVariationImage> images = new java.util.ArrayList<>();
     
     // Relationship with Promotions (one variation can have multiple promotions through campaigns)
     @OneToMany(fetch = FetchType.LAZY)
@@ -83,6 +84,17 @@ public class ProductVariation {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    // Helper methods for managing the bidirectional relationship with ProductVariationImage
+    public void addImage(ProductVariationImage image) {
+        images.add(image);
+        image.setProductVariation(this);
+    }
+
+    public void removeImage(ProductVariationImage image) {
+        images.remove(image);
+        image.setProductVariation(null);
     }
     
     // Helper method to check if product variation is deleted (soft delete)

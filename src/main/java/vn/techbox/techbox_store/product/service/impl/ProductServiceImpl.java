@@ -190,12 +190,94 @@ public class ProductServiceImpl implements ProductService {
                 .status(request.getStatus() != null ? request.getStatus() : ProductStatus.DRAFT)
                 .warrantyMonths(request.getWarrantyMonths())
                 .build();
-        
+
+        // Save Product first to get ID
         Product savedProduct = productRepository.save(product);
+
+        // Add Attributes after Product is saved (so we have productId)
+        if (request.getAttributes() != null) {
+            for (AttributeRequest attrReq : request.getAttributes()) {
+                // Validate attribute existence
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+
+                // Create ProductAttribute with composite key
+                ProductAttribute productAttribute = ProductAttribute.builder()
+                        .productId(savedProduct.getId())  // Set productId for composite key
+                        .attributeId(attribute.getId())    // Set attributeId for composite key
+                        .value(attrReq.getValue())
+                        .build();
+
+                // Set bidirectional relationship
+                productAttribute.setProduct(savedProduct);
+                productAttribute.setAttribute(attribute);
+
+                // Add to product's collection
+                savedProduct.getProductAttributes().add(productAttribute);
+            }
+
+            // Save again to persist the attributes (cascade should work now)
+            savedProduct = productRepository.save(savedProduct);
+        }
+
+        // Return ProductResponse
         return convertToResponse(savedProduct);
     }
-    
+
     @Override
+    @Transactional
+    public ProductResponse createProductWithAttributes(ProductWithAttributesRequest request) {
+        if (existsByName(request.getName())) {
+            throw new IllegalArgumentException("Product name already exists: " + request.getName());
+        }
+
+        // Validate category exists if provided
+        if (request.getCategoryId() != null && !categoryRepository.existsById(request.getCategoryId())) {
+            throw new IllegalArgumentException("Category not found with id: " + request.getCategoryId());
+        }
+
+        // Validate brand exists if provided
+        if (request.getBrandId() != null && !brandRepository.existsById(request.getBrandId())) {
+            throw new IllegalArgumentException("Brand not found with id: " + request.getBrandId());
+        }
+
+        // Create Product from DTO
+        Product product = Product.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .categoryId(request.getCategoryId())
+                .brandId(request.getBrandId())
+                .imageUrl(request.getImageUrl())
+                .imagePublicId(request.getImagePublicId())
+                .status(ProductStatus.DRAFT) // Default status is DRAFT
+                .warrantyMonths(request.getWarrantyMonths())
+                .build();
+
+        // Save Product first to get ID
+        Product savedProduct = productRepository.save(product);
+
+        // Add Attributes after Product is saved (so we have productId)
+        if (request.getAttributes() != null) {
+            for (AttributeRequest attrReq : request.getAttributes()) {
+                // Validate attribute existence
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+
+                // Create ProductAttribute entity with both IDs
+                ProductAttribute productAttribute = ProductAttribute.builder()
+                        .productId(savedProduct.getId())
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+
+                // Save ProductAttribute
+                productAttributeRepository.save(productAttribute);
+            }
+        }
+
+        // Return ProductResponse
+        return convertToResponse(savedProduct);
+    }    @Override
     public ProductResponse updateProduct(Integer id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));

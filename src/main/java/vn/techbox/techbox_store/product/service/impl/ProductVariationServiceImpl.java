@@ -15,6 +15,7 @@ import vn.techbox.techbox_store.product.repository.ProductVariationImageReposito
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -80,23 +81,57 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             .productId(request.getProductId())
             .price(request.getPrice())
             .sku(request.getSku())
-            .avgCostPrice(request.getAvgCostPrice())
+            .avgCostPrice(BigDecimal.valueOf(0))
+            .stockQuantity(0)
+            .reservedQuantity(0)
             .build();
-        
+
+        // Save ProductVariation first to get ID
         ProductVariation savedVariation = productVariationRepository.save(productVariation);
-        
-        // Update product display price if this is the first variation
-        if (isFirstVariation && request.getPrice() != null) {
-            product.setDisplayOriginalPrice(request.getPrice());
-            // Note: displaySalePrice will be updated by promotion logic
-            productRepository.save(product);
+
+        // Add variation attributes after ProductVariation is saved (so we have variationId)
+        if (request.getVariationAttributes() != null && !request.getVariationAttributes().isEmpty()) {
+            for (VariationAttributeRequest attrReq : request.getVariationAttributes()) {
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+                
+                VariationAttribute variationAttribute = VariationAttribute.builder()
+                        .productVariationId(savedVariation.getId())  // Set productVariationId for composite key
+                        .attributeId(attribute.getId())              // Set attributeId for composite key
+                        .value(attrReq.getValue())
+                        .build();
+                
+                // Set bidirectional relationships
+                variationAttribute.setProductVariation(savedVariation);
+                variationAttribute.setAttribute(attribute);
+                
+                // Add to variation's collection
+                savedVariation.getVariationAttributes().add(variationAttribute);
+            }
+
+            // Save again to persist the attributes (cascade should work now)
+            savedVariation = productVariationRepository.save(savedVariation);
         }
-        
-        // Save images if provided
+
+        // Add images after ProductVariation is saved (so we have variationId)
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
-            saveProductVariationImages(savedVariation.getId(), request.getImageUrls(), request.getImagePublicIds());
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                String publicId = (request.getImagePublicIds() != null && i < request.getImagePublicIds().size()) ? request.getImagePublicIds().get(i) : null;
+                ProductVariationImage image = ProductVariationImage.builder()
+                        .productVariationId(savedVariation.getId())  // Set productVariationId for foreign key
+                        .imageUrl(request.getImageUrls().get(i))
+                        .imagePublicId(publicId)
+                        .build();
+                // Set bidirectional relationship
+                image.setProductVariation(savedVariation);
+                // Add to variation's collection
+                savedVariation.getImages().add(image);
+            }
+
+            // Save again to persist the images (cascade should work now)
+            savedVariation = productVariationRepository.save(savedVariation);
         }
-        
+
         return productVariationMapper.toResponse(savedVariation);
     }
     
@@ -145,6 +180,40 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setAvgCostPrice(request.getAvgCostPrice());
         }
 
+        // Efficiently update variation attributes using orphanRemoval
+        if (request.getVariationAttributes() != null) {
+            // Clear the existing collection. orphanRemoval=true will delete the old attributes.
+            variation.getVariationAttributes().clear();
+            // Add the new attributes
+            for (VariationAttributeRequest attrReq : request.getVariationAttributes()) {
+                Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
+                        .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
+                
+                VariationAttribute variationAttribute = VariationAttribute.builder()
+                        .attributeId(attribute.getId())
+                        .value(attrReq.getValue())
+                        .build();
+                
+                variation.addVariationAttribute(variationAttribute);
+            }
+        }
+
+        // Handle image deletions using orphanRemoval by removing them from the collection
+        if (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty()) {
+            variation.getImages().removeIf(image -> request.getDeleteImageIds().contains(image.getImagePublicId()));
+        }
+
+        // Handle new image additions
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            for (int i = 0; i < request.getImageUrls().size(); i++) {
+                String publicId = (request.getImagePublicIds() != null && i < request.getImagePublicIds().size()) ? request.getImagePublicIds().get(i) : null;
+                ProductVariationImage image = ProductVariationImage.builder()
+                        .imageUrl(request.getImageUrls().get(i))
+                        .imagePublicId(publicId)
+                        .build();
+                variation.addImage(image);
+            }
+        }
 
         
         ProductVariation updatedVariation = productVariationRepository.save(variation);
