@@ -34,6 +34,11 @@ public class ProductSpecification {
             spec = spec.and(ProductSpecification.nameLike(filter.getName()));
         }
         
+        // Apply SPU filter
+        if (filter.getSpu() != null && !filter.getSpu().trim().isEmpty()) {
+            spec = spec.and(ProductSpecification.spuLike(filter.getSpu()));
+        }
+        
         // Apply brand filter
         if (filter.getBrandId() != null) {
             spec = spec.and(ProductSpecification.hasBrand(filter.getBrandId()));
@@ -83,6 +88,17 @@ public class ProductSpecification {
             criteriaBuilder.like(
                 criteriaBuilder.lower(root.get("name")),
                 "%" + name.toLowerCase() + "%"
+            );
+    }
+    
+    /**
+     * Filter by SPU (case-insensitive, partial match)
+     */
+    public static Specification<Product> spuLike(String spu) {
+        return (root, query, criteriaBuilder) -> 
+            criteriaBuilder.like(
+                criteriaBuilder.lower(root.get("spu")),
+                "%" + spu.toLowerCase() + "%"
             );
     }
     

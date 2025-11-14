@@ -8,19 +8,32 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductManagementDetailResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductManagementListResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductResponse;
 import vn.techbox.techbox_store.product.model.Product;
 import vn.techbox.techbox_store.product.model.ProductAttribute;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
 import vn.techbox.techbox_store.product.model.VariationAttribute;
+import vn.techbox.techbox_store.product.repository.BrandRepository;
+import vn.techbox.techbox_store.product.repository.CategoryRepository;
+import vn.techbox.techbox_store.product.repository.ProductAttributeRepository;
+import vn.techbox.techbox_store.product.service.ProductVariationService;
 import vn.techbox.techbox_store.promotion.model.Promotion;
 import vn.techbox.techbox_store.promotion.model.PromotionType;
 
 @Component
+@RequiredArgsConstructor
 public class ProductMapper {
+    
+    private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final ProductVariationService productVariationService;
     
     /**
      * Convert Product entity to ProductListResponse DTO
@@ -38,6 +51,27 @@ public class ProductMapper {
                 .discountValue(product.getDiscountValue())
                 .averageRating(product.getAverageRating())
                 .totalRatings(product.getTotalRatings())
+                .build();
+    }
+
+    public ProductManagementListResponse toManagementListResponse(Product product) {
+        if (product == null) return null;
+
+        return ProductManagementListResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .spu(product.getSpu())
+                .imageUrl(product.getImageUrl())
+                .displayOriginalPrice(product.getDisplayOriginalPrice())
+                .displaySalePrice(product.getDisplaySalePrice())
+                .discountType(product.getDiscountType())
+                .discountValue(product.getDiscountValue())
+                .averageRating(product.getAverageRating())
+                .totalRatings(product.getTotalRatings())
+                .status(product.getStatus())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
+                .deleteAt(product.getDeletedAt())
                 .build();
     }
 
@@ -199,5 +233,78 @@ public class ProductMapper {
                 .build();
     }
     
+    /**
+     * Convert Product entity to ProductManagementDetailResponse DTO
+     * Includes full information for admin/management view and edit
+     */
+    public ProductManagementDetailResponse toManagementDetailResponse(Product product) {
+        if (product == null) return null;
+        
+        ProductManagementDetailResponse response = new ProductManagementDetailResponse();
+        
+        // Basic product information
+        response.setId(product.getId());
+        response.setSpu(product.getSpu());
+        response.setName(product.getName());
+        response.setDescription(product.getDescription());
+        response.setImageUrl(product.getImageUrl());
+        response.setImagePublicId(product.getImagePublicId());
+        response.setStatus(product.getStatus());
+        response.setWarrantyMonths(product.getWarrantyMonths());
+        
+        // Category information
+        if (product.getCategoryId() != null) {
+            categoryRepository.findById(product.getCategoryId()).ifPresent(category -> {
+                response.setCategoryId(category.getId());
+                response.setCategoryName(category.getName());
+            });
+        }
+        
+        // Brand information
+        if (product.getBrandId() != null) {
+            brandRepository.findById(product.getBrandId()).ifPresent(brand -> {
+                response.setBrandId(brand.getId());
+                response.setBrandName(brand.getName());
+            });
+        }
+        
+        // Product attributes
+        List<ProductAttribute> productAttributes = productAttributeRepository.findByProductId(product.getId());
+        List<ProductManagementDetailResponse.ProductAttributeDetail> attributeDetails = productAttributes.stream()
+                .map(pa -> {
+                    ProductManagementDetailResponse.ProductAttributeDetail detail = 
+                        new ProductManagementDetailResponse.ProductAttributeDetail();
+                    detail.setAttributeId(pa.getAttributeId());
+                    detail.setAttributeValue(pa.getValue());
+                    // Get attribute name from relationship
+                    if (pa.getAttribute() != null) {
+                        detail.setAttributeName(pa.getAttribute().getName());
+                    }
+                    return detail;
+                })
+                .collect(Collectors.toList());
+        response.setAttributes(attributeDetails);
+        
+        // Display prices
+        response.setDisplayOriginalPrice(product.getDisplayOriginalPrice());
+        response.setDisplaySalePrice(product.getDisplaySalePrice());
+        
+        // Rating and review stats
+        response.setAverageRating(product.getAverageRating());
+        response.setTotalRatings(product.getTotalRatings());
+        
+        // Variations summary (count only, not full details)
+        int totalVariations = productVariationService.countTotalVariationsByProductId(product.getId());
+        int activeVariations = productVariationService.countActiveVariationsByProductId(product.getId());
+        response.setTotalVariations(totalVariations);
+        response.setActiveVariations(activeVariations);
+        
+        // Metadata
+        response.setCreatedAt(product.getCreatedAt());
+        response.setUpdatedAt(product.getUpdatedAt());
+        response.setDeletedAt(product.getDeletedAt());
+        
+        return response;
+    }
 
 }

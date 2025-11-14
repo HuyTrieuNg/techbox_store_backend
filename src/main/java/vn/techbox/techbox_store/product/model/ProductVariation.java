@@ -63,8 +63,9 @@ public class ProductVariation {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
     
-    @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<VariationAttribute> variationAttributes;
+    @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<VariationAttribute> variationAttributes = new java.util.ArrayList<>();
     
     @OneToMany(mappedBy = "productVariation", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
@@ -84,6 +85,17 @@ public class ProductVariation {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // Helper methods for managing the bidirectional relationship with VariationAttribute
+    public void addVariationAttribute(VariationAttribute attribute) {
+        variationAttributes.add(attribute);
+        attribute.setProductVariation(this);
+    }
+
+    public void removeVariationAttribute(VariationAttribute attribute) {
+        variationAttributes.remove(attribute);
+        attribute.setProductVariation(null);
     }
     
     // Helper methods for managing the bidirectional relationship with ProductVariationImage
