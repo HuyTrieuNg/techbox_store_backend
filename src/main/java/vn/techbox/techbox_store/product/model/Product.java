@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "products")
@@ -34,7 +35,7 @@ public class Product {
     @Column(name = "brand_id")
     private Integer brandId;
 
-    @Column(name = "SPU", nullable = false, unique = true)
+    @Column(name = "SPU", nullable = false, unique = true, length = 15)
     private String spu;
     
     @Column(name = "image_url", columnDefinition = "TEXT")
@@ -113,7 +114,7 @@ public class Product {
     private String generateSpu() {
         // Generate unique SPU using UUID (short version)
         // Format: PRD-XXXXXXXX (8 uppercase alphanumeric characters)
-        String uuid = java.util.UUID.randomUUID().toString().replace("-", "").toUpperCase();
+        String uuid = UUID.randomUUID().toString().replace("-", "").toUpperCase();
         return "PRD-" + uuid.substring(0, 8);
     }
     

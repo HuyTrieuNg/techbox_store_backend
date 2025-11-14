@@ -26,7 +26,9 @@ public interface ProductService {
 
 
     ProductResponse createProduct(ProductCreateRequest request);
-    
+
+    ProductResponse createProductWithAttributes(ProductWithAttributesRequest request);
+
     ProductResponse updateProduct(Integer id, ProductUpdateRequest request);
     
     void deleteProduct(Integer id);

@@ -21,6 +21,7 @@ import vn.techbox.techbox_store.product.repository.ProductVariationImageReposito
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,44 +87,56 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             .productId(request.getProductId())
             .price(request.getPrice())
             .sku(request.getSku())
-            .avgCostPrice(request.getAvgCostPrice())
-            .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0)
-            .reservedQuantity(request.getReservedQuantity() != null ? request.getReservedQuantity() : 0)
+            .avgCostPrice(BigDecimal.valueOf(0))
+            .stockQuantity(0)
+            .reservedQuantity(0)
             .build();
 
-        // Add variation attributes to the entity
+        // Save ProductVariation first to get ID
+        ProductVariation savedVariation = productVariationRepository.save(productVariation);
+
+        // Add variation attributes after ProductVariation is saved (so we have variationId)
         if (request.getVariationAttributes() != null && !request.getVariationAttributes().isEmpty()) {
             for (VariationAttributeRequest attrReq : request.getVariationAttributes()) {
                 Attribute attribute = attributeRepository.findById(attrReq.getAttributeId())
                         .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attrReq.getAttributeId()));
                 
                 VariationAttribute variationAttribute = VariationAttribute.builder()
-                        .attributeId(attribute.getId())
+                        .productVariationId(savedVariation.getId())  // Set productVariationId for composite key
+                        .attributeId(attribute.getId())              // Set attributeId for composite key
                         .value(attrReq.getValue())
                         .build();
                 
-                productVariation.addVariationAttribute(variationAttribute);
+                // Set bidirectional relationships
+                variationAttribute.setProductVariation(savedVariation);
+                variationAttribute.setAttribute(attribute);
+                
+                // Add to variation's collection
+                savedVariation.getVariationAttributes().add(variationAttribute);
             }
+
+            // Save again to persist the attributes (cascade should work now)
+            savedVariation = productVariationRepository.save(savedVariation);
         }
 
-        // Add images to the entity
+        // Add images after ProductVariation is saved (so we have variationId)
         if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
             for (int i = 0; i < request.getImageUrls().size(); i++) {
                 String publicId = (request.getImagePublicIds() != null && i < request.getImagePublicIds().size()) ? request.getImagePublicIds().get(i) : null;
                 ProductVariationImage image = ProductVariationImage.builder()
+                        .productVariationId(savedVariation.getId())  // Set productVariationId for foreign key
                         .imageUrl(request.getImageUrls().get(i))
                         .imagePublicId(publicId)
                         .build();
-                // Assuming a helper method addImage exists in ProductVariation
-                // productVariation.addImage(image); 
-                // If not, we need to set the back-reference manually
-                image.setProductVariation(productVariation);
-                productVariation.getImages().add(image);
+                // Set bidirectional relationship
+                image.setProductVariation(savedVariation);
+                // Add to variation's collection
+                savedVariation.getImages().add(image);
             }
-        }
 
-        // Save the parent entity once. All children will be saved via cascade.
-        ProductVariation savedVariation = productVariationRepository.save(productVariation);
+            // Save again to persist the images (cascade should work now)
+            savedVariation = productVariationRepository.save(savedVariation);
+        }
 
         return productVariationMapper.toResponse(savedVariation);
     }
@@ -191,8 +204,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                         .imageUrl(request.getImageUrls().get(i))
                         .imagePublicId(publicId)
                         .build();
-                image.setProductVariation(variation);
-                variation.getImages().add(image);
+                variation.addImage(image);
             }
         }
 

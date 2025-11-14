@@ -1,6 +1,5 @@
 package vn.techbox.techbox_store.product.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
-import vn.techbox.techbox_store.product.dto.productDto.ProductCreateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductFilterRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
@@ -19,11 +17,11 @@ import vn.techbox.techbox_store.product.dto.productDto.ProductManagementDetailRe
 import vn.techbox.techbox_store.product.dto.productDto.ProductManagementListResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductUpdateRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductWithAttributesRequest;
 import vn.techbox.techbox_store.product.model.ProductStatus;
 import vn.techbox.techbox_store.product.service.ProductService;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +37,7 @@ public class ProductController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
+    private final ObjectMapper objectMapper;
 
 
     // ============================================
@@ -239,122 +238,108 @@ public class ProductController {
     }
 
     /**
-     * Create a new product
+     * Create a new product with attributes in a single transaction
      * POST /admin/products
+     * This endpoint ensures atomicity: either product + attributes are created together, or nothing
+     */
+    // @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
+    // @PostMapping(consumes = {"multipart/form-data"})
+    // public ResponseEntity<?> createProduct(
+    //         @RequestParam("productData") String productDataJson,
+    //         @RequestParam(value = "image", required = false) MultipartFile image) {
+
+    //     try {
+    //         // Parse product data JSON
+    //         ProductWithAttributesRequest request = objectMapper.readValue(productDataJson, ProductWithAttributesRequest.class);
+
+    //         // Handle image upload if a file is provided
+    //         if (image != null && !image.isEmpty()) {
+    //             @SuppressWarnings("unchecked")
+    //             Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_images");
+    //             request.setImageUrl((String) uploadResult.get("secure_url"));
+    //             request.setImagePublicId((String) uploadResult.get("public_id"));
+    //         }
+
+    //         // Create product with attributes in single transaction
+    //         ProductResponse createdProduct = productService.createProductWithAttributes(request);
+
+    //         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+
+    //     } catch (IOException e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body(Map.of("error", "Failed to process request data or upload image: " + e.getMessage()));
+    //     } catch (IllegalArgumentException e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    //                 .body(Map.of("error", e.getMessage()));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    //                 .body(Map.of("error", "Failed to create product with attributes: " + e.getMessage()));
+    //     }
+    // }
+
+    /**
+     * Create a new product with attributes using JSON (alternative to multipart endpoint)
+     * POST /admin/products/json
+     * Image URLs and public IDs must be pre-uploaded to Cloudinary
      */
     @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
-    @PostMapping(consumes = { "multipart/form-data" })
-    public ResponseEntity<?> createProduct(
-            @RequestParam("name") String name,
-            @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "categoryId", required = false) Integer categoryId,
-            @RequestParam(value = "brandId", required = false) Integer brandId,
-            @RequestParam(value = "spu", required = false) String spu,
-            @RequestParam(value = "attributes", required = false) String attributes,
-            @RequestParam(value = "warrantyMonths", required = false) Integer warrantyMonths,
-            @RequestParam(value = "image", required = false) MultipartFile image) {
-
+    @PostMapping(consumes = "application/json")
+    public ResponseEntity<?> createProductJson(@RequestBody ProductWithAttributesRequest request) {
         try {
-            ProductCreateRequest request = ProductCreateRequest.builder()
-                    .name(name)
-                    .description(description)
-                    .categoryId(categoryId)
-                    .brandId(brandId)
-                    .warrantyMonths(warrantyMonths)
-                    .attributes(null)
-                    .build(); 
-
-            // Handle image upload if a file is provided
-            if (image != null && !image.isEmpty()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_images");
-                request.setImageUrl((String) uploadResult.get("secure_url"));
-                request.setImagePublicId((String) uploadResult.get("public_id"));
-            }
-
-            // Single call to the refactored service method
-            ProductResponse createdProduct = productService.createProduct(request);
+            // Create product with attributes in single transaction
+            ProductResponse createdProduct = productService.createProductWithAttributes(request);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
 
-        } catch (IOException e) {
-            // This can be thrown by ObjectMapper or CloudinaryService
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Failed to process request data or upload image: " + e.getMessage()));
+                    .body(Map.of("error", e.getMessage(), "type", "VALIDATION_ERROR"));
         } catch (Exception e) {
-            // Catches validation errors from the service layer
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Failed to create product: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to create product with attributes: " + e.getMessage(), "type", "INTERNAL_ERROR"));
         }
     }
-    
+
     /**
      * Update an existing product
-     * PUT /admin/products/{id}
-     */
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
-    @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
+    @PutMapping("/{id}")
     public ResponseEntity<?> updateProduct(
             @PathVariable Integer id,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "categoryId", required = false) Integer categoryId,
-            @RequestParam(value = "brandId", required = false) Integer brandId,
-            @RequestParam(value = "attributes", required = false) String attributesJson,
-            @RequestParam(value = "warrantyMonths", required = false) Integer warrantyMonths,
-            @RequestParam(value = "image", required = false) MultipartFile image,
-            @RequestParam(value = "deleteImage", required = false, defaultValue = "false") boolean deleteImage) {
-        
-        try {
-            // Parse attributes JSON
-            Map<String, String> attributes = new HashMap<>();
-            if (attributesJson != null && !attributesJson.isEmpty()) {
-                attributes = new ObjectMapper().readValue(attributesJson, new TypeReference<>() {});
-            }
+            @RequestBody ProductUpdateRequest request) {
 
+        try {
             // Get current product to check existing image
             ProductResponse currentProduct = productService.getProductById(id)
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
-
-            ProductUpdateRequest request = ProductUpdateRequest.builder()
-                    .name(name)
-                    .description(description)
-                    .categoryId(categoryId)
-                    .brandId(brandId)
-                    .attributes(attributes)
-                    .warrantyMonths(warrantyMonths)
-                    .build();
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + id));
 
             // Handle image operations
-            if (image != null && !image.isEmpty()) {
-                // Always delete old image when uploading new one
+            if (request.getImageUrl() != null && request.getImagePublicId() != null) {
+                // Delete old image if exists
                 if (currentProduct.getImagePublicId() != null) {
-                    cloudinaryService.deleteFile(currentProduct.getImagePublicId());
+                    try {
+                        cloudinaryService.deleteFile(currentProduct.getImagePublicId());
+                    } catch (IOException e) {
+                        // Log error but continue
+                        System.err.println("Failed to delete old image from Cloudinary: " + currentProduct.getImagePublicId());
+                    }
                 }
-                
-                // Upload new image
-                @SuppressWarnings("unchecked")
-                Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_images");
-                request.setImageUrl((String) uploadResult.get("secure_url"));
-                request.setImagePublicId((String) uploadResult.get("public_id"));
-            } else if (deleteImage && currentProduct.getImagePublicId() != null) {
-                // Only delete image if explicitly requested
-                cloudinaryService.deleteFile(currentProduct.getImagePublicId());
-                request.setImageUrl(null);
-                request.setImagePublicId(null);
+                // New image is already provided in request
+            } else if (request.getImageUrl() == null && request.getImagePublicId() == null) {
+                // Keep existing image
+                request.setImageUrl(currentProduct.getImageUrl());
+                request.setImagePublicId(currentProduct.getImagePublicId());
             }
-            
+
             ProductResponse updatedProduct = productService.updateProduct(id, request);
             return ResponseEntity.ok(updatedProduct);
-            
-        } catch (IOException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to process image: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage(), "type", "VALIDATION_ERROR"));
         } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Failed to update product: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update product: " + e.getMessage(), "type", "INTERNAL_ERROR"));
         }
     }
 
