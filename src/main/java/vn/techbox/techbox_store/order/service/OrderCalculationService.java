@@ -33,9 +33,15 @@ public class OrderCalculationService {
         BigDecimal totalPromotionDiscount = BigDecimal.ZERO;
 
         for (DiscountCalculationRequest.OrderItemRequest item : request.getOrderItems()) {
-            totalOriginalAmount = totalOriginalAmount.add(
-                item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
-            );
+            ProductVariation productVariation = productVariationRepository.findById(item.getProductVariationId())
+                    .orElse(null);
+
+            if (productVariation != null) {
+                BigDecimal originalPrice = productVariation.getPrice();
+                totalOriginalAmount = totalOriginalAmount.add(
+                    originalPrice.multiply(BigDecimal.valueOf(item.getQuantity()))
+                );
+            }
         }
 
         // Tính promotion discount cho từng item
@@ -43,7 +49,14 @@ public class OrderCalculationService {
             ProductVariation productVariation = productVariationRepository.findById(item.getProductVariationId())
                     .orElse(null);
 
-            BigDecimal originalAmount = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            if (productVariation == null) {
+                continue;
+            }
+
+            // Sử dụng giá gốc từ database thay vì giá từ frontend
+            BigDecimal originalPrice = productVariation.getPrice();
+            BigDecimal originalAmount = originalPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+
             BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
                     item.getProductVariationId(),
                     item.getQuantity()
@@ -53,9 +66,9 @@ public class OrderCalculationService {
 
             itemDiscounts.add(DiscountCalculationResponse.ItemDiscountDetail.builder()
                     .productVariationId(item.getProductVariationId())
-                    .productName(productVariation != null ? productVariation.getProduct().getName() : "Unknown")
+                    .productName(productVariation.getProduct().getName())
                     .quantity(item.getQuantity())
-                    .unitPrice(item.getUnitPrice())
+                    .unitPrice(originalPrice)
                     .originalAmount(originalAmount)
                     .promotionDiscount(promotionDiscount)
                     .finalAmount(originalAmount.subtract(promotionDiscount))
@@ -143,6 +156,10 @@ public class OrderCalculationService {
         log.info("Calculating promotion discounts for {} items", orderItems.size());
 
         for (OrderItem item : orderItems) {
+            // Đảm bảo unitPrice là giá gốc từ database
+            BigDecimal originalPrice = item.getProductVariation().getPrice();
+            item.setUnitPrice(originalPrice);
+
             BigDecimal promotionDiscount = orderUtil.calculatePromotionDiscount(
                     item.getProductVariation().getId(),
                     item.getQuantity()
@@ -150,7 +167,7 @@ public class OrderCalculationService {
             item.setDiscountAmount(promotionDiscount);
 
             // Cập nhật lại total price sau khi áp dụng discount
-            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            BigDecimal itemTotal = originalPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
             BigDecimal discountedPrice = itemTotal.subtract(promotionDiscount);
             item.setTotalPrice(discountedPrice);
 
