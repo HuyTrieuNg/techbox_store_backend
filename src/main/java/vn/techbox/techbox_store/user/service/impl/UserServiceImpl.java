@@ -16,13 +16,10 @@ import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.AccountRepository;
 import vn.techbox.techbox_store.user.repository.RoleRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
-import vn.techbox.techbox_store.user.exception.UserAccountLockedException;
-import vn.techbox.techbox_store.user.exception.UserException;
-import vn.techbox.techbox_store.user.exception.UserInvalidCredentialsException;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 import vn.techbox.techbox_store.user.service.AuthService;
 import vn.techbox.techbox_store.user.service.UserService;
 
-import vn.techbox.techbox_store.user.security.UserPrincipal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -139,6 +136,14 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAllWithAddresses(pageable);
     }
 
+    @Override
+    public Page<User> getAllUsersWithPagination(Pageable pageable, boolean includeDeleted) {
+        if (includeDeleted) {
+            return userRepository.findAllWithAddressesIncludingDeleted(pageable);
+        }
+        return userRepository.findAllWithAddresses(pageable);
+    }
+
     public Optional<User> getUserById(Integer id) {
         return Optional.ofNullable(userRepository.findByIdWithRoles(id));
     }
@@ -242,12 +247,8 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("User not found with id: " + id);
         }
 
-        user.setDeletedAt(LocalDateTime.now());
-        user.getAccount().setDeletedAt(LocalDateTime.now());
+        // Chỉ set isActive = false, không động đến deletedAt
         user.getAccount().setIsActive(false);
-
-        // Soft delete all addresses
-        user.getAddresses().forEach(addr -> addr.setDeletedAt(LocalDateTime.now()));
 
         userRepository.save(user);
     }
@@ -256,69 +257,43 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByIdIncludingDeleted(id)
             .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-        if (user.getDeletedAt() == null) {
+        if (user.getAccount().getIsActive()) {
             throw new RuntimeException("User is not deleted");
         }
 
-        user.setDeletedAt(null);
-        user.getAccount().setDeletedAt(null);
+        // Restore bằng cách set isActive = true
         user.getAccount().setIsActive(true);
-
-        // Restore addresses
-        user.getAddresses().forEach(addr -> addr.setDeletedAt(null));
 
         userRepository.save(user);
     }
 
     public TokenResponse verify(UserLoginRequest req) {
-        // Validate input
-        if (req.email() == null || req.email().trim().isEmpty()) {
-            throw new UserInvalidCredentialsException("Invalid email or password");
-        }
-        if (req.password() == null || req.password().trim().isEmpty()) {
-            throw new UserInvalidCredentialsException("Invalid email or password");
-        }
-
-        // Find user by email
-        Optional<User> userOpt = userRepository.findByAccountEmail(req.email());
-        if (userOpt.isEmpty()) {
-            throw new UserInvalidCredentialsException("Invalid email or password");
-        }
-
-        User user = userOpt.get();
-        Account account = user.getAccount();
-
-        // Check if account is active (covers both disabled and deleted users)
-        if (!account.getIsActive()) {
-            throw new UserInvalidCredentialsException("Invalid email or password");
-        }
-
-        // Check if account is locked
-        if (account.getIsLocked()) {
-            throw new UserAccountLockedException("Account is locked");
-        }
-
         try {
-            // Authenticate with password
             Authentication authentication = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(req.email(), req.password())
             );
 
             if (authentication.isAuthenticated()) {
-                // Update last login
-                account.setLastLogin(LocalDateTime.now());
-                accountRepository.save(account);
-
                 String accessToken = authService.generateToken(req.email());
                 String refreshToken = authService.generateRefreshToken(req.email());
                 return new TokenResponse(accessToken, refreshToken, authService.getAccessTokenExpiry());
             }
-            throw new UserInvalidCredentialsException("Invalid email or password");
+            throw new RuntimeException("Authentication failed");
         } catch (Exception e) {
-            if (e instanceof UserException) {
-                throw e;
-            }
-            throw new UserInvalidCredentialsException("Invalid email or password");
+            throw new RuntimeException("Login failed: " + e.getMessage());
         }
+    }
+
+    @Override
+    public Page<User> getUsersByRole(String roleName, Pageable pageable) {
+        return userRepository.findByRoleName(roleName, pageable);
+    }
+
+    @Override
+    public Page<User> getUsersByRole(String roleName, Pageable pageable, boolean includeDeleted) {
+        if (includeDeleted) {
+            return userRepository.findByRoleNameIncludingDeleted(roleName, pageable);
+        }
+        return userRepository.findByRoleName(roleName, pageable);
     }
 }

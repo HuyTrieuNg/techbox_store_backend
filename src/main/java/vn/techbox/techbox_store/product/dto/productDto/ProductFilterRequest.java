@@ -21,9 +21,6 @@ public class ProductFilterRequest {
     // Search by name
     private String name;
     
-    // Search by SPU (product code) - for management/admin use
-    private String spu;
-    
     // Filter by brand
     private Integer brandId;
     

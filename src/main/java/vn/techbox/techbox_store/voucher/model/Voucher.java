@@ -18,7 +18,6 @@ import java.util.List;
 @Builder
 public class Voucher {
     
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -40,13 +39,13 @@ public class Voucher {
     @Column(name = "usage_limit", nullable = false)
     private Integer usageLimit;
     
+    @Column(name = "used_count", nullable = false)
+    @Builder.Default
+    private Integer usedCount = 0;
+    
     @Column(name = "reserved_quantity", nullable = false)
     @Builder.Default
     private Integer reservedQuantity = 0;
-
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private Boolean isActive = true;
 
     @Version
     @Column(name = "version")
@@ -75,9 +74,6 @@ public class Voucher {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (isActive == null) {
-            isActive = true;
-        }
     }
     
     @PreUpdate
@@ -106,12 +102,12 @@ public class Voucher {
     }
     
     public boolean hasUsageLeft() {
-        return userVouchers == null || userVouchers.size() < usageLimit;
+        return (usedCount + reservedQuantity) < usageLimit;
     }
     
     public Integer getAvailableQuantity() {
         int limit = (usageLimit != null ? usageLimit : 0);
-        int used = (userVouchers != null ? userVouchers.size() : 0);
+        int used = (usedCount != null ? usedCount : 0);
         int reserved = (reservedQuantity != null ? reservedQuantity : 0);
         int available = limit - used - reserved;
         return Math.max(0, available);

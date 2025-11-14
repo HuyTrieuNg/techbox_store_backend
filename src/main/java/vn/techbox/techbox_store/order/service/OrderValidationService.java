@@ -7,8 +7,14 @@ import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 import vn.techbox.techbox_store.payment.model.PaymentMethod;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.voucher.model.Voucher;
+import vn.techbox.techbox_store.voucher.model.UserVoucher;
+import vn.techbox.techbox_store.voucher.repository.UserVoucherRepository;
+import vn.techbox.techbox_store.voucher.repository.VoucherRepository;
+import vn.techbox.techbox_store.voucher.exception.VoucherValidationException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -16,6 +22,8 @@ import java.util.Set;
 public class OrderValidationService {
 
     private final ProductVariationRepository productVariationRepository;
+    private final UserVoucherRepository userVoucherRepository;
+    private final VoucherRepository voucherRepository;
 
     private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(
         OrderStatus.PENDING,
@@ -32,6 +40,15 @@ public class OrderValidationService {
         validateOrderItems(request.getOrderItems());
         validatePaymentMethod(request.getPaymentMethod());
         validateShippingInformation(request);
+    }
+
+    public void validateCreateOrderRequest(CreateOrderRequest request, Integer userId) {
+        validateOrderItems(request.getOrderItems());
+        validatePaymentMethod(request.getPaymentMethod());
+        validateShippingInformation(request);
+        if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isEmpty()) {
+            validateVoucherCode(request.getVoucherCode(), userId);
+        }
     }
 
     public void validateStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
@@ -110,6 +127,43 @@ public class OrderValidationService {
 
         if (request.getShippingAddress() == null || request.getShippingAddress().trim().isEmpty()) {
             throw new RuntimeException("Shipping address is required");
+        }
+    }
+
+    private void validateVoucherCode(String voucherCode, Integer userId) {
+        // Check if voucher exists and is valid
+        Voucher voucher = voucherRepository.findByCodeAndNotDeleted(voucherCode)
+                .orElseThrow(() -> new VoucherValidationException(
+                    "Mã voucher không tồn tại hoặc đã hết hạn",
+                    voucherCode,
+                    "VOUCHER_NOT_FOUND"
+                ));
+
+        if (!voucher.isValid()) {
+            throw new VoucherValidationException(
+                "Mã voucher đã hết hạn sử dụng",
+                voucherCode,
+                "VOUCHER_EXPIRED"
+            );
+        }
+
+        if (!voucher.hasUsageLeft()) {
+            throw new VoucherValidationException(
+                "Mã voucher đã hết lượt sử dụng",
+                voucherCode,
+                "VOUCHER_LIMIT_EXCEEDED"
+            );
+        }
+
+        // Check if user has already used this voucher
+        Optional<UserVoucher> existingUsage = userVoucherRepository
+                .findByUserIdAndVoucherCode(userId, voucherCode);
+        if (existingUsage.isPresent()) {
+            throw new VoucherValidationException(
+                "Bạn đã sử dụng mã voucher này rồi",
+                voucherCode,
+                "VOUCHER_ALREADY_USED"
+            );
         }
     }
 }

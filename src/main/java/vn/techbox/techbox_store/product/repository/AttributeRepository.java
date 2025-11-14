@@ -14,8 +14,6 @@ public interface AttributeRepository extends JpaRepository<Attribute, Integer> {
     
     Optional<Attribute> findByName(String name);
     
-    Optional<Attribute> findById(Integer id);
-
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Integer id);

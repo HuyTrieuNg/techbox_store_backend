@@ -33,8 +33,12 @@ public class VoucherController {
     @Operation(summary = "Create a new voucher", description = "Create a new voucher with specified details")
     public ResponseEntity<VoucherResponse> createVoucher(
             @Valid @RequestBody VoucherCreateRequest request) {
-        VoucherResponse response = voucherService.createVoucher(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            VoucherResponse response = voucherService.createVoucher(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PreAuthorize("hasAuthority('VOUCHER:UPDATE')")
@@ -43,8 +47,14 @@ public class VoucherController {
     public ResponseEntity<VoucherResponse> updateVoucher(
             @Parameter(description = "Voucher code") @PathVariable String code,
             @Valid @RequestBody VoucherUpdateRequest request) {
-        VoucherResponse response = voucherService.updateVoucher(code, request);
-        return ResponseEntity.ok(response);
+        try {
+            VoucherResponse response = voucherService.updateVoucher(code, request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PreAuthorize("hasAuthority('VOUCHER:READ')")
@@ -52,8 +62,12 @@ public class VoucherController {
     @Operation(summary = "Get voucher by ID", description = "Retrieve voucher details by ID")
     public ResponseEntity<VoucherResponse> getVoucherByCode(
             @Parameter(description = "Voucher code") @PathVariable String code) {
-        VoucherResponse response = voucherService.getVoucherByCode(code);
-        return ResponseEntity.ok(response);
+        try {
+            VoucherResponse response = voucherService.getVoucherByCode(code);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PreAuthorize("hasAuthority('VOUCHER:READ')")
@@ -106,8 +120,12 @@ public class VoucherController {
     @Operation(summary = "Delete a voucher", description = "Soft delete a voucher by ID")
     public ResponseEntity<Void> deleteVoucher(
             @Parameter(description = "Voucher code") @PathVariable String code) {
-        voucherService.deleteVoucherByCode(code);
-        return ResponseEntity.noContent().build();
+        try {
+            voucherService.deleteVoucherByCode(code);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PreAuthorize("hasAuthority('VOUCHER:UPDATE')")
@@ -115,8 +133,12 @@ public class VoucherController {
     @Operation(summary = "Restore a deleted voucher", description = "Restore a soft-deleted voucher by ID")
     public ResponseEntity<Void> restoreVoucher(
             @Parameter(description = "Voucher code") @PathVariable String code) {
-        voucherService.restoreVoucherByCode(code);
-        return ResponseEntity.ok().build();
+        try {
+            voucherService.restoreVoucherByCode(code);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     // Voucher Validation and Usage
@@ -135,8 +157,12 @@ public class VoucherController {
     @Operation(summary = "Use a voucher", description = "Mark a voucher as used for an order")
     public ResponseEntity<String> useVoucher(
             @Valid @RequestBody VoucherUseRequest request) {
-        voucherService.useVoucher(request);
-        return ResponseEntity.ok("Voucher used successfully");
+        try {
+            voucherService.useVoucher(request);
+            return ResponseEntity.ok("Voucher used successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     
     // Reporting and Analytics

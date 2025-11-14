@@ -13,6 +13,7 @@ public interface UserService {
     User createUser(UserCreateRequest req);
     List<User> getAllUsers();
     Page<User> getAllUsersWithPagination(Pageable pageable);
+    Page<User> getAllUsersWithPagination(Pageable pageable, boolean includeDeleted);
     Optional<User> getUserById(Integer id);
     Optional<User> getUserByEmail(String email);
     Optional<User> getUserByEmailWithAddresses(String email);
@@ -21,4 +22,6 @@ public interface UserService {
     void restoreUser(Integer id);
     boolean isCurrentUser(UserPrincipal userPrincipal, Integer userId);
     TokenResponse verify(UserLoginRequest req);
+    Page<User> getUsersByRole(String roleName, Pageable pageable);
+    Page<User> getUsersByRole(String roleName, Pageable pageable, boolean includeDeleted);
 }

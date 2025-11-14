@@ -3,10 +3,13 @@ package vn.techbox.techbox_store.product.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
+import vn.techbox.techbox_store.product.dto.productDto.ProductFilterRequest;
+import vn.techbox.techbox_store.product.dto.productDto.ProductListResponse;
+import vn.techbox.techbox_store.product.service.ProductService;
+
 import org.springframework.web.multipart.MultipartFile;
 
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
@@ -23,7 +26,8 @@ import vn.techbox.techbox_store.product.service.ProductService;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 /**
@@ -89,153 +93,8 @@ public class ProductController {
     // end of public endpoints
     // ============================================
     
-
-
-
-
     // ============================================
     // management endpoints for products
-    @PreAuthorize("hasAuthority('PRODUCT:READ')")
-    @GetMapping("/management")
-    public ResponseEntity<Page<ProductManagementListResponse>> getProductsForManagement(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String spu,
-            @RequestParam(required = false) Integer brandId,
-            @RequestParam(required = false) Integer categoryId,
-            @RequestParam(required = false) List<String> attributes,
-            @RequestParam(required = false) java.math.BigDecimal minPrice,
-            @RequestParam(required = false) java.math.BigDecimal maxPrice,
-            @RequestParam(required = false) Double minRating,
-            @RequestParam(required = false) Integer campaignId,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        // Convert status string to enum
-        ProductStatus productStatus = null;
-        if (status != null && !status.trim().isEmpty()) {
-            try {
-                productStatus = ProductStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // Invalid status, leave as null (no filter)
-            }
-        }
-                
-        ProductFilterRequest filterRequest = ProductFilterRequest.builder()
-                .status(productStatus)
-                .name(name)
-                .spu(spu)
-                .brandId(brandId)
-                .categoryId(categoryId)
-                .attributes(attributes)
-                .minPrice(minPrice)
-                .maxPrice(maxPrice)
-                .minRating(minRating)
-                .campaignId(campaignId)
-                .sortBy(sortBy)
-                .sortDirection(sortDirection)
-                .page(page)
-                .size(size)
-                .build();
-        
-        Page<ProductManagementListResponse> products = productService.filterProductsForManagement(filterRequest);
-        return ResponseEntity.ok(products);
-    }
-
-
-
-    /**
-     * Get full product details for management
-     * Includes all information for admin to view and edit
-     * Does NOT filter soft deleted products
-     * Does NOT include variations (use separate variation API)
-     */
-    // @PreAuthorize("hasAuthority('PRODUCT:READ')")
-    @GetMapping("/management/{id}")
-    public ResponseEntity<?> getProductForManagement(@PathVariable Integer id) {
-        try {
-            ProductManagementDetailResponse response = productService.getProductForManagement(id);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Publish product - Change status to PUBLISHED
-     * Requirements:
-     * - Product must have at least 1 variation
-     * - Updates product's display prices
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
-    @PutMapping("/{id}/publish")
-    public ResponseEntity<?> publishProduct(@PathVariable Integer id) {
-        try {
-            ProductResponse response = productService.publishProduct(id);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Draft product - Change status to DRAFT
-     * Can restore deleted product or hide published product
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
-    @PutMapping("/{id}/draft")
-    public ResponseEntity<?> draftProduct(@PathVariable Integer id) {
-        try {
-            ProductResponse response = productService.draftProduct(id);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * Soft delete product - Change status to DELETED
-     * Requirements:
-     * - Product must be in DRAFT or PUBLISHED status
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
-        try {
-            ProductResponse response = productService.deleteProductSoft(id);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * Hard delete product - Permanently remove a product by ID
-     * Requirements:
-     * - Product must be soft deleted (status = DELETED)
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
-    @DeleteMapping("/hard/{id}")
-    public ResponseEntity<?> deleteProductHard(@PathVariable Integer id) {
-        try {
-            productService.deleteProductHard(id);
-            return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-        }
-    }
 
     /**
      * Create a new product with attributes in a single transaction
