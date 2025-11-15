@@ -11,9 +11,10 @@ import vn.techbox.techbox_store.inventory.mapper.StockImportMapper;
 import vn.techbox.techbox_store.inventory.model.StockImport;
 import vn.techbox.techbox_store.inventory.model.StockImportItem;
 import vn.techbox.techbox_store.inventory.repository.StockImportRepository;
-import vn.techbox.techbox_store.inventory.service.impl.StockImportService;
+import vn.techbox.techbox_store.inventory.repository.SupplierRepository;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,6 +32,8 @@ public class StockImportServiceImpl implements StockImportService {
     
     private final StockImportRepository stockImportRepository;
     private final ProductVariationRepository productVariationRepository;
+    private final SupplierRepository supplierRepository;
+    private final UserRepository userRepository;
     private final StockImportMapper stockImportMapper;
     
     @Override
@@ -52,7 +55,21 @@ public class StockImportServiceImpl implements StockImportService {
         Page<StockImport> stockImports = stockImportRepository.findAllWithFilters(
                 fromDateTime, toDateTime, supplierId, userId, documentCode, pageable);
         
-        return stockImports.map(stockImportMapper::toDTO);
+        Page<StockImportDTO> result = stockImports.map(stockImportMapper::toDTO);
+        
+        // Populate supplier and user names for each item
+        result.forEach(dto -> {
+            if (dto.getSupplierId() != null) {
+                supplierRepository.findById(dto.getSupplierId())
+                        .ifPresent(supplier -> dto.setSupplierName(supplier.getName()));
+            }
+            if (dto.getUserId() != null) {
+                userRepository.findById(dto.getUserId())
+                        .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+            }
+        });
+        
+        return result;
     }
     
     @Override
@@ -63,7 +80,21 @@ public class StockImportServiceImpl implements StockImportService {
         StockImport stockImport = stockImportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock import not found with ID: " + id));
         
-        return stockImportMapper.toDetailDTO(stockImport);
+        StockImportDetailDTO dto = stockImportMapper.toDetailDTO(stockImport);
+        
+        // Populate supplier name
+        if (stockImport.getSupplierId() != null) {
+            supplierRepository.findById(stockImport.getSupplierId())
+                    .ifPresent(supplier -> dto.setSupplierName(supplier.getName()));
+        }
+        
+        // Populate user name
+        if (stockImport.getUserId() != null) {
+            userRepository.findById(stockImport.getUserId())
+                    .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+        }
+        
+        return dto;
     }
     
     @Override

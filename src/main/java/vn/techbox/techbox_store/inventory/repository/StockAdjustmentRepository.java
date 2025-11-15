@@ -18,10 +18,10 @@ public interface StockAdjustmentRepository extends JpaRepository<StockAdjustment
      * Find all stock adjustments with filters
      */
     @Query("SELECT sa FROM StockAdjustment sa WHERE " +
-           "(:fromDate IS NULL OR sa.adjustmentDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR sa.adjustmentDate <= :toDate) AND " +
-           "(:userId IS NULL OR sa.userId = :userId) AND " +
-           "(:checkName IS NULL OR :checkName = '' OR LOWER(sa.checkName) LIKE LOWER(CONCAT('%', :checkName, '%')))")
+           "(COALESCE(:fromDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate >= :fromDate) AND " +
+           "(COALESCE(:toDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate <= :toDate) AND " +
+           "(COALESCE(:userId, sa.userId) = sa.userId OR sa.userId = :userId) AND " +
+           "(COALESCE(:checkName, '') = '' OR LOWER(sa.checkName) LIKE LOWER(CONCAT('%', :checkName, '%')))")
     Page<StockAdjustment> findAllWithFilters(
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
@@ -33,8 +33,8 @@ public interface StockAdjustmentRepository extends JpaRepository<StockAdjustment
      * Find stock adjustments for report (without pagination)
      */
     @Query("SELECT sa FROM StockAdjustment sa WHERE " +
-           "(:fromDate IS NULL OR sa.adjustmentDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR sa.adjustmentDate <= :toDate) " +
+           "(COALESCE(:fromDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate >= :fromDate) AND " +
+           "(COALESCE(:toDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate <= :toDate) " +
            "ORDER BY sa.adjustmentDate")
     List<StockAdjustment> findForReport(
             @Param("fromDate") LocalDateTime fromDate,

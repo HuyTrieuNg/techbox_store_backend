@@ -14,6 +14,7 @@ import vn.techbox.techbox_store.inventory.repository.StockAdjustmentRepository;
 import vn.techbox.techbox_store.inventory.service.StockAdjustmentService;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
 
     private final StockAdjustmentRepository stockAdjustmentRepository;
     private final ProductVariationRepository productVariationRepository;
+    private final UserRepository userRepository;
     private final StockAdjustmentMapper stockAdjustmentMapper;
 
     @Override
@@ -48,7 +50,17 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         Page<StockAdjustment> stockAdjustments = stockAdjustmentRepository.findAllWithFilters(
                 fromDateTime, toDateTime, userId, checkName, pageable);
 
-        return stockAdjustments.map(stockAdjustmentMapper::toDTO);
+        Page<StockAdjustmentDTO> result = stockAdjustments.map(stockAdjustmentMapper::toDTO);
+        
+        // Populate user names for each item
+        result.forEach(dto -> {
+            if (dto.getUserId() != null) {
+                userRepository.findById(dto.getUserId())
+                        .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+            }
+        });
+        
+        return result;
     }
 
     @Override
@@ -59,7 +71,15 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         StockAdjustment stockAdjustment = stockAdjustmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock adjustment not found with ID: " + id));
 
-        return stockAdjustmentMapper.toDetailDTO(stockAdjustment);
+        StockAdjustmentDetailDTO dto = stockAdjustmentMapper.toDetailDTO(stockAdjustment);
+        
+        // Populate user name
+        if (stockAdjustment.getUserId() != null) {
+            userRepository.findById(stockAdjustment.getUserId())
+                    .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+        }
+        
+        return dto;
     }
 
     @Override

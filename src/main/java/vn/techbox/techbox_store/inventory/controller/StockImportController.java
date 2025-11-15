@@ -16,7 +16,7 @@ import vn.techbox.techbox_store.inventory.dto.CreateStockImportRequest;
 import vn.techbox.techbox_store.inventory.dto.StockImportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockImportDetailDTO;
 import vn.techbox.techbox_store.inventory.dto.StockImportReportDTO;
-import vn.techbox.techbox_store.inventory.service.impl.StockImportService;
+import vn.techbox.techbox_store.inventory.service.StockImportService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import vn.techbox.techbox_store.user.security.UserPrincipal;
 
