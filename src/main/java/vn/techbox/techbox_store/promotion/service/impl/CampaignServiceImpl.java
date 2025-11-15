@@ -115,18 +115,18 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional(readOnly = true)
     public Page<CampaignResponse> getAllCampaigns(Pageable pageable) {
-        log.info("Retrieving all campaigns with pagination");
-        
-        return campaignRepository.findAll(pageable)
+        log.info("Retrieving all campaigns with pagination (excluding soft-deleted)");
+
+        return campaignRepository.findByDeletedAtIsNull(pageable)
                 .map(this::mapToResponse);
     }
     
     @Override
     @Transactional(readOnly = true)
     public List<CampaignResponse> getActiveCampaigns() {
-        log.info("Retrieving active campaigns");
-        
-        return campaignRepository.findAll().stream()
+        log.info("Retrieving active campaigns (excluding soft-deleted)");
+
+        return campaignRepository.findByDeletedAtIsNull().stream()
                 .filter(Campaign::isActive)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -135,9 +135,9 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional(readOnly = true)
     public List<CampaignResponse> getScheduledCampaigns() {
-        log.info("Retrieving scheduled campaigns");
-        
-        return campaignRepository.findAll().stream()
+        log.info("Retrieving scheduled campaigns (excluding soft-deleted)");
+
+        return campaignRepository.findByDeletedAtIsNull().stream()
                 .filter(Campaign::isScheduled)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -146,9 +146,9 @@ public class CampaignServiceImpl implements CampaignService {
     @Override
     @Transactional(readOnly = true)
     public List<CampaignResponse> getExpiredCampaigns() {
-        log.info("Retrieving expired campaigns");
-        
-        return campaignRepository.findAll().stream()
+        log.info("Retrieving expired campaigns (excluding soft-deleted)");
+
+        return campaignRepository.findByDeletedAtIsNull().stream()
                 .filter(Campaign::isExpired)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
