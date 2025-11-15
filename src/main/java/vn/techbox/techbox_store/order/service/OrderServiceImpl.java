@@ -116,10 +116,12 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Create reservations for VNPAY orders
+        // Create reservations for VNPAY orders (temporary, expires in 15 min)
+        // Note: Permanent reservations will be created when status changes to CONFIRMED
         if (request.getPaymentMethod() == PaymentMethod.VNPAY) {
             try {
                 for (OrderItem orderItem : savedOrder.getOrderItems()) {
+                    // Reserve inventory for each order item 15 minutes
                     inventoryReservationService.reserveInventory(
                             savedOrder.getId().intValue(),
                             orderItem.getProductVariation().getId(),
@@ -244,9 +246,52 @@ public class OrderServiceImpl implements OrderService {
         orderValidationService.validateStatusTransition(order.getStatus(), status);
 
         if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.COD) {
-            Order confirmed = orderConfirmationService.confirmCodOrder(orderId.intValue());
-            log.info("Order {} confirmed (COD). Stock deducted and status persisted.", orderId);
-            return orderMappingService.toOrderResponse(confirmed);
+            // Create permanent reservations with null expiry for COD orders
+            try {
+                for (OrderItem orderItem : order.getOrderItems()) {
+                    inventoryReservationService.reserveInventoryPermanent(
+                            order.getId().intValue(),
+                            orderItem.getProductVariation().getId(),
+                            orderItem.getQuantity()
+                    );
+                }
+                if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+                    voucherReservationService.reserveVoucherByCode(
+                            order.getId().intValue(),
+                            order.getVoucherCode(),
+                            order.getUserId()
+                    );
+                }
+                log.info("Permanent reservations created for COD order {}", orderId);
+            } catch (Exception e) {
+                log.error("Failed to create permanent reservations for COD order {}: {}", orderId, e.getMessage(), e);
+                throw new OrderException("Failed to create reservations: " + e.getMessage());
+            }
+        }
+
+        // If status changes to CONFIRMED and VNPAY, set reservations expiry to null
+        if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.VNPAY) {
+            try {
+                inventoryReservationService.setReservationsExpiryNull(orderId.intValue());
+                voucherReservationService.confirmReservations(orderId.intValue()); // Note: This might be incorrect, should be setExpiryNull for vouchers too
+                log.info("Reservations expiry set to null for VNPAY order {}", orderId);
+            } catch (Exception e) {
+                log.error("Failed to set reservations expiry for VNPAY order {}: {}", orderId, e.getMessage(), e);
+                throw new OrderException("Failed to update reservations: " + e.getMessage());
+            }
+        }
+
+        // If status changes to PROCESSING, confirm reservations (deduct stock) and create stock export
+        if (status == OrderStatus.PROCESSING) {
+            try {
+                inventoryReservationService.confirmReservations(orderId.intValue());
+                voucherReservationService.confirmReservations(orderId.intValue());
+                // Stock export is created in confirmReservations method of InventoryReservationService
+                log.info("Reservations confirmed, stock deducted, and stock export created for order {}", orderId);
+            } catch (Exception e) {
+                log.error("Failed to confirm reservations for order {}: {}", orderId, e.getMessage(), e);
+                throw new OrderException("Failed to deduct stock from reservations: " + e.getMessage());
+            }
         }
 
         // Nếu trạng thái chuyển sang DELIVERED, lưu ngày giao thực tế

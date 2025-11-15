@@ -18,6 +18,8 @@ import vn.techbox.techbox_store.inventory.dto.StockExportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockExportDetailDTO;
 import vn.techbox.techbox_store.inventory.dto.StockExportReportDTO;
 import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import vn.techbox.techbox_store.user.security.UserPrincipal;
 
 import java.time.LocalDate;
 
@@ -32,12 +34,12 @@ public class StockExportController {
     /**
      * Get all stock exports with filters and pagination
      * 
-     * GET /api/stock-exports?page=0&size=20&fromDate=2025-01-01&toDate=2025-12-31&userId=1&orderId=1&documentCode=EXP
+     * GET /api/stock-exports?page=1&size=20&fromDate=2025-01-01&toDate=2025-12-31&userId=1&orderId=1&documentCode=EXP
      */
     @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping
     public ResponseEntity<Page<StockExportDTO>> getAllStockExports(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -48,7 +50,13 @@ public class StockExportController {
         log.info("GET /api/stock-exports - page: {}, size: {}, fromDate: {}, toDate: {}, userId: {}, orderId: {}, documentCode: {}", 
                 page, size, fromDate, toDate, userId, orderId, documentCode);
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exportDate"));
+        // Convert 1-based page to 0-based page for Spring Data JPA
+        int zeroBasedPage = page - 1;
+        if (zeroBasedPage < 0) {
+            zeroBasedPage = 0;
+        }
+        
+        Pageable pageable = PageRequest.of(zeroBasedPage, size, Sort.by(Sort.Direction.DESC, "exportDate"));
         Page<StockExportDTO> stockExports = stockExportService.getAllStockExports(
                 fromDate, toDate, userId, orderId, documentCode, pageable);
         
@@ -77,14 +85,13 @@ public class StockExportController {
     @PreAuthorize("hasAuthority('INVENTORY:WRITE')")
     @PostMapping
     public ResponseEntity<StockExportDetailDTO> createStockExport(
-            @Valid @RequestBody CreateStockExportRequest request) {
+            @Valid @RequestBody CreateStockExportRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
         log.info("POST /api/stock-exports - items count: {}", 
                 request.getItems() != null ? request.getItems().size() : 0);
         
-        // TODO: Get current user ID from authentication context
-        // For now, using a placeholder user ID
-        Integer currentUserId = 1;
+        Integer currentUserId = userPrincipal.getId();
         
         StockExportDetailDTO createdStockExport = stockExportService.createStockExport(request, currentUserId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdStockExport);
@@ -99,13 +106,12 @@ public class StockExportController {
     @PostMapping("/from-order/{orderId}")
     public ResponseEntity<StockExportDetailDTO> createStockExportFromOrder(
             @PathVariable Integer orderId,
-            @Valid @RequestBody CreateStockExportFromOrderRequest request) {
+            @Valid @RequestBody CreateStockExportFromOrderRequest request,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
         
         log.info("POST /api/stock-exports/from-order/{}", orderId);
         
-        // TODO: Get current user ID from authentication context
-        // For now, using a placeholder user ID
-        Integer currentUserId = 1;
+        Integer currentUserId = userPrincipal.getId();
         
         StockExportDetailDTO createdStockExport = stockExportService.createStockExportFromOrder(
                 orderId, request, currentUserId);

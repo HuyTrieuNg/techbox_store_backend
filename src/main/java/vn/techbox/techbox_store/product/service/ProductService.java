@@ -49,6 +49,7 @@ public interface ProductService {
     // Cập nhật rating của sản phẩm
     void updateProductRating(Integer productId);
     
+    
     // Internal use
     Optional<ProductResponse> getProductById(Integer id);
     
