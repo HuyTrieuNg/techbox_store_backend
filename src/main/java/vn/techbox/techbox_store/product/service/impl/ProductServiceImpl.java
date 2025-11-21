@@ -585,6 +585,7 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
             // Create ProductAttribute entity
             ProductAttribute productAttribute = ProductAttribute.builder()
+                    .productId(productId)
                     .attributeId(attribute.getId())
                     .value(value)
                     .build();
