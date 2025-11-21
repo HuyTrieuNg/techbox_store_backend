@@ -65,7 +65,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review saved = reviewRepository.save(review);
         
         // Cập nhật rating cho product
-        productService.updateProductRating(productId);
+        productService.updateProductRatingOnCreate(productId, (double) request.getRating());
         
         return mapToResponse(saved, user);
     }
@@ -85,11 +85,15 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("You can only update your own review");
         }
 
+        Double oldRating = (double) review.getRating();
+        boolean ratingChanged = false;
+
         if (request.getRating() != null) {
             if (request.getRating() < 1 || request.getRating() > 5) {
                 throw new IllegalArgumentException("Rating must be between 1 and 5");
             }
             review.setRating(request.getRating());
+            ratingChanged = true;
         }
         if (request.getContent() != null) {
             review.setContent(request.getContent());
@@ -97,8 +101,10 @@ public class ReviewServiceImpl implements ReviewService {
         review.setUpdatedAt(LocalDateTime.now());
         Review saved = reviewRepository.save(review);
         
-        // Cập nhật rating cho product
-        productService.updateProductRating(productId);
+        // Cập nhật rating cho product nếu rating thay đổi
+        if (ratingChanged) {
+            productService.updateProductRatingOnUpdate(productId, oldRating, (double) request.getRating());
+        }
         
         return mapToResponse(saved, user);
     }
@@ -118,11 +124,13 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("You can only delete your own review");
         }
 
+        Double oldRating = (double) review.getRating();
+
         review.softDelete();
         reviewRepository.save(review);
         
         // Cập nhật rating cho product
-        productService.updateProductRating(productId);
+        productService.updateProductRatingOnDelete(productId, oldRating);
     }
 
     @Override

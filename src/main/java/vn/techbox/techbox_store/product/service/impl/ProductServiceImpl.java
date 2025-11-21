@@ -455,6 +455,60 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
     
+    @Override
+    public void updateProductRatingOnCreate(Integer productId, Double newRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        double newAvg = (currentAvg * currentTotal + newRating) / (currentTotal + 1);
+        product.setAverageRating(newAvg);
+        product.setTotalRatings(currentTotal + 1);
+        
+        productRepository.save(product);
+    }
+    
+    @Override
+    public void updateProductRatingOnUpdate(Integer productId, Double oldRating, Double newRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        if (currentTotal == 0) {
+            // Không nên xảy ra, nhưng phòng ngừa
+            product.setAverageRating(newRating);
+        } else {
+            double newAvg = (currentAvg * currentTotal - oldRating + newRating) / currentTotal;
+            product.setAverageRating(newAvg);
+        }
+        
+        productRepository.save(product);
+    }
+    
+    @Override
+    public void updateProductRatingOnDelete(Integer productId, Double oldRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        if (currentTotal <= 1) {
+            product.setAverageRating(0.0);
+            product.setTotalRatings(0);
+        } else {
+            double newAvg = (currentAvg * currentTotal - oldRating) / (currentTotal - 1);
+            product.setAverageRating(newAvg);
+            product.setTotalRatings(currentTotal - 1);
+        }
+        
+        productRepository.save(product);
+    }
+    
     /**
      * Publish product - Change status to PUBLISHED
      * Requirements:
