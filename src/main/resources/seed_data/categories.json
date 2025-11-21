@@ -1,0 +1,705 @@
+[
+  {
+    "name": "Laptop",
+    "url": "https://thinkpro.vn/laptop",
+    "children": [
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/laptop-lenovo",
+        "children": [
+          {
+            "name": "ThinkPad",
+            "url": "https://thinkpro.vn/laptop-lenovo-thinkpad",
+            "children": []
+          },
+          {
+            "name": "Yoga",
+            "url": "https://thinkpro.vn/laptop-lenovo-yoga",
+            "children": []
+          },
+          {
+            "name": "ThinkBook",
+            "url": "https://thinkpro.vn/laptop-lenovo-thinkbook",
+            "children": []
+          },
+          {
+            "name": "Legion",
+            "url": "https://thinkpro.vn/laptop-lenovo-legion",
+            "children": []
+          },
+          {
+            "name": "LOQ",
+            "url": "https://thinkpro.vn/laptop-lenovo-loq",
+            "children": []
+          },
+          {
+            "name": "IdeaPad",
+            "url": "https://thinkpro.vn/laptop-lenovo-ideapad",
+            "children": []
+          },
+          {
+            "name": "XIAOXIN",
+            "url": "https://thinkpro.vn/laptop-lenovo-xiaoxin",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Dell",
+        "url": "https://thinkpro.vn/laptop-dell",
+        "children": [
+          {
+            "name": "XPS",
+            "url": "https://thinkpro.vn/laptop-dell-xps",
+            "children": []
+          },
+          {
+            "name": "Inspiron",
+            "url": "https://thinkpro.vn/laptop-dell-inspiron",
+            "children": []
+          },
+          {
+            "name": "Precision",
+            "url": "https://thinkpro.vn/laptop-dell-precision",
+            "children": []
+          },
+          {
+            "name": "Latitude",
+            "url": "https://thinkpro.vn/laptop-dell-latitude",
+            "children": []
+          },
+          {
+            "name": "Alienware",
+            "url": "https://thinkpro.vn/laptop-dell-alienware",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Asus",
+        "url": "https://thinkpro.vn/laptop-asus",
+        "children": [
+          {
+            "name": "Expertbook",
+            "url": "https://thinkpro.vn/laptop-asus-expertbook",
+            "children": []
+          },
+          {
+            "name": "Vivobook",
+            "url": "https://thinkpro.vn/laptop-asus-vivobook",
+            "children": []
+          },
+          {
+            "name": "Zenbook",
+            "url": "https://thinkpro.vn/laptop-asus-zenbook",
+            "children": []
+          },
+          {
+            "name": "TUF Gaming",
+            "url": "https://thinkpro.vn/laptop-asus-tuf-gaming",
+            "children": []
+          },
+          {
+            "name": "ROG Gaming",
+            "url": "https://thinkpro.vn/laptop-asus-rog-gaming",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Acer",
+        "url": "https://thinkpro.vn/laptop-acer",
+        "children": []
+      },
+      {
+        "name": "Apple",
+        "url": "https://thinkpro.vn/laptop-apple",
+        "children": []
+      },
+      {
+        "name": "HP",
+        "url": "https://thinkpro.vn/laptop-hp",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Bàn phím,",
+    "url": "https://thinkpro.vn/ban-phim",
+    "children": [
+      {
+        "name": "Keychron",
+        "url": "https://thinkpro.vn/ban-phim-keychron",
+        "children": []
+      },
+      {
+        "name": "Lofree",
+        "url": "https://thinkpro.vn/ban-phim-lofree",
+        "children": []
+      },
+      {
+        "name": "AULA",
+        "url": "https://thinkpro.vn/ban-phim-aula",
+        "children": []
+      },
+      {
+        "name": "NuPhy",
+        "url": "https://thinkpro.vn/ban-phim-nuphy",
+        "children": []
+      },
+      {
+        "name": "SATECHI",
+        "url": "https://thinkpro.vn/ban-phim-satechi",
+        "children": []
+      },
+      {
+        "name": "CIDOO",
+        "url": "https://thinkpro.vn/ban-phim-cidoo",
+        "children": []
+      },
+      {
+        "name": "WOB",
+        "url": "https://thinkpro.vn/ban-phim-wob",
+        "children": []
+      },
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/ban-phim-hyperwork",
+        "children": []
+      },
+      {
+        "name": "XINMENG",
+        "url": "https://thinkpro.vn/ban-phim-xinmeng",
+        "children": []
+      },
+      {
+        "name": "MONKA",
+        "url": "https://thinkpro.vn/ban-phim-monka",
+        "children": []
+      },
+      {
+        "name": "LEOBOG",
+        "url": "https://thinkpro.vn/ban-phim-leobog",
+        "children": []
+      },
+      {
+        "name": "GravaStar",
+        "url": "https://thinkpro.vn/ban-phim-gravastar",
+        "children": []
+      },
+      {
+        "name": "Microsoft",
+        "url": "https://thinkpro.vn/ban-phim-microsoft",
+        "children": []
+      },
+      {
+        "name": "Akko",
+        "url": "https://thinkpro.vn/ban-phim-akko",
+        "children": []
+      },
+      {
+        "name": "FL-ESPORT",
+        "url": "https://thinkpro.vn/ban-phim-fl-esport",
+        "children": []
+      },
+      {
+        "name": "Ducky",
+        "url": "https://thinkpro.vn/ban-phim-ducky",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Chuột",
+    "url": "https://thinkpro.vn/chuot",
+    "children": [
+      {
+        "name": "Logitech",
+        "url": "https://thinkpro.vn/chuot-logitech",
+        "children": []
+      },
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/chuot-lenovo",
+        "children": []
+      },
+      {
+        "name": "Ugreen",
+        "url": "https://thinkpro.vn/chuot-ugreen",
+        "children": []
+      },
+      {
+        "name": "Keychron",
+        "url": "https://thinkpro.vn/chuot-keychron",
+        "children": []
+      },
+      {
+        "name": "ATTACK SHARK",
+        "url": "https://thinkpro.vn/chuot-attack-shark",
+        "children": []
+      },
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/chuot-hyperwork",
+        "children": []
+      },
+      {
+        "name": "Ducky",
+        "url": "https://thinkpro.vn/chuot-ducky",
+        "children": []
+      },
+      {
+        "name": "Lofree",
+        "url": "https://thinkpro.vn/chuot-lofree",
+        "children": []
+      },
+      {
+        "name": "AULA",
+        "url": "https://thinkpro.vn/chuot-aula",
+        "children": []
+      },
+      {
+        "name": "SATECHI",
+        "url": "https://thinkpro.vn/chuot-satechi",
+        "children": []
+      },
+      {
+        "name": "GravaStar",
+        "url": "https://thinkpro.vn/chuot-gravastar",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Ghế công thái học,",
+    "url": "https://thinkpro.vn/ghe-cong-thai-hoc",
+    "children": [
+      {
+        "name": "GAMI",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-gami",
+        "children": []
+      },
+      {
+        "name": "Manson",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-manson",
+        "children": []
+      },
+      {
+        "name": "SIHOO",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-sihoo",
+        "children": []
+      },
+      {
+        "name": "GT CHAIR",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-gt-chair",
+        "children": []
+      },
+      {
+        "name": "Herman Miller",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-herman-miller",
+        "children": []
+      },
+      {
+        "name": "Comfort Seating",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-comfort-seating",
+        "children": []
+      },
+      {
+        "name": "MerryFair",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-merryfair",
+        "children": []
+      },
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-hyperwork",
+        "children": []
+      },
+      {
+        "name": "UpGen",
+        "url": "https://thinkpro.vn/ghe-cong-thai-hoc-upgen",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Bàn nâng hạ",
+    "url": "https://thinkpro.vn/ban-nang-ha",
+    "children": [
+      {
+        "name": "NiceDesign",
+        "url": "https://thinkpro.vn/ban-nang-ha-nicedesign",
+        "children": []
+      },
+      {
+        "name": "Dandihome",
+        "url": "https://thinkpro.vn/ban-nang-ha-dandihome",
+        "children": []
+      },
+      {
+        "name": "UpGen",
+        "url": "https://thinkpro.vn/ban-nang-ha-upgen",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Thực tế ảo/ Game Console",
+    "url": "https://thinkpro.vn/may-choi-game",
+    "children": [
+      {
+        "name": "XREAL",
+        "url": "https://thinkpro.vn/may-choi-game-xreal",
+        "children": []
+      },
+      {
+        "name": "Nintendo Switch",
+        "url": "https://thinkpro.vn/may-choi-game-nintendo-switch",
+        "children": []
+      },
+      {
+        "name": "Meta",
+        "url": "https://thinkpro.vn/may-choi-game-meta",
+        "children": []
+      },
+      {
+        "name": "Playstation",
+        "url": "https://thinkpro.vn/may-choi-game-playstation",
+        "children": []
+      },
+      {
+        "name": "Microsoft",
+        "url": "https://thinkpro.vn/may-choi-game-microsoft",
+        "children": []
+      },
+      {
+        "name": "Rokid",
+        "url": "https://thinkpro.vn/may-choi-game-rokid",
+        "children": []
+      },
+      {
+        "name": "Sony",
+        "url": "https://thinkpro.vn/may-choi-game-sony",
+        "children": []
+      },
+      {
+        "name": "Meta",
+        "url": "https://thinkpro.vn/may-choi-game-meta",
+        "children": []
+      },
+      {
+        "name": "STEAM DECK",
+        "url": "https://thinkpro.vn/may-choi-game-steam-deck",
+        "children": []
+      },
+      {
+        "name": "Apple",
+        "url": "https://thinkpro.vn/may-choi-game-apple",
+        "children": []
+      },
+      {
+        "name": "Machenike",
+        "url": "https://thinkpro.vn/may-choi-game-machenike",
+        "children": []
+      },
+      {
+        "name": "HGST",
+        "url": "https://thinkpro.vn/may-choi-game-hgst",
+        "children": []
+      },
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/may-choi-game-lenovo",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Arm màn hình,",
+    "url": "https://thinkpro.vn/arm-man-hinh",
+    "children": [
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/arm-man-hinh-hyperwork",
+        "children": []
+      },
+      {
+        "name": "Humanmotion",
+        "url": "https://thinkpro.vn/arm-man-hinh-humanmotion",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Màn hình",
+    "url": "https://thinkpro.vn/man-hinh",
+    "children": [
+      {
+        "name": "ARZOPA",
+        "url": "https://thinkpro.vn/man-hinh-arzopa",
+        "children": []
+      },
+      {
+        "name": "MSI",
+        "url": "https://thinkpro.vn/man-hinh-msi",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "RAM,",
+    "url": "https://thinkpro.vn/ram",
+    "children": [
+      {
+        "name": "Samsung",
+        "url": "https://thinkpro.vn/ram-samsung",
+        "children": []
+      },
+      {
+        "name": "SK Hynix",
+        "url": "https://thinkpro.vn/ram-sk-hynix",
+        "children": []
+      },
+      {
+        "name": "Micron",
+        "url": "https://thinkpro.vn/ram-micron",
+        "children": []
+      },
+      {
+        "name": "Kingston",
+        "url": "https://thinkpro.vn/ram-kingston",
+        "children": []
+      },
+      {
+        "name": "Ramaxel",
+        "url": "https://thinkpro.vn/ram-ramaxel",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Ổ cứng",
+    "url": "https://thinkpro.vn/o-cung",
+    "children": [
+      {
+        "name": "Samsung",
+        "url": "https://thinkpro.vn/o-cung-samsung",
+        "children": []
+      },
+      {
+        "name": "Western Digital",
+        "url": "https://thinkpro.vn/o-cung-western-digital",
+        "children": []
+      },
+      {
+        "name": "Micron",
+        "url": "https://thinkpro.vn/o-cung-micron",
+        "children": []
+      },
+      {
+        "name": "Kingston",
+        "url": "https://thinkpro.vn/o-cung-kingston",
+        "children": []
+      },
+      {
+        "name": "KIOXIA",
+        "url": "https://thinkpro.vn/o-cung-kioxia",
+        "children": []
+      },
+      {
+        "name": "SK Hynix",
+        "url": "https://thinkpro.vn/o-cung-sk-hynix",
+        "children": []
+      },
+      {
+        "name": "Union",
+        "url": "https://thinkpro.vn/o-cung-union",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Phụ kiện Setup",
+    "url": "https://thinkpro.vn/phu-kien-va-setup",
+    "children": [
+      {
+        "name": "NiceDesign",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-nicedesign",
+        "children": []
+      },
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-hyperwork",
+        "children": []
+      },
+      {
+        "name": "UpGen",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-upgen",
+        "children": []
+      },
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-lenovo",
+        "children": []
+      },
+      {
+        "name": "INNOSTYLE",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-innostyle",
+        "children": []
+      },
+      {
+        "name": "Keychron",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-keychron",
+        "children": []
+      },
+      {
+        "name": "Herman Miller",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-herman-miller",
+        "children": []
+      },
+      {
+        "name": "Darmoshark",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-darmoshark",
+        "children": []
+      },
+      {
+        "name": "Manson",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-manson",
+        "children": []
+      },
+      {
+        "name": "Ergonomic Group",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-ergonomic-group",
+        "children": []
+      },
+      {
+        "name": "SATECHI",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-satechi",
+        "children": []
+      },
+      {
+        "name": "GAMI",
+        "url": "https://thinkpro.vn/phu-kien-va-setup-gami",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Hộc tủ",
+    "url": "https://thinkpro.vn/hoc-tu",
+    "children": [
+      {
+        "name": "NiceDesign",
+        "url": "https://thinkpro.vn/hoc-tu-nicedesign",
+        "children": []
+      },
+      {
+        "name": "HyperWork",
+        "url": "https://thinkpro.vn/hoc-tu-hyperwork",
+        "children": []
+      },
+      {
+        "name": "Ergonomic Group",
+        "url": "https://thinkpro.vn/hoc-tu-ergonomic-group",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Cổng chuyển,",
+    "url": "https://thinkpro.vn/cong-chuyen",
+    "children": []
+  },
+  {
+    "name": "Sạc",
+    "url": "https://thinkpro.vn/sac",
+    "children": [
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/sac-lenovo",
+        "children": []
+      },
+      {
+        "name": "Dell",
+        "url": "https://thinkpro.vn/sac-dell",
+        "children": []
+      },
+      {
+        "name": "HP",
+        "url": "https://thinkpro.vn/sac-hp",
+        "children": []
+      },
+      {
+        "name": "Razer",
+        "url": "https://thinkpro.vn/sac-razer",
+        "children": []
+      },
+      {
+        "name": "Acer",
+        "url": "https://thinkpro.vn/sac-acer",
+        "children": []
+      },
+      {
+        "name": "Apple",
+        "url": "https://thinkpro.vn/sac-apple",
+        "children": []
+      },
+      {
+        "name": "Asus",
+        "url": "https://thinkpro.vn/sac-asus",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Balo",
+    "url": "https://thinkpro.vn/balo",
+    "children": [
+      {
+        "name": "tomtoc",
+        "url": "https://thinkpro.vn/balo-tomtoc",
+        "children": []
+      },
+      {
+        "name": "Lenovo",
+        "url": "https://thinkpro.vn/balo-lenovo",
+        "children": []
+      },
+      {
+        "name": "NiceDesign",
+        "url": "https://thinkpro.vn/balo-nicedesign",
+        "children": []
+      },
+      {
+        "name": "Think",
+        "url": "https://thinkpro.vn/balo-think",
+        "children": []
+      },
+      {
+        "name": "LAUT",
+        "url": "https://thinkpro.vn/balo-laut",
+        "children": []
+      }
+    ]
+  },
+  {
+    "name": "Loa",
+    "url": "https://thinkpro.vn/loa",
+    "children": [
+      {
+        "name": "Marshall",
+        "url": "https://thinkpro.vn/loa-marshall",
+        "children": []
+      },
+      {
+        "name": "Bang & Olufsen",
+        "url": "https://thinkpro.vn/loa-bang-olufsen",
+        "children": []
+      },
+      {
+        "name": "Harman Kardon",
+        "url": "https://thinkpro.vn/loa-harman-kardon",
+        "children": []
+      }
+    ]
+  }
+]
