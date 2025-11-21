@@ -7,8 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.inventory.model.StockExport;
 import vn.techbox.techbox_store.inventory.model.StockExportItem;
 import vn.techbox.techbox_store.inventory.repository.StockExportRepository;
-import vn.techbox.techbox_store.order.model.Order;
-import vn.techbox.techbox_store.order.repository.OrderRepository;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 import vn.techbox.techbox_store.user.model.User;
