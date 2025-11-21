@@ -12,8 +12,10 @@ import vn.techbox.techbox_store.inventory.model.StockExport;
 import vn.techbox.techbox_store.inventory.model.StockExportItem;
 import vn.techbox.techbox_store.inventory.repository.StockExportRepository;
 import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
+import vn.techbox.techbox_store.order.repository.OrderRepository;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +32,8 @@ public class StockExportServiceImpl implements StockExportService {
     
     private final StockExportRepository stockExportRepository;
     private final ProductVariationRepository productVariationRepository;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
     private final StockExportMapper stockExportMapper;
     
     @Override
@@ -51,7 +55,22 @@ public class StockExportServiceImpl implements StockExportService {
         Page<StockExport> stockExports = stockExportRepository.findAllWithFilters(
                 fromDateTime, toDateTime, userId, orderId, documentCode, pageable);
         
-        return stockExports.map(stockExportMapper::toDTO);
+        Page<StockExportDTO> result = stockExports.map(stockExportMapper::toDTO);
+        
+        // Populate user and order names/codes for each item
+        result.forEach(dto -> {
+            if (dto.getUserId() != null) {
+                userRepository.findById(dto.getUserId())
+                        .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+            }
+            if (dto.getOrderId() != null) {
+                orderRepository.findById(dto.getOrderId().longValue())
+                        .ifPresentOrElse(order -> dto.setOrderCode(order.getOrderCode()),
+                                () -> dto.setOrderCode("Đơn hàng #" + dto.getOrderId()));
+            }
+        });
+        
+        return result;
     }
     
     @Override
@@ -62,7 +81,22 @@ public class StockExportServiceImpl implements StockExportService {
         StockExport stockExport = stockExportRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Stock export not found with ID: " + id));
         
-        return stockExportMapper.toDetailDTO(stockExport);
+        StockExportDetailDTO dto = stockExportMapper.toDetailDTO(stockExport);
+        
+        // Populate user name
+        if (stockExport.getUserId() != null) {
+            userRepository.findById(stockExport.getUserId())
+                    .ifPresent(user -> dto.setUserName(user.getFirstName() + " " + user.getLastName()));
+        }
+        
+        // Populate order code
+        if (stockExport.getOrderId() != null) {
+            orderRepository.findById(stockExport.getOrderId().longValue())
+                    .ifPresentOrElse(order -> dto.setOrderCode(order.getOrderCode()),
+                            () -> dto.setOrderCode("Đơn hàng #" + stockExport.getOrderId()));
+        }
+        
+        return dto;
     }
     
     @Override
@@ -113,6 +147,7 @@ public class StockExportServiceImpl implements StockExportService {
     }
     
     @Override
+    @Transactional
     public StockExportDetailDTO createStockExportFromOrder(
             Integer orderId, 
             CreateStockExportFromOrderRequest request, 
@@ -126,29 +161,24 @@ public class StockExportServiceImpl implements StockExportService {
             throw new RuntimeException("Stock export already exists for order ID: " + orderId);
         }
         
-        // TODO: Get order items from Order service
-        // For now, throw an exception as this requires Order entity integration
-        throw new RuntimeException("Order integration not yet implemented. Please use manual stock export creation.");
-        
-        /* Placeholder for future implementation:
-        Order order = orderRepository.findById(orderId)
+        // Get order details
+        vn.techbox.techbox_store.order.model.Order order = orderRepository.findById(Long.valueOf(orderId))
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
         
         // Create stock export request from order items
         CreateStockExportRequest exportRequest = new CreateStockExportRequest();
         exportRequest.setOrderId(orderId);
-        exportRequest.setNote(request.getNote());
+        exportRequest.setNote(request.getNote() != null ? request.getNote() : "Stock export for order " + order.getOrderCode());
         
         List<StockExportItemRequest> items = order.getOrderItems().stream()
                 .map(orderItem -> StockExportItemRequest.builder()
-                        .productVariationId(orderItem.getProductVariationId())
+                        .productVariationId(orderItem.getProductVariation().getId())
                         .quantity(orderItem.getQuantity())
                         .build())
                 .collect(Collectors.toList());
         exportRequest.setItems(items);
         
         return createStockExport(exportRequest, currentUserId);
-        */
     }
     
     @Override

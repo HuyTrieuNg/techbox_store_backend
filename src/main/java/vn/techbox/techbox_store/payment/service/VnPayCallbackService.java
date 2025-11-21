@@ -98,19 +98,19 @@ public class VnPayCallbackService {
         }
 
         if ("00".equals(respCode)) {
-            // Payment successful - confirm reservations
+            // Payment successful - set reservations expiry to null
             try {
-                inventoryReservationService.confirmReservations(order.getId().intValue());
+                inventoryReservationService.setReservationsExpiryNull(order.getId().intValue());
                 voucherReservationService.confirmReservations(order.getId().intValue());
 
                 payment.setPaymentStatus(PaymentStatus.PAID);
                 payment.setPaymentCompletedAt(LocalDateTime.now());
                 order.setStatus(OrderStatus.CONFIRMED);
 
-                log.info("Payment confirmed and reservations converted to actual usage for order: {}", order.getId());
+                log.info("Payment confirmed and reservations expiry set to null for order: {}", order.getId());
             } catch (Exception e) {
-                log.error("Failed to confirm reservations for order: {}", order.getId(), e);
-                // If reservation confirmation fails, we should still mark payment as paid
+                log.error("Failed to set reservations expiry for order: {}", order.getId(), e);
+                // If setting expiry fails, we should still mark payment as paid
                 // but log the error for manual intervention
                 payment.setPaymentStatus(PaymentStatus.PAID);
                 payment.setPaymentCompletedAt(LocalDateTime.now());

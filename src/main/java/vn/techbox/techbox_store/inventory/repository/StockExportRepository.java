@@ -29,11 +29,11 @@ public interface StockExportRepository extends JpaRepository<StockExport, Intege
      * Find all stock exports with filters
      */
     @Query("SELECT se FROM StockExport se WHERE " +
-           "(:fromDate IS NULL OR se.exportDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR se.exportDate <= :toDate) AND " +
-           "(:userId IS NULL OR se.userId = :userId) AND " +
-           "(:orderId IS NULL OR se.orderId = :orderId) AND " +
-           "(:documentCode IS NULL OR :documentCode = '' OR LOWER(se.documentCode) LIKE LOWER(CONCAT('%', :documentCode, '%')))")
+           "(COALESCE(:fromDate, se.exportDate) = se.exportDate OR se.exportDate >= :fromDate) AND " +
+           "(COALESCE(:toDate, se.exportDate) = se.exportDate OR se.exportDate <= :toDate) AND " +
+           "(COALESCE(:userId, se.userId) = se.userId OR se.userId = :userId) AND " +
+           "(COALESCE(:orderId, se.orderId) = se.orderId OR se.orderId = :orderId) AND " +
+           "(COALESCE(:documentCode, '') = '' OR LOWER(se.documentCode) LIKE LOWER(CONCAT('%', :documentCode, '%')))")
     Page<StockExport> findAllWithFilters(
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
@@ -46,8 +46,8 @@ public interface StockExportRepository extends JpaRepository<StockExport, Intege
      * Find stock exports for report (without pagination)
      */
     @Query("SELECT se FROM StockExport se WHERE " +
-           "(:fromDate IS NULL OR se.exportDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR se.exportDate <= :toDate) " +
+           "(COALESCE(:fromDate, se.exportDate) = se.exportDate OR se.exportDate >= :fromDate) AND " +
+           "(COALESCE(:toDate, se.exportDate) = se.exportDate OR se.exportDate <= :toDate) " +
            "ORDER BY se.exportDate")
     List<StockExport> findForReport(
             @Param("fromDate") LocalDateTime fromDate,

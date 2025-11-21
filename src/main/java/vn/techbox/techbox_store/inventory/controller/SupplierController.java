@@ -27,12 +27,12 @@ public class SupplierController {
     /**
      * Get all suppliers with pagination and search
      * 
-     * GET /api/suppliers?page=0&size=20&keyword=abc&includeDeleted=false
+     * GET /api/suppliers?page=1&size=20&keyword=abc&includeDeleted=false
      */
     @PreAuthorize("hasAuthority('INVENTORY:READ')")
     @GetMapping
     public ResponseEntity<Page<SupplierDTO>> getAllSuppliers(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean includeDeleted) {
@@ -40,7 +40,13 @@ public class SupplierController {
         log.info("GET /api/suppliers - page: {}, size: {}, keyword: {}, includeDeleted: {}", 
                 page, size, keyword, includeDeleted);
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        // Convert 1-based page to 0-based page for Spring Data JPA
+        int zeroBasedPage = page - 1;
+        if (zeroBasedPage < 0) {
+            zeroBasedPage = 0;
+        }
+        
+        Pageable pageable = PageRequest.of(zeroBasedPage, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<SupplierDTO> suppliers = supplierService.getAllSuppliers(keyword, includeDeleted, pageable);
         
         return ResponseEntity.ok(suppliers);

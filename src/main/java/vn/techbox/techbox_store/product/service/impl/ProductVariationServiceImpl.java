@@ -12,13 +12,13 @@ import vn.techbox.techbox_store.product.model.Attribute;
 import vn.techbox.techbox_store.product.repository.AttributeRepository;
 import vn.techbox.techbox_store.product.dto.productDto.VariationAttributeRequest;
 import vn.techbox.techbox_store.product.model.Product;
+import vn.techbox.techbox_store.product.model.ProductStatus;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.model.ProductVariationImage;
 import vn.techbox.techbox_store.product.model.VariationAttribute;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
-import vn.techbox.techbox_store.product.repository.VariationAttributeRepository;
-import vn.techbox.techbox_store.product.repository.ProductVariationImageRepository;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
+import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
 import java.math.BigDecimal;
@@ -31,13 +31,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductVariationServiceImpl implements ProductVariationService {
 
-    private final VariationAttributeRepository variationAttributeRepository;
     private final ProductVariationRepository productVariationRepository;
     private final ProductRepository productRepository;
-    private final ProductVariationImageRepository productVariationImageRepository;
     private final ProductVariationMapper productVariationMapper;
     private final AttributeRepository attributeRepository;
-    
+    private final ProductPriceUpdateService productPriceUpdateService;
+
     @Override
     @Transactional(readOnly = true)
     public List<ProductVariationResponse> getAllProductVariations() {
@@ -79,6 +78,11 @@ public class ProductVariationServiceImpl implements ProductVariationService {
         // Ensure the parent product exists and is active
         Product product = productRepository.findActiveById(request.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Active product not found with id: " + request.getProductId()));
+
+        // Check if product is in DRAFT or PUBLISHED status
+        if (product.getStatus() != ProductStatus.DRAFT && product.getStatus() != ProductStatus.PUBLISHED) {
+            throw new IllegalStateException("Can only add variations to products in DRAFT or PUBLISHED status");
+        }
 
         // Build the ProductVariation entity from the request
         ProductVariation productVariation = ProductVariation.builder()
@@ -137,6 +141,12 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             savedVariation = productVariationRepository.save(savedVariation);
         }
 
+        // Update product display prices if product is published
+        if (product.getStatus() == ProductStatus.PUBLISHED) {
+            Integer id = product.getId();
+            productPriceUpdateService.updateProductPricing(id);
+        }
+
         return productVariationMapper.toResponse(savedVariation);
     }
     
@@ -153,13 +163,12 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setPrice(request.getPrice());
         }
 
-        // SKU cannot be updated
-        // if (request.getSku() != null) {
-        //     if (existsBySkuAndIdNot(request.getSku(), id)) {
-        //         throw new IllegalArgumentException("SKU already exists: " + request.getSku());
-        //     }
-        //     variation.setSku(request.getSku());
-        // }
+        if (request.getSku() != null) {
+            if (existsBySkuAndIdNot(request.getSku(), id)) {
+                throw new IllegalArgumentException("SKU already exists: " + request.getSku());
+            }
+            variation.setSku(request.getSku());
+        }
 
         // Efficiently update variation attributes using orphanRemoval
         if (request.getVariationAttributes() != null) {

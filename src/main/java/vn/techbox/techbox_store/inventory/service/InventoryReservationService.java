@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.inventory.model.InventoryReservation;
 import vn.techbox.techbox_store.inventory.model.ReservationStatus;
 import vn.techbox.techbox_store.inventory.repository.InventoryReservationRepository;
+import vn.techbox.techbox_store.inventory.dto.CreateStockExportFromOrderRequest;
+import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 import vn.techbox.techbox_store.order.repository.OrderRepository;
@@ -27,12 +29,25 @@ public class InventoryReservationService {
     private final InventoryReservationRepository inventoryReservationRepository;
     private final ProductVariationRepository productVariationRepository;
     private final OrderRepository orderRepository;
+    private final StockExportService stockExportService;
 
     @Transactional
     @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     public void reserveInventory(Integer orderId, Integer productVariationId, Integer quantity) {
-        log.info("Reserving inventory for order: {}, productVariation: {}, quantity: {}",
-                orderId, productVariationId, quantity);
+        reserveInventoryInternal(orderId, productVariationId, quantity, LocalDateTime.now().plusMinutes(15));
+    }
+
+    @Transactional
+    @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    public void reserveInventoryPermanent(Integer orderId, Integer productVariationId, Integer quantity) {
+        reserveInventoryInternal(orderId, productVariationId, quantity, null);
+    }
+
+    @Transactional
+    @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    private void reserveInventoryInternal(Integer orderId, Integer productVariationId, Integer quantity, LocalDateTime expiresAt) {
+        log.info("Reserving inventory for order: {}, productVariation: {}, quantity: {}, permanent: {}",
+                orderId, productVariationId, quantity, expiresAt == null);
 
         ProductVariation productVariation = productVariationRepository.findById(productVariationId)
                 .orElseThrow(() -> new IllegalArgumentException("Product variation not found: " + productVariationId));
@@ -55,10 +70,23 @@ public class InventoryReservationService {
                 .quantity(quantity)
                 .status(ReservationStatus.RESERVED)
                 .reservedAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .expiresAt(expiresAt)
                 .build();
 
         inventoryReservationRepository.save(reservation);
+    }
+
+    @Transactional
+    public void setReservationsExpiryNull(Integer orderId) {
+        log.info("Setting expiry to null for reservations of order: {}", orderId);
+
+        List<InventoryReservation> reservations = inventoryReservationRepository
+                .findByOrderIdAndStatus(orderId, ReservationStatus.RESERVED);
+
+        for (InventoryReservation reservation : reservations) {
+            reservation.setExpiresAt(null);
+            inventoryReservationRepository.save(reservation);
+        }
     }
 
     @Transactional
@@ -67,6 +95,10 @@ public class InventoryReservationService {
 
         List<InventoryReservation> reservations = inventoryReservationRepository
                 .findByOrderIdAndStatus(orderId, ReservationStatus.RESERVED);
+
+        // Get order for user information
+        var order = orderRepository.findById(orderId.longValue())
+                .orElseThrow(() -> new IllegalStateException("Order not found: " + orderId));
 
         for (InventoryReservation reservation : reservations) {
             // Confirm the reservation
@@ -81,6 +113,16 @@ public class InventoryReservationService {
 
             productVariationRepository.save(productVariation);
             inventoryReservationRepository.save(reservation);
+        }
+
+        // Create stock export record for the sale
+        if (!reservations.isEmpty()) {
+            CreateStockExportFromOrderRequest request = CreateStockExportFromOrderRequest.builder()
+                    .note("Sale export for order " + orderId)
+                    .build();
+
+            stockExportService.createStockExportFromOrder(orderId, request, order.getUser().getId());
+            log.info("Created stock export for order: {}", orderId);
         }
     }
 

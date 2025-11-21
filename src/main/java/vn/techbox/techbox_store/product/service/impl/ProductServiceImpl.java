@@ -14,6 +14,7 @@ import vn.techbox.techbox_store.product.helpers.SortHelper;
 import vn.techbox.techbox_store.product.model.*;
 import vn.techbox.techbox_store.product.repository.*;
 import vn.techbox.techbox_store.product.mapper.ProductMapper;
+import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
 import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 import vn.techbox.techbox_store.product.specification.ProductSpecification;
@@ -45,8 +46,10 @@ public class ProductServiceImpl implements ProductService {
     private final ProductFilterHelper productFilterHelper;
     private final SortHelper sortHelper;
     private final ProductSpecification productSpecification;
+    private final ProductVariationRepository productVariationRepository;
     private final AttributeRepository attributeRepository;
-    
+    private final ProductPriceUpdateService productPriceUpdateService;
+
     @Override
     @Transactional(readOnly = true)
     public Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest) {
@@ -452,6 +455,60 @@ public class ProductServiceImpl implements ProductService {
         productRepository.save(product);
     }
     
+    @Override
+    public void updateProductRatingOnCreate(Integer productId, Double newRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        double newAvg = (currentAvg * currentTotal + newRating) / (currentTotal + 1);
+        product.setAverageRating(newAvg);
+        product.setTotalRatings(currentTotal + 1);
+        
+        productRepository.save(product);
+    }
+    
+    @Override
+    public void updateProductRatingOnUpdate(Integer productId, Double oldRating, Double newRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        if (currentTotal == 0) {
+            // Không nên xảy ra, nhưng phòng ngừa
+            product.setAverageRating(newRating);
+        } else {
+            double newAvg = (currentAvg * currentTotal - oldRating + newRating) / currentTotal;
+            product.setAverageRating(newAvg);
+        }
+        
+        productRepository.save(product);
+    }
+    
+    @Override
+    public void updateProductRatingOnDelete(Integer productId, Double oldRating) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + productId));
+        
+        double currentAvg = product.getAverageRating() != null ? product.getAverageRating() : 0.0;
+        int currentTotal = product.getTotalRatings() != null ? product.getTotalRatings() : 0;
+        
+        if (currentTotal <= 1) {
+            product.setAverageRating(0.0);
+            product.setTotalRatings(0);
+        } else {
+            double newAvg = (currentAvg * currentTotal - oldRating) / (currentTotal - 1);
+            product.setAverageRating(newAvg);
+            product.setTotalRatings(currentTotal - 1);
+        }
+        
+        productRepository.save(product);
+    }
+    
     /**
      * Publish product - Change status to PUBLISHED
      * Requirements:
@@ -479,14 +536,11 @@ public class ProductServiceImpl implements ProductService {
         // Update status to PUBLISHED
         product.setStatus(ProductStatus.PUBLISHED);
         product.setDeletedAt(null); // Clear deleted timestamp if any (should already be null for DRAFT)
+
+        productPriceUpdateService.updateProductPricing(id);
+        productRepository.save(product);
         
-        // Update display prices based on lowest price variation with promotion
-        // Get active variations using service
-        List<ProductVariation> variations = productVariationService.getActiveVariationEntitiesByProductId(id);
-        updateProductDisplayPrices(product, variations);
-        
-        Product savedProduct = productRepository.save(product);
-        return convertToResponse(savedProduct);
+        return convertToResponse(product);
     }
     
     /**
@@ -533,66 +587,15 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(ProductStatus.DELETED);
         product.setDeletedAt(java.time.LocalDateTime.now());
         
+        // Soft delete all active variations
+        List<ProductVariation> variations = productVariationService.getActiveVariationEntitiesByProductId(id);
+        for (ProductVariation variation : variations) {
+            variation.delete();
+            productVariationRepository.save(variation);
+        }
+        
         Product savedProduct = productRepository.save(product);
         return convertToResponse(savedProduct);
-    }
-    
-    /**
-     * Helper method to update product's display prices
-     * Calculates lowest price among all variations considering promotions
-     */
-    private void updateProductDisplayPrices(Product product, List<ProductVariation> variations) {
-        java.math.BigDecimal lowestOriginalPrice = null;
-        java.math.BigDecimal lowestSalePrice = null;
-        
-        for (ProductVariation variation : variations) {
-            java.math.BigDecimal originalPrice = variation.getPrice();
-            
-            // Find active promotion for this variation
-            Promotion activePromotion = promotionRepository
-                    .findActivePromotionsByProductVariationId(variation.getId(), java.time.LocalDateTime.now())
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-            
-            java.math.BigDecimal salePrice = originalPrice;
-            if (activePromotion != null) {
-                salePrice = calculateSalePrice(originalPrice, activePromotion);
-            }
-            
-            // Track lowest prices
-            if (lowestOriginalPrice == null || originalPrice.compareTo(lowestOriginalPrice) < 0) {
-                lowestOriginalPrice = originalPrice;
-            }
-            
-            if (lowestSalePrice == null || salePrice.compareTo(lowestSalePrice) < 0) {
-                lowestSalePrice = salePrice;
-            }
-        }
-        
-        // Update product's display prices (these are not stored in Product entity but calculated)
-        // Note: If you want to store these, add fields to Product entity
-        // For now, we don't need to store them as they're calculated on-the-fly in ProductMapper
-    }
-    
-    /**
-     * Helper method to calculate sale price with promotion
-     */
-    private java.math.BigDecimal calculateSalePrice(java.math.BigDecimal originalPrice, Promotion promotion) {
-        if (promotion == null) {
-            return originalPrice;
-        }
-        
-        java.math.BigDecimal discount;
-        if (promotion.getDiscountType() == PromotionType.PERCENTAGE) {
-            discount = originalPrice.multiply(promotion.getDiscountValue())
-                    .divide(java.math.BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-        } else {
-            discount = promotion.getDiscountValue();
-        }
-        
-        java.math.BigDecimal salePrice = originalPrice.subtract(discount);
-        return salePrice.max(java.math.BigDecimal.ZERO);
     }
     
 
@@ -636,6 +639,7 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new IllegalArgumentException("Attribute not found with id: " + attributeId));
             // Create ProductAttribute entity
             ProductAttribute productAttribute = ProductAttribute.builder()
+                    .productId(productId)
                     .attributeId(attribute.getId())
                     .value(value)
                     .build();

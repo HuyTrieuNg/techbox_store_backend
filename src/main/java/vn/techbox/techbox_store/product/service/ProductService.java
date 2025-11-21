@@ -49,6 +49,16 @@ public interface ProductService {
     // Cập nhật rating của sản phẩm
     void updateProductRating(Integer productId);
     
+    // Cập nhật rating khi tạo review mới
+    void updateProductRatingOnCreate(Integer productId, Double newRating);
+    
+    // Cập nhật rating khi update review
+    void updateProductRatingOnUpdate(Integer productId, Double oldRating, Double newRating);
+    
+    // Cập nhật rating khi xóa review
+    void updateProductRatingOnDelete(Integer productId, Double oldRating);
+    
+    
     // Internal use
     Optional<ProductResponse> getProductById(Integer id);
     

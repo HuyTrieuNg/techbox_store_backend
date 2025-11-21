@@ -24,11 +24,11 @@ public interface StockImportRepository extends JpaRepository<StockImport, Intege
      * Find all stock imports with filters
      */
     @Query("SELECT si FROM StockImport si WHERE " +
-           "(:fromDate IS NULL OR si.importDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR si.importDate <= :toDate) AND " +
-           "(:supplierId IS NULL OR si.supplierId = :supplierId) AND " +
-           "(:userId IS NULL OR si.userId = :userId) AND " +
-           "(:documentCode IS NULL OR :documentCode = '' OR LOWER(si.documentCode) LIKE LOWER(CONCAT('%', :documentCode, '%')))")
+           "(COALESCE(:fromDate, si.importDate) = si.importDate OR si.importDate >= :fromDate) AND " +
+           "(COALESCE(:toDate, si.importDate) = si.importDate OR si.importDate <= :toDate) AND " +
+           "(COALESCE(:supplierId, si.supplierId) = si.supplierId OR si.supplierId = :supplierId) AND " +
+           "(COALESCE(:userId, si.userId) = si.userId OR si.userId = :userId) AND " +
+           "(COALESCE(:documentCode, '') = '' OR LOWER(si.documentCode) LIKE LOWER(CONCAT('%', :documentCode, '%')))")
     Page<StockImport> findAllWithFilters(
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
