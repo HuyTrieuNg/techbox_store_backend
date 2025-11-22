@@ -13,6 +13,9 @@ import vn.techbox.techbox_store.product.repository.BrandRepository;
 import vn.techbox.techbox_store.product.repository.CategoryRepository;
 import vn.techbox.techbox_store.product.repository.ProductRepository;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
+import vn.techbox.techbox_store.product.repository.AttributeRepository;
+import vn.techbox.techbox_store.product.repository.ProductAttributeRepository;
+import vn.techbox.techbox_store.product.repository.VariationAttributeRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,13 +31,26 @@ public class ProductSeeder implements DataSeeder {
     private final ProductVariationRepository productVariationRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final AttributeRepository attributeRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final VariationAttributeRepository variationAttributeRepository;
     private final ObjectMapper objectMapper;
+
+    // Cache for attributes to avoid duplicate creation
+    private final Map<String, Attribute> attributeCache = new HashMap<>();
 
     @Override
     @Transactional
     public void seed() {
         try {
             log.info("Starting Product seeding from JSON...");
+
+            // Pre-load all existing attributes into cache
+            List<Attribute> existingAttributes = attributeRepository.findAll();
+            for (Attribute attr : existingAttributes) {
+                attributeCache.put(attr.getName().toLowerCase().trim(), attr);
+            }
+            log.info("Loaded {} existing attributes into cache", attributeCache.size());
 
             // Read JSON file from resources
             ClassPathResource resource = new ClassPathResource("seed_data/products.json");
@@ -50,6 +66,8 @@ public class ProductSeeder implements DataSeeder {
 
             int productCount = 0;
             int variationCount = 0;
+            int productAttributeCount = 0;
+            int variationAttributeCount = 0;
 
             // Process each product
             for (Map.Entry<String, ProductSeedDto> entry : productsMap.entrySet()) {
@@ -79,6 +97,36 @@ public class ProductSeeder implements DataSeeder {
 
                     product = productRepository.save(product);
                     productCount++;
+
+                    // Process common_specs (product-level attributes)
+                    if (dto.getCommonSpecs() != null && !dto.getCommonSpecs().isEmpty()) {
+                        for (Map.Entry<String, String> specEntry : dto.getCommonSpecs().entrySet()) {
+                            String attributeName = specEntry.getKey();
+                            String attributeValue = specEntry.getValue();
+
+                            if (attributeValue == null || attributeValue.trim().isEmpty()) {
+                                continue;
+                            }
+
+                            try {
+                                // Find or create attribute
+                                Attribute attribute = findOrCreateAttribute(attributeName);
+
+                                // Create product attribute
+                                ProductAttribute productAttribute = ProductAttribute.builder()
+                                        .productId(product.getId())
+                                        .attributeId(attribute.getId())
+                                        .value(attributeValue)
+                                        .build();
+
+                                productAttributeRepository.save(productAttribute);
+                                productAttributeCount++;
+                            } catch (Exception e) {
+                                log.warn("Error creating product attribute {} for product {}: {}",
+                                    attributeName, dto.getName(), e.getMessage());
+                            }
+                        }
+                    }
 
                     // Create product variations
                     if (dto.getVariants() != null && !dto.getVariants().isEmpty()) {
@@ -114,6 +162,36 @@ public class ProductSeeder implements DataSeeder {
                                     }
                                 }
 
+                                // Process variation attributes
+                                if (variantDto.getAttributes() != null && !variantDto.getAttributes().isEmpty()) {
+                                    for (Map.Entry<String, String> attrEntry : variantDto.getAttributes().entrySet()) {
+                                        String attributeName = attrEntry.getKey();
+                                        String attributeValue = attrEntry.getValue();
+
+                                        if (attributeValue == null || attributeValue.trim().isEmpty()) {
+                                            continue;
+                                        }
+
+                                        try {
+                                            // Find or create attribute
+                                            Attribute attribute = findOrCreateAttribute(attributeName);
+
+                                            // Create variation attribute
+                                            VariationAttribute variationAttribute = VariationAttribute.builder()
+                                                    .productVariationId(variation.getId())
+                                                    .attributeId(attribute.getId())
+                                                    .value(attributeValue)
+                                                    .build();
+
+                                            variationAttributeRepository.save(variationAttribute);
+                                            variationAttributeCount++;
+                                        } catch (Exception e) {
+                                            log.warn("Error creating variation attribute {} for variant {}: {}",
+                                                attributeName, variantDto.getName(), e.getMessage());
+                                        }
+                                    }
+                                }
+
                             } catch (NumberFormatException e) {
                                 log.warn("Invalid price for variant: {} - {}", dto.getName(), variantDto.getName());
                             }
@@ -126,6 +204,8 @@ public class ProductSeeder implements DataSeeder {
             }
 
             log.info("✓ Successfully seeded {} products with {} variations", productCount, variationCount);
+            log.info("✓ Created {} product attributes (common specs)", productAttributeCount);
+            log.info("✓ Created {} variation attributes", variationAttributeCount);
 
         } catch (IOException e) {
             log.error("Failed to load products from JSON file", e);
@@ -143,6 +223,48 @@ public class ProductSeeder implements DataSeeder {
                             .build();
                     return brandRepository.save(newBrand);
                 });
+    }
+
+    private synchronized Attribute findOrCreateAttribute(String attributeName) {
+        if (attributeName == null || attributeName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Attribute name cannot be null or empty");
+        }
+
+        String normalizedName = attributeName.trim();
+        String cacheKey = normalizedName.toLowerCase();
+
+        // Check cache first
+        if (attributeCache.containsKey(cacheKey)) {
+            return attributeCache.get(cacheKey);
+        }
+
+        // Try to find in database
+        try {
+            Optional<Attribute> existingAttr = attributeRepository.findByName(normalizedName);
+            if (existingAttr.isPresent()) {
+                attributeCache.put(cacheKey, existingAttr.get());
+                return existingAttr.get();
+            }
+        } catch (Exception e) {
+            // If multiple results found, get the first one
+            log.warn("Multiple attributes found for name: {}, using first one", normalizedName);
+            List<Attribute> attrs = attributeRepository.searchByName(normalizedName);
+            if (!attrs.isEmpty()) {
+                Attribute attr = attrs.get(0);
+                attributeCache.put(cacheKey, attr);
+                return attr;
+            }
+        }
+
+        // Create new attribute
+        Attribute newAttribute = Attribute.builder()
+                .name(normalizedName)
+                .build();
+        newAttribute = attributeRepository.save(newAttribute);
+        attributeCache.put(cacheKey, newAttribute);
+
+        log.debug("Created new attribute: {}", normalizedName);
+        return newAttribute;
     }
 
     private Category findCategoryByPath(String categoryPath) {
