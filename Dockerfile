@@ -10,6 +10,9 @@ RUN mvn -B -DskipTests clean package
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user
 RUN useradd -r -u 1001 -m appuser
 COPY --from=build /app/target/*.jar /app/app.jar

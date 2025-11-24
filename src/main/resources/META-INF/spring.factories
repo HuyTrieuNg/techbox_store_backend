@@ -1,2 +1,3 @@
-org.springframework.boot.env.EnvironmentPostProcessor=vn.techbox.techbox_store.config.DotenvConfig
+# Removed DotenvConfig registration because the class was deleted.
+# org.springframework.boot.env.EnvironmentPostProcessor=vn.techbox.techbox_store.config.DotenvConfig
 
