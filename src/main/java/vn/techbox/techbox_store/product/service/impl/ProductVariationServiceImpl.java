@@ -75,9 +75,14 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             throw new IllegalArgumentException("SKU already exists: " + request.getSku());
         }
 
-        // Ensure the parent product exists and is active
-        Product product = productRepository.findActiveById(request.getProductId())
-                .orElseThrow(() -> new IllegalArgumentException("Active product not found with id: " + request.getProductId()));
+        // Ensure the parent product exists and is not soft-deleted
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + request.getProductId()));
+
+        // Check if product is soft-deleted
+        if (product.getDeletedAt() != null) {
+            throw new IllegalArgumentException("Cannot add variations to deleted products");
+        }
 
         // Check if product is in DRAFT or PUBLISHED status
         if (product.getStatus() != ProductStatus.DRAFT && product.getStatus() != ProductStatus.PUBLISHED) {
