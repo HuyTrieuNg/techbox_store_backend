@@ -62,10 +62,10 @@ public class Product {
     private Integer totalRatings = 0;
 
     // Phi chuẩn hóa - thông tin giá và giảm giá của biến thể có giá thấp nhất
-    @Column(name = "display_original_price", precision = 10, scale = 2)
+    @Column(name = "display_original_price", precision = 11, scale = 2)
     private BigDecimal displayOriginalPrice;
     
-    @Column(name = "display_sale_price", precision = 10, scale = 2)
+    @Column(name = "display_sale_price", precision = 11, scale = 2)
     private BigDecimal displaySalePrice;
     
     @Column(name = "discount_type", length = 50)
