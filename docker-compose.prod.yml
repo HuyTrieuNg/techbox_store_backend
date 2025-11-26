@@ -1,12 +1,38 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: techbox-store:latest
-    container_name: techbox_store_prod
+  nginx:
+    image: nginx:alpine
+    container_name: techbox_nginx_prod
     ports:
-      - "${SERVER_PORT:-8080}:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - techbox-network
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+
+  certbot:
+    image: certbot/certbot
+    container_name: techbox_certbot_prod
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+    networks:
+      - techbox-network
+
+  app:
+    image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest
+    container_name: techbox_store_prod
+    expose:
+      - "8080"
     env_file:
       - .env.production
     depends_on:
