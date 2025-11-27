@@ -6,6 +6,8 @@ import vn.techbox.techbox_store.order.model.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface OrderService {
 
     OrderResponse createOrder(CreateOrderRequest request, Integer userId);
@@ -19,4 +21,5 @@ public interface OrderService {
     Page<OrderResponse> getOrdersByUserIdAndStatus(Integer userId, OrderStatus status, Pageable pageable);
     OrderResponse updateOrderStatus(Long orderId, OrderStatus status);
     OrderResponse cancelOrder(Long orderId, Integer userId);
+    List<String> getRecentProductSpus(Integer userId, int k);
 }
