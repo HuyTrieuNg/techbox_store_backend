@@ -20,12 +20,17 @@ public class ProductSeedDto {
     @JsonProperty("common_specs")
     private Map<String, String> commonSpecs;
     
+    @JsonProperty("SPU")
+    private String spu;
+
     @Data
     public static class VariantSeedDto {
         private String name;
         private String price;
         private List<String> images;
         private Map<String, String> attributes;
+        @JsonProperty("SKU")
+        private String sku;
     }
 }
 

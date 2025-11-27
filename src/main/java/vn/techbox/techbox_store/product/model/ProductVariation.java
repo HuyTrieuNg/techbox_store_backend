@@ -28,7 +28,7 @@ public class ProductVariation {
     @Column(name = "product_id", nullable = false)
     private Integer productId;
     
-    @Column(name = "price", nullable = false, precision = 10, scale = 2)
+    @Column(name = "price", nullable = false, precision = 11, scale = 2)
     private BigDecimal price;
     
     @Column(name = "sku", unique = true, length = 35)
@@ -46,7 +46,7 @@ public class ProductVariation {
     @Column(name = "version")
     private Integer version;
 
-    @Column(name = "avg_cost_price", precision = 10, scale = 2)
+    @Column(name = "avg_cost_price", precision = 11, scale = 2)
     private BigDecimal avgCostPrice;
 
     @Column(name = "created_at")
