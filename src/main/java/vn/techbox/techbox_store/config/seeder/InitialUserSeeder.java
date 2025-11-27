@@ -85,6 +85,7 @@ public class InitialUserSeeder implements CommandLineRunner {
         var user = User.builder()
                 .firstName(firstName)
                 .lastName(lastName)
+                .phone("0987123456")
                 .account(account)
                 .roles(new HashSet<>())
                 .build();
