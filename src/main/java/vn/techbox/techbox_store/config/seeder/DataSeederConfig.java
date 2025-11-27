@@ -23,7 +23,6 @@ public class DataSeederConfig {
 
     @Bean
     @Order(Integer.MAX_VALUE) // Run after all other beans are initialized
-    @Profile({"dev", "development"}) // Only run in development
     @org.springframework.context.annotation.DependsOn("entityManagerFactory") // Wait for JPA to create tables
     public CommandLineRunner runSeeders() {
         return args -> {
