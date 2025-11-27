@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.product.service;
 import org.springframework.data.domain.Page;
 import vn.techbox.techbox_store.product.dto.productDto.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,6 +17,9 @@ public interface ProductService {
     
     // Search & Filter với nhiều tiêu chí + phân trang
     Page<ProductListResponse> filterProducts(ProductFilterRequest filterRequest);
+    
+    // Lấy danh sách sản phẩm theo danh sách SPU
+    Page<ProductListResponse> getProductsBySpus(List<String> spus, int page, int size);
     
     Page<ProductManagementListResponse> filterProductsForManagement(ProductFilterRequest filterRequest);
 

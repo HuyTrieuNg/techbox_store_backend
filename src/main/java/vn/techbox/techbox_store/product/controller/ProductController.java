@@ -86,6 +86,16 @@ public class ProductController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/by-spus")
+    public ResponseEntity<Page<ProductListResponse>> getProductsBySpus(
+            @RequestParam List<String> spus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<ProductListResponse> products = productService.getProductsBySpus(spus, page, size);
+        return ResponseEntity.ok(products);
+    }
+
     // end of public endpoints
     // ============================================
     
