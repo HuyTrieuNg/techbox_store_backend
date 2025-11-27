@@ -143,7 +143,7 @@ public class ProductSeeder implements DataSeeder {
                                         .productId(product.getId())
                                         .variationName(variantDto.getName())
                                         .price(price)
-                                        .stockQuantity(100)
+                                        .stockQuantity(0)
                                         .reservedQuantity(0)
                                         .avgCostPrice(BigDecimal.ZERO)
                                         .build();
