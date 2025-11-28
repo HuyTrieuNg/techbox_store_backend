@@ -23,6 +23,7 @@ public class ProductDetailResponse {
     private String description;
     private Integer categoryId;
     private String categoryName;
+    private String spu;
     private Integer brandId;
     private String brandName;
     private String imageUrl;
@@ -70,6 +71,7 @@ public class ProductDetailResponse {
         // Basic variation information
         private Integer id;
         private String variationName;
+        private String sku;
         private BigDecimal price;
         private Integer availableQuantity;  // Số lượng khả dụng (stockQuantity - reservedQuantity)
         

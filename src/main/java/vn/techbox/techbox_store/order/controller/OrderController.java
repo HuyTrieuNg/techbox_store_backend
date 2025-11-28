@@ -19,6 +19,7 @@ import vn.techbox.techbox_store.order.model.OrderStatus;
 import vn.techbox.techbox_store.order.service.OrderService;
 import vn.techbox.techbox_store.user.security.UserPrincipal;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -64,6 +65,19 @@ public class OrderController {
         }
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/recent-products-spus")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @Operation(summary = "Get recent product SPUs", description = "Get list of SPUs from recent orders of the authenticated user")
+    public ResponseEntity<List<String>> getRecentProductSpus(
+            @RequestParam(defaultValue = "10") int k,
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        Integer userId = userPrincipal.getId();
+        List<String> spus = orderService.getRecentProductSpus(userId, k);
+
+        return ResponseEntity.ok(spus);
     }
 
     @PostMapping

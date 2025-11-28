@@ -70,6 +70,14 @@ public class ProductServiceImpl implements ProductService {
         // Map to response
         return productsPage.map(productMapper::toListResponse);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductListResponse> getProductsBySpus(List<String> spus, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productsPage = productRepository.findBySpuIn(spus, pageable);
+        return productsPage.map(productMapper::toListResponse);
+    }
     
 
     @Override

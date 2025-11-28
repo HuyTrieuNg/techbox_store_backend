@@ -31,4 +31,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
        // Find products by list of IDs and not deleted
        @Query("SELECT p FROM Product p WHERE p.id IN :ids AND p.deletedAt IS NULL")
        Page<Product> findByIdInAndDeletedAtIsNull(@Param("ids") List<Integer> ids, Pageable pageable);
+
+       // Find products by list of SPUs
+       Page<Product> findBySpuIn(List<String> spus, Pageable pageable);
 }

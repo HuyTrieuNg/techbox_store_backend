@@ -130,6 +130,7 @@ public class ProductSeeder implements DataSeeder {
         Product product = Product.builder()
                 .name(dto.getName())
                 .description(dto.getDescriptionMd())
+                .warrantyMonths(ThreadLocalRandom.current().nextInt(3, 25))
                 .categoryId(category.getId())
                 .brandId(brand.getId())
                 .imageUrl(dto.getImage())

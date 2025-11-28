@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -31,4 +32,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     boolean existsByOrderCode(String orderCode);
 
     Optional<Order> findByPaymentInfo_Id(Long paymentInfoId);
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.productVariation pv LEFT JOIN FETCH pv.product WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
+    Page<Order> findTopOrdersByUserId(@Param("userId") Integer userId, Pageable pageable);
 }

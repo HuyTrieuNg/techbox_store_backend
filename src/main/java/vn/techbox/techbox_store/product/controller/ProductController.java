@@ -1,13 +1,11 @@
 package vn.techbox.techbox_store.product.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
 import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
@@ -37,7 +35,6 @@ public class ProductController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
-    private final ObjectMapper objectMapper;
 
 
     // ============================================
@@ -84,6 +81,16 @@ public class ProductController {
         return productService.getProductDetailById(id)
                 .map(product -> ResponseEntity.ok(product))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/by-spus")
+    public ResponseEntity<Page<ProductListResponse>> getProductsBySpus(
+            @RequestParam List<String> spus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<ProductListResponse> products = productService.getProductsBySpus(spus, page, size);
+        return ResponseEntity.ok(products);
     }
 
     // end of public endpoints

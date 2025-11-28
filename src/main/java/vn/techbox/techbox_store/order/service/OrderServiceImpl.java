@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.order.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +47,6 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentRepository payment;
     private final InventoryReservationService inventoryReservationService;
     private final VoucherReservationService voucherReservationService;
-    private final OrderConfirmationService orderConfirmationService;
 
     @Override
     @Transactional
@@ -353,6 +353,24 @@ public class OrderServiceImpl implements OrderService {
         log.info("Order {} cancelled successfully", orderId);
 
         return orderMappingService.toOrderResponse(savedOrder);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getRecentProductSpus(Integer userId, int k) {
+        List<Order> recentOrders = orderRepository.findTopOrdersByUserId(userId, PageRequest.of(0, 10)).getContent(); // Get top 10 recent orders
+        List<String> spus = new ArrayList<>();
+        for (Order order : recentOrders) {
+            for (OrderItem item : order.getOrderItems()) {
+                if (spus.size() >= k) break;
+                String spu = item.getProductVariation().getProduct().getSpu();
+                if (!spus.contains(spu)) {
+                    spus.add(spu);
+                }
+            }
+            if (spus.size() >= k) break;
+        }
+        return spus;
     }
 
     private String generateOrderCode() {
