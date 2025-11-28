@@ -86,6 +86,7 @@ public class InitialUserSeeder implements CommandLineRunner {
                 .firstName(firstName)
                 .lastName(lastName)
                 .account(account)
+                .phone("0987123456")
                 .roles(new HashSet<>())
                 .build();
         var saved = userRepository.save(user);
