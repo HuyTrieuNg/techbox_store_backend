@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import vn.techbox.techbox_store.product.model.ProductStatus;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.time.LocalDateTime;
 
 /**

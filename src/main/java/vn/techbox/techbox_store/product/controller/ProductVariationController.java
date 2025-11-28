@@ -16,9 +16,7 @@ import vn.techbox.techbox_store.product.dto.productDto.ProductVariationWithImage
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

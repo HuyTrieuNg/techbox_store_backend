@@ -47,7 +47,6 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentRepository payment;
     private final InventoryReservationService inventoryReservationService;
     private final VoucherReservationService voucherReservationService;
-    private final OrderConfirmationService orderConfirmationService;
 
     @Override
     @Transactional
