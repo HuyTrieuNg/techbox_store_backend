@@ -8,17 +8,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.techbox.techbox_store.cloudinary.service.CloudinaryService;
+import vn.techbox.techbox_store.product.dto.productDto.ProductDetailResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationCreateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationManagementResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationWithImagesRequest;
+import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
+import vn.techbox.techbox_store.product.service.sync.SyncService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/product-variations")
@@ -26,6 +30,8 @@ import java.util.Map;
 public class ProductVariationController {
     
     private final ProductVariationService productVariationService;
+    private final ProductService productService;
+    private final SyncService syncService;
     private final CloudinaryService cloudinaryService;
     
     /**
@@ -38,19 +44,8 @@ public class ProductVariationController {
         return ResponseEntity.ok(variations);
     }
     
-    /**
-     * Get all variations for management by product ID with optional deleted filter
-     * Used for admin/management view and edit
-     * 
-     * @param productId The ID of the product
-     * @param deleted Optional filter:
-     *                - Not provided (null): return all variations
-     *                - ?deleted=false: return only active variations
-     *                - ?deleted=true: return only soft-deleted variations
-     * @return List of variations matching the filter criteria
-     */
 
-    // @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/management/product/{productId}")
     public ResponseEntity<List<ProductVariationManagementResponse>> getVariationsForManagement(
             @PathVariable Integer productId,
@@ -69,45 +64,6 @@ public class ProductVariationController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    // @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
-    // @PostMapping(consumes = {"multipart/form-data"})
-    // public ResponseEntity<?> createProductVariation(
-    //         @RequestParam("variationData") String variationDataJson,
-    //         @RequestParam(value = "images", required = false) MultipartFile[] images) {
-        
-    //     try {
-    //         ObjectMapper objectMapper = new ObjectMapper();
-    //         ProductVariationCreateRequest request = objectMapper.readValue(variationDataJson, ProductVariationCreateRequest.class);
-            
-    //         // Upload images to Cloudinary if provided
-    //         List<String> imageUrls = new ArrayList<>();
-    //         List<String> imagePublicIds = new ArrayList<>();
-            
-    //         if (images != null && images.length > 0) {
-    //             for (MultipartFile image : images) {
-    //                 if (!image.isEmpty()) {
-    //                     @SuppressWarnings("unchecked")
-    //                     Map<String, Object> uploadResult = (Map<String, Object>) cloudinaryService.uploadFile(image, "product_variation_images");
-    //                     imageUrls.add((String) uploadResult.get("secure_url"));
-    //                     imagePublicIds.add((String) uploadResult.get("public_id"));
-    //                 }
-    //             }
-    //         }
-            
-    //         request.setImageUrls(imageUrls);
-    //         request.setImagePublicIds(imagePublicIds);
-            
-    //         ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
-    //         return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
-            
-    //     } catch (IOException e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(Map.of("error", "Failed to process request or upload images: " + e.getMessage()));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .body(Map.of("error", "Failed to create product variation: " + e.getMessage()));
-    //     }
-    // }
 
     @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping(consumes = {"multipart/form-data"})
@@ -146,6 +102,14 @@ public class ProductVariationController {
                     .build();
 
             ProductVariationResponse createdVariation = productVariationService.createProductVariation(createRequest);
+
+            Integer productId = request.getProductId();
+            Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
+            if (prdUpdate.isPresent()) {    
+                ProductDetailResponse product = prdUpdate.get();
+                syncService.syncProductUpdate(product); 
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
 
         } catch (IOException e) {
@@ -169,7 +133,17 @@ public class ProductVariationController {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> createProductVariationJson(@RequestBody ProductVariationCreateRequest request) {
         try {
+
+            
             ProductVariationResponse createdVariation = productVariationService.createProductVariation(request);
+            
+            Integer productId = request.getProductId();
+            Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
+            if (prdUpdate.isPresent()) {    
+                ProductDetailResponse product = prdUpdate.get();
+                syncService.syncProductUpdate(product); 
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(createdVariation);
 
         } catch (IllegalArgumentException e) {
@@ -201,6 +175,14 @@ public class ProductVariationController {
             }
 
             ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
+
+            Integer productId = updatedVariation.getProductId();
+            Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
+            if (prdUpdate.isPresent()) {    
+                ProductDetailResponse product = prdUpdate.get();
+                syncService.syncProductUpdate(product); 
+            }
+
             return ResponseEntity.ok(updatedVariation);
 
         } catch (IllegalArgumentException e) {
@@ -211,21 +193,7 @@ public class ProductVariationController {
                     .body(Map.of("error", "Failed to update product variation: " + e.getMessage(), "type", "INTERNAL_ERROR"));
         }
     }
-    //                 }
-    //             }
-    //         }
-            
-    //         ProductVariationResponse updatedVariation = productVariationService.updateProductVariation(id, request);
-    //         return ResponseEntity.ok(updatedVariation);
-            
-    //     } catch (IOException e) {
-    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-    //                 .body(Map.of("error", "Failed to process request or images: " + e.getMessage()));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-    //                 .body(Map.of("error", "Failed to update product variation: " + e.getMessage()));
-    //     }
-    // }
+   
     
     @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
     @DeleteMapping("/{id}")
@@ -233,15 +201,6 @@ public class ProductVariationController {
         productVariationService.deleteProductVariation(id);
         return ResponseEntity.noContent().build();
     }
-
-
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
-    @DeleteMapping("/hard/{id}")
-    public ResponseEntity<Void> deleteProductVariationHard(@PathVariable Integer id) {
-        productVariationService.deleteProductVariationHard(id);
-        return ResponseEntity.noContent().build();
-    }
-
     
     
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
@@ -253,7 +212,6 @@ public class ProductVariationController {
     
     /**
      * Get variation by SKU
-     * Useful for inventory management
      */
     @GetMapping("/sku/{sku}")
     public ResponseEntity<ProductVariationResponse> getVariationBySku(@PathVariable String sku) {
