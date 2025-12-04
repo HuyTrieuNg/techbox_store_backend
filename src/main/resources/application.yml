@@ -69,3 +69,8 @@ user:
 
 inventory:
   min-stock-threshold: ${INVENTORY_MIN_STOCK_THRESHOLD:30}
+
+sync:
+  endpoint:
+    url: ${SYNC_ENDPOINT_URL:http://localhost:8000}
+    api-key: ${SYNC_API_KEY:}

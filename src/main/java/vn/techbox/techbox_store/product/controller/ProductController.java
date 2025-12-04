@@ -18,10 +18,12 @@ import vn.techbox.techbox_store.product.dto.productDto.ProductUpdateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductWithAttributesRequest;
 import vn.techbox.techbox_store.product.model.ProductStatus;
 import vn.techbox.techbox_store.product.service.ProductService;
+import vn.techbox.techbox_store.product.service.sync.SyncService;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -35,6 +37,7 @@ public class ProductController {
     
     private final ProductService productService;
     private final CloudinaryService cloudinaryService;
+    private final SyncService syncService;
 
 
     // ============================================
@@ -155,11 +158,8 @@ public class ProductController {
 
     /**
      * Get full product details for management
-     * Includes all information for admin to view and edit
-     * Does NOT filter soft deleted products
-     * Does NOT include variations (use separate variation API)
      */
-    // @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @PreAuthorize("hasAuthority('PRODUCT:READ')")
     @GetMapping("/management/{id}")
     public ResponseEntity<?> getProductForManagement(@PathVariable Integer id) {
         try {
@@ -182,6 +182,15 @@ public class ProductController {
     public ResponseEntity<?> publishProduct(@PathVariable Integer id) {
         try {
             ProductResponse response = productService.publishProduct(id);
+            
+            // Sync AIserver about update
+            Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(id);
+
+            if (prdUpdate.isPresent()) {    
+                ProductDetailResponse product = prdUpdate.get();
+                syncService.syncProductUpdate(product); 
+}
+            
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -201,6 +210,10 @@ public class ProductController {
     public ResponseEntity<?> draftProduct(@PathVariable Integer id) {
         try {
             ProductResponse response = productService.draftProduct(id);
+            
+            // sync AIserver about deletion
+            syncService.syncProductDelete(id);
+
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -218,6 +231,10 @@ public class ProductController {
     public ResponseEntity<?> deleteProduct(@PathVariable Integer id) {
         try {
             ProductResponse response = productService.deleteProductSoft(id);
+
+            // sync AIserver about deletion
+            syncService.syncProductDelete(id);
+
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -228,26 +245,10 @@ public class ProductController {
         }
     }
 
-    /**
-     * Hard delete product - Permanently remove a product by ID
-     * Requirements:
-     * - Product must be soft deleted (status = DELETED)
-     */
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
-    @DeleteMapping("/hard/{id}")
-    public ResponseEntity<?> deleteProductHard(@PathVariable Integer id) {
-        try {
-            productService.deleteProductHard(id);
-            return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
-        }
-    }
 
     /**
      * Create a new product with attributes using JSON (alternative to multipart endpoint)
      * POST /admin/products/json
-     * Image URLs and public IDs must be pre-uploaded to Cloudinary
      */
     @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
     @PostMapping(consumes = "application/json")
@@ -270,7 +271,6 @@ public class ProductController {
     /**
      * Update an existing product
      * PUT /api/products/{id}
-     * Supports partial updates - only provided fields will be updated
      */
     @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
     @PutMapping("/{id}")
@@ -302,6 +302,23 @@ public class ProductController {
             }
 
             ProductResponse updatedProduct = productService.updateProduct(id, request);
+            
+            // sync AIserver only if product is published
+            try {
+                if (updatedProduct.getStatus() == ProductStatus.PUBLISHED) {
+                Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(id);
+
+                    if (prdUpdate.isPresent()) {    
+                        ProductDetailResponse product = prdUpdate.get();
+                        syncService.syncProductUpdate(product); 
+                    }
+                }
+                } catch (Exception e) {
+                    // Log error but continue  
+                    System.err.println("Failed to sync product update for product ID: " + id + ", error: " + e.getMessage());
+                }
+            
+            
             return ResponseEntity.ok(updatedProduct);
 
         } catch (IllegalArgumentException e) {
@@ -317,18 +334,18 @@ public class ProductController {
      * Add attributes to an existing product
      * POST /admin/products/{id}/attributes
      */
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
-    @PostMapping("/{id}/attributes")
-    public ResponseEntity<?> addAttributesToProduct(
-            @PathVariable Integer id,
-            @RequestBody Map<Integer, String> attributes) {
-        try {
-            productService.addAttributesToProduct(id, attributes);
-            return ResponseEntity.ok(Map.of("message", "Attributes added successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
-    }
+    // @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
+    // @PostMapping("/{id}/attributes")
+    // public ResponseEntity<?> addAttributesToProduct(
+    //         @PathVariable Integer id,
+    //         @RequestBody Map<Integer, String> attributes) {
+    //     try {
+    //         productService.addAttributesToProduct(id, attributes);
+    //         return ResponseEntity.ok(Map.of("message", "Attributes added successfully"));
+    //     } catch (IllegalArgumentException e) {
+    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+    //     }
+    // }
 
 
     // end of management endpoints

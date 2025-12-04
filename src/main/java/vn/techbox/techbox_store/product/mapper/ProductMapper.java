@@ -119,6 +119,7 @@ public class ProductMapper {
         // Convert product attributes to DTOs
         List<ProductDetailResponse.AttributeDto> productAttributeDtos = 
                 productAttributes.stream()
+                    .filter(pa -> pa.getAttribute() != null)
                     .map(pa -> ProductDetailResponse.AttributeDto.builder()
                             .id(pa.getAttributeId())
                             .name(pa.getAttribute().getName())
@@ -179,6 +180,7 @@ public class ProductMapper {
         
         // Convert variation attributes to DTOs
         List<ProductDetailResponse.AttributeDto> attributeDtos = variationAttributes.stream()
+                .filter(va -> va.getAttribute() != null)
                 .map(va -> ProductDetailResponse.AttributeDto.builder()
                         .id(va.getAttributeId())
                         .name(va.getAttribute().getName())
