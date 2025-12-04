@@ -189,7 +189,7 @@ public class ProductController {
             if (prdUpdate.isPresent()) {    
                 ProductDetailResponse product = prdUpdate.get();
                 syncService.syncProductUpdate(product); 
-}
+            }
             
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

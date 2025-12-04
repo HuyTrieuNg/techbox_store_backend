@@ -23,6 +23,7 @@ public class StockAdjustmentMapper {
 
         return StockAdjustmentDTO.builder()
                 .id(stockAdjustment.getId())
+                .documentCode(stockAdjustment.getDocumentCode())
                 .userId(stockAdjustment.getUserId())
                 .userName(null) // Will be populated by service if needed
                 .checkName(stockAdjustment.getCheckName())
@@ -43,6 +44,7 @@ public class StockAdjustmentMapper {
 
         return StockAdjustmentDetailDTO.builder()
                 .id(stockAdjustment.getId())
+                .documentCode(stockAdjustment.getDocumentCode())
                 .userId(stockAdjustment.getUserId())
                 .userName(null) // Will be populated by service if needed
                 .checkName(stockAdjustment.getCheckName())
