@@ -23,6 +23,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
+    // Find all orders except those with the given status (e.g., exclude PENDING)
+    Page<Order> findByStatusNotOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
+
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId AND o.status = :status ORDER BY o.createdAt DESC")
     Page<Order> findByUserIdAndStatusOrderByCreatedAtDesc(@Param("userId") Integer userId, @Param("status") OrderStatus status, Pageable pageable);
 

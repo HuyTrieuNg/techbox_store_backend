@@ -10,6 +10,7 @@ import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryCreateRequest;
 import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryResponse;
 import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
 import vn.techbox.techbox_store.product.service.CategoryService;
+import vn.techbox.techbox_store.product.exception.CategoryDeleteException;
 
 import java.util.List;
 
@@ -75,6 +76,9 @@ public class CategoryController {
         try {
             categoryService.deleteCategory(id);
             return ResponseEntity.noContent().build();
+        } catch (CategoryDeleteException e) {
+            // Rethrow so GlobalExceptionHandler handles it and returns 409 + message
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
