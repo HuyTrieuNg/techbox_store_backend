@@ -79,6 +79,7 @@ public interface ProductStatsRepository extends JpaRepository<Product, Integer> 
             p.spu,
             pv.id,
             pv.sku,
+            pv.variationName,
             pv.stockQuantity,
             :threshold
         )

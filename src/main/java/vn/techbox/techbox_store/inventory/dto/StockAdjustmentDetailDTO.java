@@ -16,6 +16,7 @@ public class StockAdjustmentDetailDTO {
     private Integer id;
     private Integer userId;
     private String userName;
+    private String documentCode;
     private String checkName;
     private LocalDateTime adjustmentDate;
     private String note;

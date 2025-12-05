@@ -124,6 +124,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
+    // ===== BRAND DELETE EXCEPTIONS =====
+    @ExceptionHandler(vn.techbox.techbox_store.product.exception.BrandDeleteException.class)
+    public ResponseEntity<ApiErrorResponse> handleBrandDeleteException(
+            vn.techbox.techbox_store.product.exception.BrandDeleteException ex, WebRequest request) {
+        logger.warn("Brand delete failed: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("BRAND_HAS_PRODUCTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    // ===== CATEGORY DELETE EXCEPTIONS =====
+    @ExceptionHandler(vn.techbox.techbox_store.product.exception.CategoryDeleteException.class)
+    public ResponseEntity<ApiErrorResponse> handleCategoryDeleteException(
+            vn.techbox.techbox_store.product.exception.CategoryDeleteException ex, WebRequest request) {
+        logger.warn("Category delete failed: {} - Path: {}", ex.getMessage(), request.getDescription(false));
+
+        ApiErrorResponse errorResponse = new ApiErrorResponse("CATEGORY_HAS_PRODUCTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
     // ===== GENERIC EXCEPTION =====
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {

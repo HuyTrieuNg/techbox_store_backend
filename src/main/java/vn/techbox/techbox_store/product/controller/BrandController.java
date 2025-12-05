@@ -10,6 +10,7 @@ import vn.techbox.techbox_store.product.dto.brandDto.BrandCreateRequest;
 import vn.techbox.techbox_store.product.dto.brandDto.BrandResponse;
 import vn.techbox.techbox_store.product.dto.brandDto.BrandUpdateRequest;
 import vn.techbox.techbox_store.product.service.BrandService;
+import vn.techbox.techbox_store.product.exception.BrandDeleteException;
 
 import java.util.List;
 
@@ -63,6 +64,9 @@ public class BrandController {
         try {
             brandService.deleteBrand(id);
             return ResponseEntity.noContent().build();
+        } catch (BrandDeleteException e) {
+            // Rethrow so GlobalExceptionHandler handles it and returns 409 + message
+            throw e;
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }

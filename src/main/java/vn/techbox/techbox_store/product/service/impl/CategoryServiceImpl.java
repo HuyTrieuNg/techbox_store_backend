@@ -9,6 +9,8 @@ import vn.techbox.techbox_store.product.dto.CategoryDto.CategoryUpdateRequest;
 import vn.techbox.techbox_store.product.mapper.CategoryMapper;
 import vn.techbox.techbox_store.product.model.Category;
 import vn.techbox.techbox_store.product.repository.CategoryRepository;
+import vn.techbox.techbox_store.product.repository.ProductRepository;
+import vn.techbox.techbox_store.product.exception.CategoryDeleteException;
 import vn.techbox.techbox_store.product.service.CategoryService;
 
 import java.util.ArrayList;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
     
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
     private final CategoryMapper categoryMapper;
     
     @Override
@@ -170,9 +173,16 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
         
-        // Check if category has child categories
+        // First, check if there are non-deleted products under this category
+        if (productRepository.existsByCategoryIdAndDeletedAtIsNull(id)) {
+            // If products exist under the category, return 409 Conflict
+            throw new CategoryDeleteException("Cannot delete category with id: " + id + " because there are products referencing it. Delete or reassign the products first.");
+        }
+
+        // Then, check if category has child categories
         List<Category> childCategories = categoryRepository.findByParentCategoryId(id);
         if (!childCategories.isEmpty()) {
+            // If there are child categories (regardless of their product status), return 400 Bad Request
             throw new RuntimeException("Cannot delete category with child categories. Delete child categories first.");
         }
         

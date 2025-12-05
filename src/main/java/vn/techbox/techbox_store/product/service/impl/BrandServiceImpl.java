@@ -9,6 +9,8 @@ import vn.techbox.techbox_store.product.dto.brandDto.BrandUpdateRequest;
 import vn.techbox.techbox_store.product.mapper.BrandMapper;
 import vn.techbox.techbox_store.product.model.Brand;
 import vn.techbox.techbox_store.product.repository.BrandRepository;
+import vn.techbox.techbox_store.product.repository.ProductRepository;
+import vn.techbox.techbox_store.product.exception.BrandDeleteException;
 import vn.techbox.techbox_store.product.service.BrandService;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class BrandServiceImpl implements BrandService {
     
     private final BrandRepository brandRepository;
+    private final ProductRepository productRepository;
     private final BrandMapper brandMapper;
     
     @Override
@@ -74,7 +77,12 @@ public class BrandServiceImpl implements BrandService {
     public void deleteBrand(Integer id) {
         Brand brand = brandRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Brand not found with id: " + id));
-        
+
+        // Check if any non-deleted product is associated with this brand
+        if (productRepository.existsByBrandIdAndDeletedAtIsNull(id)) {
+            throw new BrandDeleteException("Cannot delete brand with id: " + id + " because there are products referencing it. Delete or reassign the products first.");
+        }
+
         brandRepository.delete(brand);
     }
     

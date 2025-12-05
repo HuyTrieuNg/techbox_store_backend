@@ -14,6 +14,7 @@ import vn.techbox.techbox_store.product.dto.productDto.ProductVariationManagemen
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationUpdateRequest;
 import vn.techbox.techbox_store.product.dto.productDto.ProductVariationWithImagesRequest;
+import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
 import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.service.ProductVariationService;
 import vn.techbox.techbox_store.product.service.sync.SyncService;
@@ -33,6 +34,7 @@ public class ProductVariationController {
     private final ProductService productService;
     private final SyncService syncService;
     private final CloudinaryService cloudinaryService;
+    private final ProductPriceUpdateService productPriceUpdateService;
     
     /**
      * Get all variations by product ID
@@ -107,6 +109,7 @@ public class ProductVariationController {
             Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
             if (prdUpdate.isPresent()) {    
                 ProductDetailResponse product = prdUpdate.get();
+                productPriceUpdateService.updateProductPricing(productId);
                 syncService.syncProductUpdate(product); 
             }
 
@@ -140,7 +143,9 @@ public class ProductVariationController {
             Integer productId = request.getProductId();
             Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
             if (prdUpdate.isPresent()) {    
+                
                 ProductDetailResponse product = prdUpdate.get();
+                productPriceUpdateService.updateProductPricing(productId);
                 syncService.syncProductUpdate(product); 
             }
 
@@ -180,6 +185,7 @@ public class ProductVariationController {
             Optional<ProductDetailResponse> prdUpdate = productService.getProductDetailById(productId);
             if (prdUpdate.isPresent()) {    
                 ProductDetailResponse product = prdUpdate.get();
+                productPriceUpdateService.updateProductPricing(productId);
                 syncService.syncProductUpdate(product); 
             }
 

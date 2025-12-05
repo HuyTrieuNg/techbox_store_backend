@@ -116,6 +116,34 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
+        // If order is COD, immediately transition to CONFIRMED and create permanent reservations
+        if (request.getPaymentMethod() == PaymentMethod.COD) {
+            try {
+                for (OrderItem orderItem : savedOrder.getOrderItems()) {
+                    inventoryReservationService.reserveInventoryPermanent(
+                            savedOrder.getId().intValue(),
+                            orderItem.getProductVariation().getId(),
+                            orderItem.getQuantity()
+                    );
+                }
+                if (savedOrder.getVoucherCode() != null && !savedOrder.getVoucherCode().trim().isEmpty()) {
+                    voucherReservationService.reserveVoucherByCode(
+                            savedOrder.getId().intValue(),
+                            savedOrder.getVoucherCode(),
+                            savedOrder.getUserId()
+                    );
+                }
+
+                // Update order status to CONFIRMED for COD orders
+                savedOrder.setStatus(OrderStatus.CONFIRMED);
+                orderRepository.save(savedOrder);
+                log.info("COD order {} automatically confirmed and permanent reservations created", savedOrder.getId());
+            } catch (Exception e) {
+                log.error("Failed to create permanent reservations for COD order {}: {}", savedOrder.getId(), e.getMessage(), e);
+                throw new OrderException("Failed to reserve inventory/voucher for COD order: " + e.getMessage());
+            }
+        }
+
         // Create reservations for VNPAY orders (temporary, expires in 15 min)
         // Note: Permanent reservations will be created when status changes to CONFIRMED
         if (request.getPaymentMethod() == PaymentMethod.VNPAY) {
@@ -175,7 +203,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long orderId, Integer userId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderException("Order not found"));
-
+        
         if (!order.getUser().getId().equals(userId)) {
             throw new OrderException("Access denied");
         }
@@ -198,6 +226,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
+    public OrderResponse getOrderByIdForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderException("Order not found"));
+        return orderMappingService.toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCodeForAdmin(String orderCode) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new OrderException("Order not found"));
+        return orderMappingService.toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<OrderResponse> getUserOrders(Integer userId, Pageable pageable) {
         Page<Order> orders = orderRepository.findByUser_IdOrderByCreatedAtDesc(userId, pageable);
         return orders.map(orderMappingService::toOrderResponse);
@@ -213,7 +257,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrders(Pageable pageable) {
-        Page<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+        // For admin 'get all' endpoint, exclude PENDING orders by default
+        Page<Order> orders = orderRepository.findByStatusNotOrderByCreatedAtDesc(OrderStatus.PENDING, pageable);
         return orders.map(orderMappingService::toOrderResponse);
     }
 

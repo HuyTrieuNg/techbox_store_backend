@@ -34,4 +34,10 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
        // Find products by list of SPUs
        Page<Product> findBySpuIn(List<String> spus, Pageable pageable);
+
+       // Check if there are any (non-deleted) products that reference a brand
+       boolean existsByBrandIdAndDeletedAtIsNull(Integer brandId);
+
+       // Check if there are any (non-deleted) products that reference a category
+       boolean existsByCategoryIdAndDeletedAtIsNull(Integer categoryId);
 }
