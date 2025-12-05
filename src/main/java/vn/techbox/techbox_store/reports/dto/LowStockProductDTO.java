@@ -15,6 +15,7 @@ public class LowStockProductDTO {
     private String spu;
     private Integer variationId;
     private String variationSku;
+    private String variationName;
     private Integer currentStock;
     private Integer threshold;
 }

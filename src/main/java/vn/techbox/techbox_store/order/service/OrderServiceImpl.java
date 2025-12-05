@@ -175,7 +175,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long orderId, Integer userId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderException("Order not found"));
-
+        
         if (!order.getUser().getId().equals(userId)) {
             throw new OrderException("Access denied");
         }
@@ -193,6 +193,22 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderException("Access denied");
         }
 
+        return orderMappingService.toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByIdForAdmin(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderException("Order not found"));
+        return orderMappingService.toOrderResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByCodeForAdmin(String orderCode) {
+        Order order = orderRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> new OrderException("Order not found"));
         return orderMappingService.toOrderResponse(order);
     }
 

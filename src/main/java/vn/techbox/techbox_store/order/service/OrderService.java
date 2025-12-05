@@ -13,6 +13,9 @@ public interface OrderService {
     OrderResponse createOrder(CreateOrderRequest request, Integer userId);
     OrderResponse getOrderById(Long orderId, Integer userId);
     OrderResponse getOrderByCode(String orderCode, Integer userId);
+    // Admin/Staff methods to get orders by id or code without user ownership check
+    OrderResponse getOrderByIdForAdmin(Long orderId);
+    OrderResponse getOrderByCodeForAdmin(String orderCode);
     Page<OrderResponse> getUserOrders(Integer userId, Pageable pageable);
     Page<OrderResponse> getUserOrdersByStatus(Integer userId, OrderStatus status, Pageable pageable);
     Page<OrderResponse> getAllOrders(Pageable pageable);

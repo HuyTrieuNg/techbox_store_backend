@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.order.dto.*;
+import vn.techbox.techbox_store.order.exception.OrderException;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 import vn.techbox.techbox_store.order.service.OrderService;
 import vn.techbox.techbox_store.user.security.UserPrincipal;
@@ -102,6 +103,7 @@ public class OrderController {
 
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER')")
+    
     @Operation(summary = "Get order by ID", description = "Get order details by order ID")
     public ResponseEntity<OrderResponse> getOrderById(
             @PathVariable Long orderId,
@@ -175,6 +177,26 @@ public class OrderController {
         log.info("Updating order {} status to: {}", orderId, status);
 
         OrderResponse response = orderService.updateOrderStatus(orderId, status);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/management")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    public ResponseEntity<OrderResponse> getOrderForAdmin(
+            @RequestParam(required = false) Long orderId,
+            @RequestParam(required = false) String orderCode) {
+
+        if ((orderId == null || orderId <= 0) && (orderCode == null || orderCode.isBlank())) {
+            throw new OrderException("Provide either orderId or orderCode");
+        }
+
+        OrderResponse response;
+        if (orderId != null && orderId > 0) {
+            response = orderService.getOrderByIdForAdmin(orderId);
+        } else {
+            response = orderService.getOrderByCodeForAdmin(orderCode);
+        }
 
         return ResponseEntity.ok(response);
     }
