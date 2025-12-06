@@ -33,7 +33,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get all orders", description = "Get paginated list of all orders with optional status filter")
     public ResponseEntity<Page<OrderResponse>> getAllOrders(
             @PageableDefault(size = 20) Pageable pageable,
@@ -50,7 +50,7 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get orders by user ID", description = "Get paginated list of orders for a specific user (Admin only)")
     public ResponseEntity<Page<OrderResponse>> getOrdersByUserId(
             @PathVariable Integer userId,
@@ -69,7 +69,7 @@ public class OrderController {
     }
 
     @GetMapping("/recent-products-spus")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get recent product SPUs", description = "Get list of SPUs from recent orders of the authenticated user")
     public ResponseEntity<List<String>> getRecentProductSpus(
             @RequestParam(defaultValue = "10") int k,
@@ -82,7 +82,7 @@ public class OrderController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('ORDER:WRITE')")
     @Operation(summary = "Create new order", description = "Create a new order with items and shipping information")
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
@@ -102,8 +102,7 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get order by ID", description = "Get order details by order ID")
     public ResponseEntity<OrderResponse> getOrderById(
             @PathVariable Long orderId,
@@ -116,7 +115,7 @@ public class OrderController {
     }
 
     @GetMapping("/code/{orderCode}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get order by code", description = "Get order details by order code")
     public ResponseEntity<OrderResponse> getOrderByCode(
             @PathVariable String orderCode,
@@ -129,7 +128,7 @@ public class OrderController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     @Operation(summary = "Get user orders", description = "Get paginated list of user orders")
     public ResponseEntity<Page<OrderResponse>> getUserOrders(
             @RequestParam(defaultValue = "0") int page,
@@ -166,7 +165,7 @@ public class OrderController {
     }
 
     @PutMapping("/{orderId}/status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @PreAuthorize("hasAuthority('ORDER:UPDATE')")
     @Operation(summary = "Update order status", description = "Update order status (Admin/Staff only)")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long orderId,
@@ -182,7 +181,7 @@ public class OrderController {
     }
 
     @GetMapping("/management")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('STAFF')")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
     public ResponseEntity<OrderResponse> getOrderForAdmin(
             @RequestParam(required = false) Long orderId,
             @RequestParam(required = false) String orderCode) {

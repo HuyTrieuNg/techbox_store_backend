@@ -97,10 +97,29 @@ public class UserDataSeeder implements CommandLineRunner {
         switch (userRole) {
             case ROLE_ADMIN -> permissions.addAll(permissionRepository.findAll());
             case ROLE_STAFF -> {
-                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN")));
-                permissions.removeIf(p -> p.getAction().equals("DELETE"));
+                // Staff có quyền quản lý sản phẩm, đơn hàng, khuyến mãi, voucher, campaign
+                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN", "INVENTORY", "REVIEW")));
+                // Không có quyền DELETE và không quản lý USER
             }
-            case ROLE_CUSTOMER -> permissions.addAll(getPermissionsByModulesAndActions(Set.of("PRODUCT", "ORDER"), Set.of("READ")));
+            case ROLE_CUSTOMER -> {
+                // Customer có quyền đọc sản phẩm
+                permissions.addAll(permissionRepository.findByModule("PRODUCT").stream()
+                    .filter(p -> p.getAction().equals("READ"))
+                    .toList());
+
+                // Customer có quyền đầy đủ về ORDER (đặt hàng, xem, hủy đơn)
+                permissions.addAll(permissionRepository.findByModule("ORDER").stream()
+                        .filter(p -> p.getAction().equals("READ") || p.getAction().equals("WRITE"))
+                        .toList());
+
+                // Customer có quyền đầy đủ về REVIEW (đọc, viết, sửa, xóa)
+                permissions.addAll(permissionRepository.findByModule("REVIEW"));
+
+                // Customer có quyền đọc VOUCHER, PROMOTION, CAMPAIGN
+                permissionRepository.findByModuleAndAction("VOUCHER", "READ").ifPresent(permissions::add);
+                permissionRepository.findByModuleAndAction("PROMOTION", "READ").ifPresent(permissions::add);
+                permissionRepository.findByModuleAndAction("CAMPAIGN", "READ").ifPresent(permissions::add);
+            }
         }
         return permissions;
     }

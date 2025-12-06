@@ -57,12 +57,6 @@ public class ProductPriceUpdateServiceImpl implements ProductPriceUpdateService 
             product.setDiscountValue(lowestPriceVariation.discountValue);
             
             productRepository.save(product);
-            log.info("Updated pricing for product ID: {} - Original: {}, Sale: {}, Discount: {}{}",
-                    productId, 
-                    lowestPriceVariation.originalPrice,
-                    lowestPriceVariation.salePrice,
-                    lowestPriceVariation.discountValue,
-                    lowestPriceVariation.discountType);
         }
     }
     

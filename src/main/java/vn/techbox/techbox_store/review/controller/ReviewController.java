@@ -18,7 +18,7 @@ public class ReviewController {
 
     private final ReviewService reviewService;
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('REVIEW:WRITE')")
     @PostMapping
     public ResponseEntity<ReviewResponse> create(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -27,7 +27,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.createReview(productId, request, userPrincipal.getUsername()));
     }
 
-    @PreAuthorize("hasRole('CUSTOMER') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
+    @PreAuthorize("hasAuthority('REVIEW:UPDATE') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewResponse> update(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -37,7 +37,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.updateReview(productId, reviewId, request, userPrincipal.getUsername()));
     }
 
-    @PreAuthorize("hasRole('CUSTOMER') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
+    @PreAuthorize("hasAuthority('REVIEW:DELETE') and (@reviewService.isReviewOwner(#reviewId, principal.username))")
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> delete(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -59,7 +59,7 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getSummary(productId));
     }
 
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAuthority('REVIEW:READ')")
     @GetMapping("/me")
     public ResponseEntity<ReviewResponse> myReview(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
