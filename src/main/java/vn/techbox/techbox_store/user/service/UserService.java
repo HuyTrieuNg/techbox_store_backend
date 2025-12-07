@@ -22,6 +22,7 @@ public interface UserService {
     void restoreUser(Integer id);
     boolean isCurrentUser(UserPrincipal userPrincipal, Integer userId);
     TokenResponse verify(UserLoginRequest req);
+    void updatePasswordByEmail(String email, String newPassword);
     Page<User> getUsersByRole(String roleName, Pageable pageable);
     Page<User> getUsersByRole(String roleName, Pageable pageable, boolean includeDeleted);
 }

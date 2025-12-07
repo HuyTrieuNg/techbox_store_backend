@@ -285,6 +285,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    public void updatePasswordByEmail(String email, String newPassword) {
+        Optional<User> optUser = getUserByEmail(email);
+        if (optUser.isEmpty()) {
+            throw new RuntimeException("User not found for email: " + email);
+        }
+        User user = optUser.get();
+        Account account = user.getAccount();
+        account.setPasswordHash(encoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
     public Page<User> getUsersByRole(String roleName, Pageable pageable) {
         return userRepository.findByRoleName(roleName, pageable);
     }

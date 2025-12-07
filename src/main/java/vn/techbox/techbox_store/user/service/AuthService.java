@@ -13,4 +13,8 @@ public interface AuthService {
     long getAccessTokenExpiry();
     long getRefreshTokenExpiry();
     TokenResponse refreshToken(String refreshToken);
+    String generatePasswordResetToken(String email, long accountUpdatedAt);
+    String extractUserNameFromResetToken(String token);
+    long extractAccountUpdatedAtFromResetToken(String token);
+    boolean validateResetToken(String token, String email, long accountUpdatedAt);
 }

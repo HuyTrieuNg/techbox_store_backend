@@ -257,4 +257,72 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid refresh token: " + e.getMessage());
         }
     }
+
+    @Value("${jwt.password-reset-expiry:1800000}")
+    private long passwordResetTokenExpiry;
+
+    public String generatePasswordResetToken(String email, long accountUpdatedAt) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("type", "password-reset");
+        claims.put("accountUpdatedAt", accountUpdatedAt);
+
+        return Jwts.builder()
+                .claims()
+                .add(claims)
+                .subject(email)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + passwordResetTokenExpiry))
+                .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String extractUserNameFromResetToken(String token) {
+        try {
+            return extractClaim(token, Claims::getSubject);
+        } catch (SignatureException e) {
+            logger.error("Invalid JWT signature while extracting email from reset token: {}", e.getMessage());
+            throw e;
+        } catch (ExpiredJwtException e) {
+            logger.error("Reset token expired: {}", e.getMessage());
+            throw e;
+        } catch (MalformedJwtException e) {
+            logger.error("Malformed reset token: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error extracting email from reset token: {}", e.getMessage());
+            throw new RuntimeException("Error processing reset token", e);
+        }
+    }
+
+    public long extractAccountUpdatedAtFromResetToken(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Object updatedAt = claims.get("accountUpdatedAt");
+            if (updatedAt instanceof Number) {
+                return ((Number) updatedAt).longValue();
+            }
+            return 0L;
+        } catch (Exception e) {
+            logger.error("Error extracting accountUpdatedAt from reset token: {}", e.getMessage());
+            throw new RuntimeException("Error processing reset token", e);
+        }
+    }
+
+    public boolean validateResetToken(String token, String email, long accountUpdatedAt) {
+        try {
+            final String tokenEmail = extractUserNameFromResetToken(token);
+            final long tokenUpdatedAt = extractAccountUpdatedAtFromResetToken(token);
+            return (tokenEmail.equals(email) && 
+                    tokenUpdatedAt == accountUpdatedAt && 
+                    !isTokenExpired(token));
+        } catch (SignatureException | ExpiredJwtException | MalformedJwtException e) {
+            logger.error("Reset token validation failed: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            logger.error("Unexpected error during reset token validation: {}", e.getMessage());
+            return false;
+        }
+    }
 }
+

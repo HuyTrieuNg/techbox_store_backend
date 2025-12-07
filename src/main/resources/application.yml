@@ -28,6 +28,21 @@ spring:
     user:
       name: admin
       password: admin123
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 logging:
   level:
@@ -45,6 +60,7 @@ jwt:
     expiry: ${JWT_ACCESS_TOKEN_EXPIRY:108000000}
   refresh-token:
     expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
+  password-reset-expiry: ${JWT_PASSWORD_RESET_EXPIRY:1800000}
   secret: ${JWT_SECRET_KEY:techbox-default-jwt-secret-key-for-development-only-please-change-in-production-environment-256-bits}
   refresh-secret: ${JWT_REFRESH_SECRET_KEY:techbox-default-jwt-refresh-secret-key-for-development-only-please-change-in-production-environment-256-bits}
 
@@ -75,3 +91,7 @@ sync:
   endpoint:
     url: ${SYNC_ENDPOINT_URL:http://localhost:8000}
     api-key: ${SYNC_API_KEY:}
+
+frontend:
+  url: ${FRONTEND_URL:http://localhost:3000}
+
