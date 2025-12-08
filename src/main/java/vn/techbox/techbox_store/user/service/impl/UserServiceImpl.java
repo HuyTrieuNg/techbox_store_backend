@@ -274,9 +274,12 @@ public class UserServiceImpl implements UserService {
             );
 
             if (authentication.isAuthenticated()) {
-                String accessToken = authService.generateToken(req.email());
-                String refreshToken = authService.generateRefreshToken(req.email());
-                return new TokenResponse(accessToken, refreshToken, authService.getAccessTokenExpiry());
+                // Get user to get userId for token generation
+                User user = getUserByEmail(req.email())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+                // Use new token pair generation method that stores refresh token in database
+                return authService.generateTokenPair(user.getId());
             }
             throw new RuntimeException("Authentication failed");
         } catch (Exception e) {

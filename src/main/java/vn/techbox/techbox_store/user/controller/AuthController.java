@@ -10,7 +10,6 @@ import vn.techbox.techbox_store.user.dto.*;
 import vn.techbox.techbox_store.mail.service.EmailService;
 import vn.techbox.techbox_store.user.model.Account;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import vn.techbox.techbox_store.user.model.User;
@@ -69,7 +68,6 @@ public class AuthController {
         try {
             String token = req.token();
             String email = authService.extractUserNameFromResetToken(token);
-            long tokenUpdatedAt = authService.extractAccountUpdatedAtFromResetToken(token);
 
             userService.getUserByEmail(email).ifPresentOrElse(user -> {
                 Account account = user.getAccount();
@@ -131,6 +129,42 @@ public class AuthController {
                 false
             );
             return ResponseEntity.status(401).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody LogoutRequest req) {
+        try {
+            authService.logout(req.refreshToken());
+            logger.info("User logged out successfully");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error("Logout failed: {}", e.getMessage());
+
+            ApiErrorResponse errorResponse = new ApiErrorResponse(
+                "LOGOUT_FAILED",
+                "Failed to logout: " + e.getMessage(),
+                false
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PostMapping("/logout-all")
+    public ResponseEntity<?> logoutAll(@RequestBody LogoutAllRequest req) {
+        try {
+            authService.logoutAll(req.userId());
+            logger.info("All sessions logged out for user: {}", req.userId());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            logger.error("Logout all failed: {}", e.getMessage());
+
+            ApiErrorResponse errorResponse = new ApiErrorResponse(
+                "LOGOUT_ALL_FAILED",
+                "Failed to logout all sessions: " + e.getMessage(),
+                false
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 }
