@@ -101,7 +101,7 @@ public class VnPayCallbackService {
             // Payment successful - set reservations expiry to null
             try {
                 inventoryReservationService.setReservationsExpiryNull(order.getId().intValue());
-                voucherReservationService.confirmReservations(order.getId().intValue());
+                voucherReservationService.setReservationsExpiryNull(order.getId().intValue());
 
                 payment.setPaymentStatus(PaymentStatus.PAID);
                 payment.setPaymentCompletedAt(LocalDateTime.now());

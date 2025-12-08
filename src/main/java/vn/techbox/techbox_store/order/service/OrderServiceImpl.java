@@ -318,7 +318,7 @@ public class OrderServiceImpl implements OrderService {
         if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.VNPAY) {
             try {
                 inventoryReservationService.setReservationsExpiryNull(orderId.intValue());
-                voucherReservationService.confirmReservations(orderId.intValue()); // Note: This might be incorrect, should be setExpiryNull for vouchers too
+                voucherReservationService.setReservationsExpiryNull(orderId.intValue());
                 log.info("Reservations expiry set to null for VNPAY order {}", orderId);
             } catch (Exception e) {
                 log.error("Failed to set reservations expiry for VNPAY order {}: {}", orderId, e.getMessage(), e);

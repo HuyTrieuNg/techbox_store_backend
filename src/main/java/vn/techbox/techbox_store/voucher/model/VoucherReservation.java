@@ -43,7 +43,7 @@ public class VoucherReservation {
     @Builder.Default
     private LocalDateTime reservedAt = LocalDateTime.now();
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
     @Column(name = "released_at")
@@ -62,9 +62,6 @@ public class VoucherReservation {
         if (reservedAt == null) {
             reservedAt = LocalDateTime.now();
         }
-        if (expiresAt == null) {
-            expiresAt = reservedAt.plusMinutes(15);
-        }
     }
 
     @PreUpdate
@@ -73,7 +70,7 @@ public class VoucherReservation {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }
 
     public boolean isActive() {

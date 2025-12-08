@@ -45,7 +45,7 @@ public class InventoryReservationService {
 
     @Transactional
     @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
-    private void reserveInventoryInternal(Integer orderId, Integer productVariationId, Integer quantity, LocalDateTime expiresAt) {
+    public void reserveInventoryInternal(Integer orderId, Integer productVariationId, Integer quantity, LocalDateTime expiresAt) {
         log.info("Reserving inventory for order: {}, productVariation: {}, quantity: {}, permanent: {}",
                 orderId, productVariationId, quantity, expiresAt == null);
 
@@ -104,18 +104,17 @@ public class InventoryReservationService {
             // Confirm the reservation
             reservation.confirm();
 
-            // Reduce actual stock and remove from reserved
+            // Only remove from reserved quantity, stock will be decremented by StockExportService
             ProductVariation productVariation = productVariationRepository.findById(reservation.getProductVariationId())
                     .orElseThrow(() -> new IllegalStateException("Product variation not found: " + reservation.getProductVariationId()));
 
-            productVariation.setStockQuantity(productVariation.getStockQuantity() - reservation.getQuantity());
             productVariation.setReservedQuantity(productVariation.getReservedQuantity() - reservation.getQuantity());
 
             productVariationRepository.save(productVariation);
             inventoryReservationRepository.save(reservation);
         }
 
-        // Create stock export record for the sale
+        // Create stock export record for the sale - this will handle stock quantity decrement
         if (!reservations.isEmpty()) {
             CreateStockExportFromOrderRequest request = CreateStockExportFromOrderRequest.builder()
                     .note("Sale export for order " + orderId)

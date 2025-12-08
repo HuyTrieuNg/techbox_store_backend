@@ -152,6 +152,24 @@ public class VoucherReservationService {
 
             voucherRepository.save(voucher);
             voucherReservationRepository.save(reservation);
+
+            log.info("Released voucher reservation for voucher: {}", voucher.getCode());
+        }
+    }
+
+    @Transactional
+    public void setReservationsExpiryNull(Integer orderId) {
+        log.info("Setting voucher reservations expiry to null for order: {}", orderId);
+
+        List<VoucherReservation> reservations = voucherReservationRepository
+                .findByOrderIdAndStatus(orderId, ReservationStatus.RESERVED);
+
+        for (VoucherReservation reservation : reservations) {
+            // Set expiry to null (permanent reservation)
+            reservation.setExpiresAt(null);
+            voucherReservationRepository.save(reservation);
+
+            log.info("Set voucher reservation expiry to null for voucher ID: {}", reservation.getVoucherId());
         }
     }
 

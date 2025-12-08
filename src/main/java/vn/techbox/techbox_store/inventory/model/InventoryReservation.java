@@ -38,7 +38,7 @@ public class InventoryReservation {
     @Builder.Default
     private LocalDateTime reservedAt = LocalDateTime.now();
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
     @Column(name = "released_at")
@@ -57,9 +57,8 @@ public class InventoryReservation {
         if (reservedAt == null) {
             reservedAt = LocalDateTime.now();
         }
-        if (expiresAt == null) {
-            expiresAt = reservedAt.plusMinutes(15);
-        }
+        // Only set default expiry if it's not explicitly set to null
+        // and if it wasn't already set during entity creation
     }
 
     @PreUpdate
@@ -68,7 +67,7 @@ public class InventoryReservation {
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }
 
     public boolean isActive() {
