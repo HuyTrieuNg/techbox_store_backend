@@ -24,7 +24,7 @@ public class RolePermissionController {
     private final RolePermissionService rolePermissionService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('USER:READ')")
     @Operation(summary = "Get all roles", description = "Get list of all roles with their permissions")
     public ResponseEntity<List<RoleResponse>> getAllRoles() {
         log.info("Getting all roles");
@@ -33,7 +33,7 @@ public class RolePermissionController {
     }
 
     @GetMapping("/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('USER:READ')")
     @Operation(summary = "Get role by ID", description = "Get role details by ID")
     public ResponseEntity<RoleResponse> getRoleById(@PathVariable Integer roleId) {
         log.info("Getting role by id: {}", roleId);
@@ -42,7 +42,7 @@ public class RolePermissionController {
     }
 
     @GetMapping("/name/{name}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('USER:READ')")
     @Operation(summary = "Get role by name", description = "Get role details by name")
     public ResponseEntity<RoleResponse> getRoleByName(@PathVariable String name) {
         log.info("Getting role by name: {}", name);
@@ -51,7 +51,7 @@ public class RolePermissionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('USER:WRITE')")
     @Operation(summary = "Create new role", description = "Create a new role")
     public ResponseEntity<RoleResponse> createRole(@Valid @RequestBody RoleCreateRequest request) {
         log.info("Creating new role: {}", request.getName());
@@ -60,7 +60,7 @@ public class RolePermissionController {
     }
 
     @DeleteMapping("/{roleId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('USER:DELETE')")
     @Operation(summary = "Delete role", description = "Delete a role by ID")
     public ResponseEntity<Void> deleteRole(@PathVariable Integer roleId) {
         log.info("Deleting role: {}", roleId);

@@ -9,8 +9,10 @@ import vn.techbox.techbox_store.payment.model.PaymentMethod;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 import vn.techbox.techbox_store.voucher.model.Voucher;
 import vn.techbox.techbox_store.voucher.model.UserVoucher;
+import vn.techbox.techbox_store.voucher.model.VoucherReservation;
 import vn.techbox.techbox_store.voucher.repository.UserVoucherRepository;
 import vn.techbox.techbox_store.voucher.repository.VoucherRepository;
+import vn.techbox.techbox_store.voucher.repository.VoucherReservationRepository;
 import vn.techbox.techbox_store.voucher.exception.VoucherValidationException;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class OrderValidationService {
     private final ProductVariationRepository productVariationRepository;
     private final UserVoucherRepository userVoucherRepository;
     private final VoucherRepository voucherRepository;
+    private final VoucherReservationRepository voucherReservationRepository;
 
     private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(
         OrderStatus.PENDING,
@@ -163,6 +166,17 @@ public class OrderValidationService {
                 "Bạn đã sử dụng mã voucher này rồi",
                 voucherCode,
                 "VOUCHER_ALREADY_USED"
+            );
+        }
+
+        // Check if user has a reserved voucher (đang được đặt chỗ trong đơn hàng khác)
+        Optional<VoucherReservation> existingReservation = voucherReservationRepository
+                .findByUserIdAndVoucherCodeAndReserved(userId, voucherCode);
+        if (existingReservation.isPresent()) {
+            throw new VoucherValidationException(
+                "Bạn đang sử dụng mã voucher này trong đơn hàng khác chưa hoàn thành",
+                voucherCode,
+                "VOUCHER_ALREADY_RESERVED"
             );
         }
     }

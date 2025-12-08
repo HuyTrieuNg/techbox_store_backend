@@ -212,10 +212,47 @@ public class UserController {
             }
         }
 
+        // Nhóm permissions theo module
+        Map<String, Set<String>> modulePermissions = new HashMap<>();
+        for (String permission : permissions) {
+            if (permission.contains(":")) {
+                String module = permission.split(":")[0];
+                modulePermissions.computeIfAbsent(module, k -> new HashSet<>()).add(permission);
+            }
+        }
+
+        // Tạo danh sách các module có quyền truy cập
+        Set<String> accessibleModules = modulePermissions.keySet();
+
+        // Tạo thống kê chi tiết cho mỗi module
+        Map<String, Map<String, Object>> moduleDetails = new HashMap<>();
+        for (Map.Entry<String, Set<String>> entry : modulePermissions.entrySet()) {
+            String module = entry.getKey();
+            Set<String> modulePerms = entry.getValue();
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("permissions", modulePerms);
+            details.put("permissionCount", modulePerms.size());
+
+            // Phân loại các loại quyền
+            Set<String> actions = modulePerms.stream()
+                    .map(perm -> perm.split(":")[1])
+                    .collect(Collectors.toSet());
+            details.put("actions", actions);
+
+            moduleDetails.put(module, details);
+        }
+
         response.put("allAuthorities", authorities);
         response.put("roles", roles);
         response.put("permissions", permissions);
         response.put("authorityCount", authorities.size());
+
+        // Thêm thông tin về modules
+        response.put("accessibleModules", accessibleModules);
+        response.put("moduleCount", accessibleModules.size());
+        response.put("modulePermissions", modulePermissions);
+        response.put("moduleDetails", moduleDetails);
 
         return ResponseEntity.ok(response);
     }

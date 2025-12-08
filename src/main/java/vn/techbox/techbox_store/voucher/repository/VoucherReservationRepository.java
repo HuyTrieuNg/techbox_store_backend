@@ -10,6 +10,7 @@ import vn.techbox.techbox_store.voucher.model.VoucherReservation;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface VoucherReservationRepository extends JpaRepository<VoucherReservation, Long> {
@@ -24,6 +25,14 @@ public interface VoucherReservationRepository extends JpaRepository<VoucherReser
 
     @Query("SELECT COALESCE(SUM(vr.quantity), 0) FROM VoucherReservation vr WHERE vr.voucherId = :voucherId AND vr.status = 'RESERVED'")
     Integer getTotalReservedQuantity(@Param("voucherId") Integer voucherId);
+
+    // Check if user has voucher reservation
+    @Query("SELECT vr FROM VoucherReservation vr " +
+           "WHERE vr.userId = :userId " +
+           "AND vr.voucherId = (SELECT v.id FROM Voucher v WHERE v.code = :voucherCode) " +
+           "AND vr.status = 'RESERVED'")
+    Optional<VoucherReservation> findByUserIdAndVoucherCodeAndReserved(@Param("userId") Integer userId,
+                                                                       @Param("voucherCode") String voucherCode);
 
     // Delete RELEASED and EXPIRED reservations
     @Modifying(clearAutomatically = true, flushAutomatically = true)
