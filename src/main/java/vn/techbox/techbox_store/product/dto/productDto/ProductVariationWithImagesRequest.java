@@ -28,8 +28,6 @@ public class ProductVariationWithImagesRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
 
-    @Size(max = 255, message = "SKU must not exceed 255 characters")
-    private String sku;
 
     @DecimalMin(value = "0.0", inclusive = false, message = "Avg cost price must be greater than 0")
     private BigDecimal avgCostPrice;

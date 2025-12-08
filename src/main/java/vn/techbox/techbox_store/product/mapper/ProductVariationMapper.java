@@ -79,10 +79,16 @@ public class ProductVariationMapper {
         
         ProductVariationResponse response = builder.build();
         
-        // Set product name if productId exists
+        // Set SKU on response
+        response.setSku(variation.getSku());
+
+        // Set product name and SPU if productId exists
         if (variation.getProductId() != null) {
             productRepository.findById(variation.getProductId())
-                    .ifPresent(product -> response.setProductName(product.getName()));
+                    .ifPresent(product -> {
+                        response.setProductName(product.getName());
+                        response.setProductSpu(product.getSpu());
+                    });
         }
         
         return response;

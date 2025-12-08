@@ -23,4 +23,6 @@ public interface AttributeRepository extends JpaRepository<Attribute, Integer> {
     // Search attributes by name containing
     @Query("SELECT a FROM Attribute a WHERE LOWER(a.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Attribute> searchByName(@Param("keyword") String keyword);
+
+    
 }

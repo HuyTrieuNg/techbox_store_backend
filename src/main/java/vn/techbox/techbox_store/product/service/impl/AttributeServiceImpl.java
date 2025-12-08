@@ -9,11 +9,16 @@ import vn.techbox.techbox_store.product.dto.attributeDto.AttributeUpdateRequest;
 import vn.techbox.techbox_store.product.mapper.AttributeMapper;
 import vn.techbox.techbox_store.product.model.Attribute;
 import vn.techbox.techbox_store.product.repository.AttributeRepository;
+import vn.techbox.techbox_store.product.repository.ProductAttributeRepository;
+import vn.techbox.techbox_store.product.repository.VariationAttributeRepository;
 import vn.techbox.techbox_store.product.service.AttributeService;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,8 @@ import java.util.stream.Collectors;
 public class AttributeServiceImpl implements AttributeService {
     
     private final AttributeRepository attributeRepository;
+    private final ProductAttributeRepository productAttributeRepository;
+    private final VariationAttributeRepository variationAttributeRepository;
     private final AttributeMapper attributeMapper;
     
     @Override
@@ -86,6 +93,30 @@ public class AttributeServiceImpl implements AttributeService {
                 .map(attributeMapper::toResponse)
                 .collect(Collectors.toList());
     }
+
+
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> searchValueById(Integer id, String value) {
+        // Normalize value for case-insensitive LIKE match
+        String q = value != null ? value.trim() : "";
+        // Fetch distinct values from both product attributes and variation attributes
+        List<String> productValues = productAttributeRepository.findDistinctValuesByAttributeIdAndValueContaining(id, q);
+        List<String> variationValues = variationAttributeRepository.findDistinctValuesByAttributeIdAndValueContaining(id, q);
+
+        // Combine, deduplicate and sort
+        return Stream.concat(
+                        productValues == null ? Stream.empty() : productValues.stream(),
+                        variationValues == null ? Stream.empty() : variationValues.stream())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> s) // keep original case
+                .collect(Collectors.toCollection(() -> new TreeSet<>(String.CASE_INSENSITIVE_ORDER)))
+                .stream()
+                .collect(Collectors.toList());
+    }
     
     @Override
     @Transactional(readOnly = true)
@@ -98,6 +129,7 @@ public class AttributeServiceImpl implements AttributeService {
     public boolean existsByNameAndIdNot(String name, Integer id) {
         return attributeRepository.existsByNameAndIdNot(name, id);
     }
+    
     
 
 }

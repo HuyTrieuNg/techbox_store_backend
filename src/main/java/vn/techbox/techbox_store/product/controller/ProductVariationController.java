@@ -93,11 +93,10 @@ public class ProductVariationController {
             }
 
             // Convert to ProductVariationCreateRequest
-            ProductVariationCreateRequest createRequest = ProductVariationCreateRequest.builder()
+                ProductVariationCreateRequest createRequest = ProductVariationCreateRequest.builder()
                     .variationName(request.getVariationName())
                     .productId(request.getProductId())
                     .price(request.getPrice())
-                    .sku(request.getSku())
                     .variationAttributes(request.getVariationAttributes())
                     .imageUrls(imageUrls)
                     .imagePublicIds(imagePublicIds)

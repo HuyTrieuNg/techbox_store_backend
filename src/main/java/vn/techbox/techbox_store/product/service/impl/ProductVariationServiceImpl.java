@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,17 @@ public class ProductVariationServiceImpl implements ProductVariationService {
                 .stream()
                 .map(productVariationMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    private String generateSkuForProduct(String baseSpu) {
+        for (int i = 0; i < 10; i++) {
+            String random = UUID.randomUUID().toString().replace("-", "").toUpperCase().substring(0, 4);
+            String sku = baseSpu + "-" + random;
+            if (!existsBySku(sku)) {
+                return sku;
+            }
+        }
+        throw new IllegalStateException("Unable to generate unique SKU after 10 attempts");
     }
     
     @Override
@@ -71,10 +83,6 @@ public class ProductVariationServiceImpl implements ProductVariationService {
     
     @Override
     public ProductVariationResponse createProductVariation(ProductVariationCreateRequest request) {
-        if (request.getSku() != null && existsBySku(request.getSku())) {
-            throw new IllegalArgumentException("SKU already exists: " + request.getSku());
-        }
-
         // Ensure the parent product exists and is not soft-deleted
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + request.getProductId()));
@@ -89,12 +97,16 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             throw new IllegalStateException("Can only add variations to products in DRAFT or PUBLISHED status");
         }
 
+        // SKU: generate server-side using product SPU
+        String baseSpu = product.getSpu() != null ? product.getSpu() : "PRD";
+        String sku = generateSkuForProduct(baseSpu);
+
         // Build the ProductVariation entity from the request
         ProductVariation productVariation = ProductVariation.builder()
             .variationName(request.getVariationName())
             .productId(request.getProductId())
             .price(request.getPrice())
-            .sku(request.getSku())
+            .sku(sku)
             .avgCostPrice(BigDecimal.valueOf(0))
             .stockQuantity(0)
             .reservedQuantity(0)
@@ -168,12 +180,7 @@ public class ProductVariationServiceImpl implements ProductVariationService {
             variation.setPrice(request.getPrice());
         }
 
-        if (request.getSku() != null) {
-            if (existsBySkuAndIdNot(request.getSku(), id)) {
-                throw new IllegalArgumentException("SKU already exists: " + request.getSku());
-            }
-            variation.setSku(request.getSku());
-        }
+        // SKU is not updatable via API; no change performed here
 
         // Efficiently update variation attributes using orphanRemoval
         if (request.getVariationAttributes() != null) {

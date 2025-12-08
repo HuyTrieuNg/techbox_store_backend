@@ -19,6 +19,8 @@ public interface ProductAttributeRepository extends JpaRepository<ProductAttribu
     @Query("SELECT pa FROM ProductAttribute pa WHERE pa.attributeId = :attributeId")
     List<ProductAttribute> findByAttributeId(@Param("attributeId") Integer attributeId);
     
+    @Query("SELECT DISTINCT pa.value FROM ProductAttribute pa WHERE pa.attributeId = :attributeId AND LOWER(pa.value) LIKE LOWER(CONCAT('%', :value, '%'))")
+    List<String> findDistinctValuesByAttributeIdAndValueContaining(@Param("attributeId") Integer attributeId, @Param("value") String value);
     @Modifying
     @Query("DELETE FROM ProductAttribute pa WHERE pa.productId = :productId")
     void deleteByProductId(@Param("productId") Integer productId);

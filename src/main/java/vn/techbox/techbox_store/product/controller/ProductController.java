@@ -21,6 +21,7 @@ import vn.techbox.techbox_store.product.service.ProductService;
 import vn.techbox.techbox_store.product.service.sync.SyncService;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,8 +50,8 @@ public class ProductController {
             @RequestParam(required = false) Integer brandId,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) List<String> attributes,
-            @RequestParam(required = false) java.math.BigDecimal minPrice,
-            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Double minRating,
             @RequestParam(required = false) Integer campaignId,
             @RequestParam(defaultValue = "id") String sortBy,
@@ -114,8 +115,8 @@ public class ProductController {
             @RequestParam(required = false) Integer brandId,
             @RequestParam(required = false) Integer categoryId,
             @RequestParam(required = false) List<String> attributes,
-            @RequestParam(required = false) java.math.BigDecimal minPrice,
-            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Double minRating,
             @RequestParam(required = false) Integer campaignId,
             @RequestParam(defaultValue = "id") String sortBy,

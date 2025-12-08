@@ -17,7 +17,9 @@ public class ProductVariationResponse {
     private Integer id;
     private String variationName;
     private Integer productId;
+    private String sku;
     private BigDecimal price;
+    private String productSpu;
 
     private List<String> imageUrls;
     private Integer availableQuantity;

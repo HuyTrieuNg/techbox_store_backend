@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.promotion.dto.*;
+import vn.techbox.techbox_store.promotion.dto.PromotionVariantResponse;
 import vn.techbox.techbox_store.promotion.service.PromotionService;
 
 import java.math.BigDecimal;
@@ -84,13 +85,21 @@ public class PromotionController {
         return ResponseEntity.ok(promotions);
     }
 
+    // @PreAuthorize("hasAuthority('PROMOTION:READ')")
+    // @GetMapping("/campaign/{campaignId}")
+    // public ResponseEntity<List<PromotionResponse>> getPromotionsByCampaign(@PathVariable Integer campaignId) {
+    //     log.info("REST request to get promotions for campaign ID: {}", campaignId);
+        
+    //     List<PromotionResponse> promotions = promotionService.getPromotionsByCampaign(campaignId);
+    //     return ResponseEntity.ok(promotions);
+    // }
+
     @PreAuthorize("hasAuthority('PROMOTION:READ')")
     @GetMapping("/campaign/{campaignId}")
-    public ResponseEntity<List<PromotionResponse>> getPromotionsByCampaign(@PathVariable Integer campaignId) {
-        log.info("REST request to get promotions for campaign ID: {}", campaignId);
-        
-        List<PromotionResponse> promotions = promotionService.getPromotionsByCampaign(campaignId);
-        return ResponseEntity.ok(promotions);
+    public ResponseEntity<List<PromotionVariantResponse>> getPromotionVariantsByCampaign(@PathVariable Integer campaignId) {
+        log.info("REST request to get promotion variants for campaign ID: {}", campaignId);
+        List<PromotionVariantResponse> variants = promotionService.getPromotionVariantsByCampaign(campaignId);
+        return ResponseEntity.ok(variants);
     }
 
     // ========== Public APIs - Customer cần tính giá khi mua hàng ==========

@@ -7,6 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.techbox.techbox_store.promotion.dto.*;
+import vn.techbox.techbox_store.promotion.dto.PromotionVariantResponse;
+import vn.techbox.techbox_store.product.service.ProductVariationService;
+import vn.techbox.techbox_store.product.dto.productDto.ProductVariationResponse;
 import vn.techbox.techbox_store.promotion.model.Promotion;
 import vn.techbox.techbox_store.promotion.model.Campaign;
 import vn.techbox.techbox_store.promotion.repository.CampaignRepository;
@@ -16,6 +19,8 @@ import vn.techbox.techbox_store.promotion.service.PromotionService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +31,7 @@ public class PromotionServiceImpl implements PromotionService {
     
     private final PromotionRepository promotionRepository;
     private final CampaignRepository campaignRepository;
+    private final ProductVariationService productVariationService;
     
     @Override
     public PromotionResponse createPromotion(PromotionCreateRequest request) {
@@ -111,6 +117,53 @@ public class PromotionServiceImpl implements PromotionService {
         
         return promotionRepository.findByCampaignId(campaignId).stream()
                 .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromotionVariantResponse> getPromotionVariantsByCampaign(Integer campaignId) {
+        log.info("Retrieving promotion variants for campaign ID: {}", campaignId);
+
+        List<Promotion> promotions = promotionRepository.findByCampaignId(campaignId);
+
+        return promotions.stream()
+            .filter(Promotion::isValid) // include only valid/active promotions
+                .map(promotion -> {
+                    PromotionVariantResponse.PromotionVariantResponseBuilder builder = PromotionVariantResponse.builder()
+                            .promotionId(promotion.getId())
+                            .campaignId(promotion.getCampaign().getId())
+                            .campaignName(promotion.getCampaign().getName())
+                            .discountType(promotion.getDiscountType())
+                            .discountValue(promotion.getDiscountValue());
+
+                    // Load variation via service
+                    Optional<ProductVariationResponse> maybeVariationDTO = productVariationService.getActiveProductVariationById(promotion.getProductVariationId());
+                    if (maybeVariationDTO.isEmpty()) return null; // skip promotions without variation
+                    ProductVariationResponse variationDto = maybeVariationDTO.get();
+
+                        // Fill variation fields
+                            builder.variationId(variationDto.getId())
+                                .variationName(variationDto.getVariationName())
+                                .originalPrice(variationDto.getPrice());
+
+                        // productName, productSpu and sku are available on variationDto via mapper
+                        builder.productId(variationDto.getProductId())
+                            .productName(variationDto.getProductName())
+                            .productSpu(variationDto.getProductSpu())
+                            .sku(variationDto.getSku());
+
+                        // Compute discounted price for quantity = 1
+                        BigDecimal original = variationDto.getPrice();
+                        BigDecimal discount = promotion.calculateDiscount(original, 1);
+                        BigDecimal discountedPrice = original.subtract(discount);
+                        if (discountedPrice.compareTo(BigDecimal.ZERO) < 0) {
+                            discountedPrice = BigDecimal.ZERO;
+                        }
+                        builder.discountedPrice(discountedPrice);
+                        return builder.build();
+                })
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
     

@@ -26,6 +26,7 @@ public class AttributeController {
         return ResponseEntity.ok(attributes);
     }
 
+    @GetMapping("/{id}")
     public ResponseEntity<AttributeResponse> getAttributeById(@PathVariable Integer id) {
         return attributeService.getAttributeById(id)
                 .map(ResponseEntity::ok)
@@ -53,6 +54,12 @@ public class AttributeController {
     public ResponseEntity<Void> deleteAttribute(@PathVariable Integer id) {
         attributeService.deleteAttribute(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search-value")
+    public ResponseEntity<List<String>> searchAttributesByValue(@RequestParam Integer id, @RequestParam String value) {
+        List<String> attributes = attributeService.searchValueById(id, value);
+        return ResponseEntity.ok(attributes);
     }
     
     @GetMapping("/search")

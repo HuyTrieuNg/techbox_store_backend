@@ -28,8 +28,6 @@ public class ProductVariationCreateRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private BigDecimal price;
     
-    @Size(max = 255, message = "SKU must not exceed 255 characters")
-    private String sku;
     
     private List<String> imageUrls; // List of image URLs
     private List<String> imagePublicIds; // List of Cloudinary public IDs

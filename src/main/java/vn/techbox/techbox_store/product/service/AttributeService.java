@@ -7,6 +7,8 @@ import vn.techbox.techbox_store.product.dto.attributeDto.AttributeUpdateRequest;
 import java.util.List;
 import java.util.Optional;
 
+import org.hibernate.annotations.processing.SQL;
+
 public interface AttributeService {
     
     List<AttributeResponse> getAllAttributes();
@@ -24,4 +26,6 @@ public interface AttributeService {
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Integer id);
+
+    List<String> searchValueById(Integer id, String value);
 }

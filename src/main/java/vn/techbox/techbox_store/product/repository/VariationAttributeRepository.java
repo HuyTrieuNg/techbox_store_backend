@@ -20,6 +20,9 @@ public interface VariationAttributeRepository extends JpaRepository<VariationAtt
     
     @Query("SELECT va FROM VariationAttribute va WHERE va.attributeId = :attributeId")
     List<VariationAttribute> findByAttributeId(@Param("attributeId") Integer attributeId);
+
+    @Query("SELECT DISTINCT va.value FROM VariationAttribute va WHERE va.attributeId = :attributeId AND LOWER(va.value) LIKE LOWER(CONCAT('%', :value, '%'))")
+    List<String> findDistinctValuesByAttributeIdAndValueContaining(@Param("attributeId") Integer attributeId, @Param("value") String value);
     
     @Query("DELETE FROM VariationAttribute va WHERE va.productVariationId = :productVariationId")
     void deleteByProductVariationId(@Param("productVariationId") Integer productVariationId);
