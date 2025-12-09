@@ -339,6 +339,18 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        if (status == OrderStatus.CANCELLED) {
+            try {
+                inventoryReservationService.releaseReservations(orderId.intValue());
+                if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+                    voucherReservationService.releaseReservations(orderId.intValue());
+                }
+                log.info("Reservations released for cancelled order: {}", orderId);
+            } catch (Exception e) {
+                log.error("Failed to release reservations for cancelled order {}: {}", orderId, e.getMessage(), e);
+            }
+        }
+
         // Nếu trạng thái chuyển sang DELIVERED, lưu ngày giao thực tế
         if (status == OrderStatus.DELIVERED) {
             if (order.getShippingInfo() != null) {
@@ -374,20 +386,19 @@ public class OrderServiceImpl implements OrderService {
             throw new OrderException("Access denied");
         }
 
-        if (order.getStatus() != OrderStatus.PENDING) {
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED) {
             throw new OrderException("Cannot cancel order with status: " + order.getStatus());
         }
 
-        // If VNPAY and reservations exist, release them
-        if (order.getPaymentMethod() == PaymentMethod.VNPAY) {
-            try {
-                inventoryReservationService.releaseReservations(order.getId().intValue());
-                if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
-                    voucherReservationService.releaseReservations(order.getId().intValue());
-                }
-            } catch (Exception e) {
-                log.warn("Failed to release reservations for cancelled order {}: {}", orderId, e.getMessage());
+        // Release reservations for both COD and VNPAY orders
+        try {
+            inventoryReservationService.releaseReservations(order.getId().intValue());
+            if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+                voucherReservationService.releaseReservations(order.getId().intValue());
             }
+            log.info("Reservations released for cancelled order: {}", orderId);
+        } catch (Exception e) {
+            log.warn("Failed to release reservations for cancelled order {}: {}", orderId, e.getMessage());
         }
 
         order.setStatus(OrderStatus.CANCELLED);
