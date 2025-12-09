@@ -140,6 +140,7 @@ public class ProductVariationMapper {
                 .sku(variation.getSku())
                 .variationName(variation.getVariationName())
                 .price(variation.getPrice())
+                .costPrice(variation.getAvgCostPrice())
                 .stock(variation.getStockQuantity())
                 .reservedQuantity(variation.getReservedQuantity())
                 .build();

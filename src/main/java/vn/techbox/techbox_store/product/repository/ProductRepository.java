@@ -40,4 +40,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
 
        // Check if there are any (non-deleted) products that reference a category
        boolean existsByCategoryIdAndDeletedAtIsNull(Integer categoryId);
+
+       // Find all non-deleted products
+       @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL")
+       List<Product> findByDeletedAtIsNull();
 }

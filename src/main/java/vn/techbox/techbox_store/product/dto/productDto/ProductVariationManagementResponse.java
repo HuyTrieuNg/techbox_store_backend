@@ -28,6 +28,7 @@ public class ProductVariationManagementResponse {
     private String variationName;
     
     // Pricing
+    private BigDecimal costPrice;
     private BigDecimal price;  // Original price
     private BigDecimal salePrice;  // Price after promotion (if any)
     
