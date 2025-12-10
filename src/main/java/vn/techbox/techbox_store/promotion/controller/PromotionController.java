@@ -102,6 +102,14 @@ public class PromotionController {
         return ResponseEntity.ok(variants);
     }
 
+    @PreAuthorize("hasAuthority('PROMOTION:READ')")
+    @GetMapping("/campaign/{campaignId}/admin")
+    public ResponseEntity<List<PromotionVariantResponse>> getPromotionVariantsByCampaignForAdmin(@PathVariable Integer campaignId) {
+        log.info("REST request to get all promotion variants for campaign ID: {} (admin access)", campaignId);
+        List<PromotionVariantResponse> variants = promotionService.getPromotionVariantsByCampaignForAdmin(campaignId);
+        return ResponseEntity.ok(variants);
+    }
+
     // ========== Public APIs - Customer cần tính giá khi mua hàng ==========
     
     @GetMapping("/product-variation/{productVariationId}")

@@ -129,15 +129,28 @@ public class CampaignController {
 
     // ========== Public APIs - Customer xem campaigns ==========
     
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/admin")
     public ResponseEntity<CampaignResponse> getCampaignById(@PathVariable Integer id) {
         log.info("REST request to get campaign with ID: {}", id);
 
         try {
             CampaignResponse response = campaignService.getCampaignById(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            log.error("Campaign not found: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CampaignResponse> getPublicCampaignById(@PathVariable Integer id) {
+        log.info("REST request to get public campaign with ID: {}", id);
+
+        try {
+            CampaignResponse response = campaignService.getCampaignById(id);
             Campaign campaign = campaignRepository.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Campaign not found"));
-            // Only return if campaign is active
+            // Only return if campaign is active for public access
             if (!campaign.isActive()) {
                 return ResponseEntity.notFound().build();
             }

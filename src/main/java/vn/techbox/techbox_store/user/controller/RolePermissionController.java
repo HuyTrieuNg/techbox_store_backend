@@ -95,12 +95,57 @@ public class RolePermissionController {
         return ResponseEntity.ok(permission);
     }
 
+    @PostMapping("/permissions")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create new permission", description = "Create a new permission")
+    public ResponseEntity<PermissionResponse> createPermission(@Valid @RequestBody PermissionCreateRequest request) {
+        log.info("Creating new permission: {}", request.getName());
+        PermissionResponse permission = rolePermissionService.createPermission(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(permission);
+    }
+
     @DeleteMapping("/permissions/{permissionId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete permission", description = "Soft delete a permission by ID")
     public ResponseEntity<Void> deletePermission(@PathVariable Integer permissionId) {
         log.info("Deleting permission: {}", permissionId);
         rolePermissionService.deletePermission(permissionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/modules")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get all module permissions", description = "Get list of all module permissions with their permissions")
+    public ResponseEntity<List<ModulePermissionResponse>> getAllModulePermissions() {
+        log.info("Getting all module permissions");
+        List<ModulePermissionResponse> modules = rolePermissionService.getAllModulePermissions();
+        return ResponseEntity.ok(modules);
+    }
+
+    @GetMapping("/modules/{moduleName}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get module permission by name", description = "Get module permission details by name")
+    public ResponseEntity<ModulePermissionResponse> getModulePermissionByName(@PathVariable String moduleName) {
+        log.info("Getting module permission by name: {}", moduleName);
+        ModulePermissionResponse module = rolePermissionService.getModulePermissionByName(moduleName);
+        return ResponseEntity.ok(module);
+    }
+
+    @PostMapping("/modules")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create new module permission", description = "Create a new module permission")
+    public ResponseEntity<ModulePermissionResponse> createModulePermission(@Valid @RequestBody ModulePermissionCreateRequest request) {
+        log.info("Creating new module permission: {}", request.getModuleName());
+        ModulePermissionResponse module = rolePermissionService.createModulePermission(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(module);
+    }
+
+    @DeleteMapping("/modules/{moduleName}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete module permission", description = "Delete a module permission by name")
+    public ResponseEntity<Void> deleteModulePermission(@PathVariable String moduleName) {
+        log.info("Deleting module permission: {}", moduleName);
+        rolePermissionService.deleteModulePermission(moduleName);
         return ResponseEntity.noContent().build();
     }
 

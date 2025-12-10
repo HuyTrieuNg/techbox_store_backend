@@ -19,6 +19,8 @@ public interface PromotionService {
 
     List<PromotionVariantResponse> getPromotionVariantsByCampaign(Integer campaignId);
 
+    List<PromotionVariantResponse> getPromotionVariantsByCampaignForAdmin(Integer campaignId);
+
     List<PromotionResponse> getPromotionsByProductVariation(Integer productVariationId);
 
     PromotionCalculationResponse calculatePromotions(PromotionCalculationRequest request);

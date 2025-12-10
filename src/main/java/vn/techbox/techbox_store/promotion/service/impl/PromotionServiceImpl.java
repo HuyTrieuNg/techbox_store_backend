@@ -169,6 +169,63 @@ public class PromotionServiceImpl implements PromotionService {
     
     @Override
     @Transactional(readOnly = true)
+    public List<PromotionVariantResponse> getPromotionVariantsByCampaignForAdmin(Integer campaignId) {
+        log.info("Retrieving all promotion variants for campaign ID: {} (admin access)", campaignId);
+
+        List<Promotion> promotions = promotionRepository.findByCampaignId(campaignId);
+
+        return promotions.stream()
+                // No filter for isValid() - admin can see all promotions regardless of campaign status
+                .map(promotion -> {
+                    PromotionVariantResponse.PromotionVariantResponseBuilder builder = PromotionVariantResponse.builder()
+                            .promotionId(promotion.getId())
+                            .campaignId(promotion.getCampaign().getId())
+                            .campaignName(promotion.getCampaign().getName())
+                            .discountType(promotion.getDiscountType())
+                            .discountValue(promotion.getDiscountValue());
+
+                    // Load variation via service (use regular method instead of active-only)
+                    Optional<ProductVariationResponse> maybeVariationDto = productVariationService.getProductVariationById(promotion.getProductVariationId());
+
+                    if (maybeVariationDto.isPresent()) {
+                        ProductVariationResponse variationDto = maybeVariationDto.get();
+
+                        // Fill variation fields
+                        builder.variationId(variationDto.getId())
+                                .variationName(variationDto.getVariationName())
+                                .originalPrice(variationDto.getPrice());
+
+                        // productName, productSpu and sku are available on variationDto via mapper
+                        builder.productId(variationDto.getProductId())
+                                .productName(variationDto.getProductName())
+                                .productSpu(variationDto.getProductSpu())
+                                .sku(variationDto.getSku());
+
+                        // Compute discounted price for quantity = 1
+                        BigDecimal original = variationDto.getPrice();
+                        BigDecimal discount = promotion.calculateDiscount(original, 1);
+                        BigDecimal discountedPrice = original.subtract(discount);
+                        if (discountedPrice.compareTo(BigDecimal.ZERO) < 0) {
+                            discountedPrice = BigDecimal.ZERO;
+                        }
+                        builder.discountedPrice(discountedPrice);
+                    } else {
+                        // If product variation not found, still return promotion info with placeholder data
+                        log.warn("Product variation {} not found for promotion {}, returning partial data",
+                                promotion.getProductVariationId(), promotion.getId());
+                        builder.variationId(promotion.getProductVariationId())
+                                .variationName("Product not found")
+                                .originalPrice(BigDecimal.ZERO)
+                                .discountedPrice(BigDecimal.ZERO);
+                    }
+
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PromotionResponse> getPromotionsByProductVariation(Integer productVariationId) {
         log.info("Retrieving promotions for product variation ID: {}", productVariationId);
         

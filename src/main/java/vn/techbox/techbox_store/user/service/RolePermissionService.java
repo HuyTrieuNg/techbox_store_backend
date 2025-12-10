@@ -17,7 +17,14 @@ public interface RolePermissionService {
     List<PermissionResponse> getAllPermissions();
     List<PermissionResponse> getPermissionsByModule(String module);
     PermissionResponse getPermissionById(Integer permissionId);
+    PermissionResponse createPermission(PermissionCreateRequest request);
     void deletePermission(Integer permissionId);
+
+    // Module Permission management
+    List<ModulePermissionResponse> getAllModulePermissions();
+    ModulePermissionResponse getModulePermissionByName(String moduleName);
+    ModulePermissionResponse createModulePermission(ModulePermissionCreateRequest request);
+    void deleteModulePermission(String moduleName);
 
     // Role-Permission assignment
     RoleResponse assignPermissionsToRole(AssignPermissionsRequest request);

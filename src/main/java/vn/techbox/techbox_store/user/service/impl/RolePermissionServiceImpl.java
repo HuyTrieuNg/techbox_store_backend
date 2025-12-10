@@ -193,6 +193,195 @@ public class RolePermissionServiceImpl implements RolePermissionService {
         log.info("Permission soft deleted successfully: {}", permissionId);
     }
 
+    @Override
+    @Transactional
+    public PermissionResponse createPermission(PermissionCreateRequest request) {
+        log.info("Creating new permission: {}", request.getName());
+
+        if (permissionRepository.existsByName(request.getName())) {
+            throw new RuntimeException("Permission already exists with name: " + request.getName());
+        }
+
+        // Extract module and action from permission name (e.g., "USER:READ" -> module="USER", action="READ")
+        String[] parts = request.getName().split(":");
+        if (parts.length != 2) {
+            throw new RuntimeException("Permission name must follow format MODULE:ACTION");
+        }
+
+        String module = parts[0];
+        String action = parts[1];
+
+        Permission permission = Permission.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .module(module)
+                .action(action)
+                .build();
+
+        Permission savedPermission = permissionRepository.save(permission);
+        log.info("Permission created successfully: {}", savedPermission.getName());
+
+        return mapToPermissionResponse(savedPermission);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ModulePermissionResponse> getAllModulePermissions() {
+        log.info("Fetching all module permissions");
+
+        List<Permission> permissions = permissionRepository.findAll();
+
+        // Group permissions by module
+        return permissions.stream()
+                .collect(Collectors.groupingBy(Permission::getModule))
+                .entrySet().stream()
+                .map(entry -> {
+                    String moduleName = entry.getKey();
+                    List<Permission> modulePermissions = entry.getValue();
+
+                    List<PermissionResponse> permissionResponses = modulePermissions.stream()
+                            .map(this::mapToPermissionResponse)
+                            .collect(Collectors.toList());
+
+                    // Use the creation time of the oldest permission as module creation time
+                    var createdAt = modulePermissions.stream()
+                            .min((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
+                            .map(Permission::getCreatedAt)
+                            .orElse(java.time.LocalDateTime.now());
+
+                    // Use the update time of the newest permission as module update time
+                    var updatedAt = modulePermissions.stream()
+                            .max((p1, p2) -> p1.getUpdatedAt().compareTo(p2.getUpdatedAt()))
+                            .map(Permission::getUpdatedAt)
+                            .orElse(java.time.LocalDateTime.now());
+
+                    return ModulePermissionResponse.builder()
+                            .moduleName(moduleName)
+                            .description(getModuleDescription(moduleName))
+                            .permissions(permissionResponses)
+                            .totalPermissions(permissionResponses.size())
+                            .createdAt(createdAt)
+                            .updatedAt(updatedAt)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ModulePermissionResponse getModulePermissionByName(String moduleName) {
+        log.info("Fetching module permission by name: {}", moduleName);
+
+        List<Permission> modulePermissions = permissionRepository.findByModule(moduleName);
+
+        if (modulePermissions.isEmpty()) {
+            throw new RuntimeException("Module permission not found with name: " + moduleName);
+        }
+
+        List<PermissionResponse> permissionResponses = modulePermissions.stream()
+                .map(this::mapToPermissionResponse)
+                .collect(Collectors.toList());
+
+        var createdAt = modulePermissions.stream()
+                .min((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
+                .map(Permission::getCreatedAt)
+                .orElse(java.time.LocalDateTime.now());
+
+        var updatedAt = modulePermissions.stream()
+                .max((p1, p2) -> p1.getUpdatedAt().compareTo(p2.getUpdatedAt()))
+                .map(Permission::getUpdatedAt)
+                .orElse(java.time.LocalDateTime.now());
+
+        return ModulePermissionResponse.builder()
+                .moduleName(moduleName)
+                .description(getModuleDescription(moduleName))
+                .permissions(permissionResponses)
+                .totalPermissions(permissionResponses.size())
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public ModulePermissionResponse createModulePermission(ModulePermissionCreateRequest request) {
+        log.info("Creating new module permission: {}", request.getModuleName());
+
+        // Check if module already has permissions (module exists)
+        List<Permission> existingPermissions = permissionRepository.findByModule(request.getModuleName());
+        if (!existingPermissions.isEmpty()) {
+            throw new RuntimeException("Module permission already exists with name: " + request.getModuleName());
+        }
+
+        // Create a basic permission for the module to establish its existence
+        // This can be a READ permission as a default
+        String defaultPermissionName = request.getModuleName() + ":READ";
+
+        Permission defaultPermission = Permission.builder()
+                .name(defaultPermissionName)
+                .description("Default read permission for " + request.getModuleName() + " module")
+                .module(request.getModuleName())
+                .action("READ")
+                .build();
+
+        Permission savedPermission = permissionRepository.save(defaultPermission);
+        log.info("Module permission created successfully: {}", request.getModuleName());
+
+        return ModulePermissionResponse.builder()
+                .moduleName(request.getModuleName())
+                .description(request.getDescription())
+                .permissions(List.of(mapToPermissionResponse(savedPermission)))
+                .totalPermissions(1)
+                .createdAt(savedPermission.getCreatedAt())
+                .updatedAt(savedPermission.getUpdatedAt())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteModulePermission(String moduleName) {
+        log.info("Deleting module permission: {}", moduleName);
+
+        List<Permission> modulePermissions = permissionRepository.findByModule(moduleName);
+
+        if (modulePermissions.isEmpty()) {
+            throw new RuntimeException("Module permission not found with name: " + moduleName);
+        }
+
+        // Check if any permissions are assigned to roles
+        for (Permission permission : modulePermissions) {
+            if (!permission.getRoles().isEmpty()) {
+                throw new RuntimeException("Cannot delete module permission " + moduleName +
+                        ". Permission " + permission.getName() + " is assigned to " +
+                        permission.getRoles().size() + " role(s)");
+            }
+        }
+
+        // Soft delete all permissions in the module
+        for (Permission permission : modulePermissions) {
+            permission.setDeletedAt(java.time.LocalDateTime.now());
+            permissionRepository.save(permission);
+        }
+
+        log.info("Module permission deleted successfully: {}", moduleName);
+    }
+
+    private String getModuleDescription(String moduleName) {
+        // Return default descriptions for known modules or a generic one
+        return switch (moduleName) {
+            case "USER" -> "User management module";
+            case "PRODUCT" -> "Product management module";
+            case "ORDER" -> "Order management module";
+            case "INVENTORY" -> "Inventory management module";
+            case "VOUCHER" -> "Voucher management module";
+            case "CAMPAIGN" -> "Campaign management module";
+            case "PROMOTION" -> "Promotion management module";
+            case "REVIEW" -> "Review management module";
+            case "REPORT" -> "Report management module";
+            default -> moduleName + " management module";
+        };
+    }
+
     private RoleResponse mapToRoleResponse(Role role) {
         Set<PermissionResponse> permissionResponses = role.getPermissions().stream()
                 .map(this::mapToPermissionResponse)
