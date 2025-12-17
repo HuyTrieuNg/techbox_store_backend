@@ -38,7 +38,7 @@ public class ReviewSeeder implements DataSeeder {
 
         // Prefer seeded demo customers if available
         List<User> seedUsers = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= 20; i++) {
             String email = "customer" + i + "@techbox.vn";
             Optional<User> uOpt = userRepository.findByAccountEmail(email);
             uOpt.ifPresent(seedUsers::add);
@@ -60,7 +60,7 @@ public class ReviewSeeder implements DataSeeder {
 
         for (Product p : products) {
             // create between 1 and 3 reviews per product (capped by available users)
-            int maxPerProduct = Math.min(3, seedUsers.size());
+            int maxPerProduct = Math.min(20, seedUsers.size());
             int count = 1 + rnd.nextInt(maxPerProduct);
             for (int i = 0; i < count; i++) {
                 User u = seedUsers.get((p.getId() + i) % seedUsers.size());
@@ -68,7 +68,7 @@ public class ReviewSeeder implements DataSeeder {
                 boolean already = reviewRepository.findByProductIdAndUserId(p.getId(), u.getId()).isPresent();
                 if (already) continue;
 
-                int rating = 1 + rnd.nextInt(5); // 1..5
+                int rating = 3 + rnd.nextInt(3); // 3..5
                 String content = String.format("Đây là review mẫu cho sản phẩm '%s' của %s %s. Điểm: %d/5 sao.",
                         p.getName(), u.getFirstName(), u.getLastName(), rating);
 

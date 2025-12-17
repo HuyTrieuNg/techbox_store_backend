@@ -119,7 +119,18 @@
             {
                 "name": "Laptop HP",
                 "url": "https://thinkpro.vn/laptop-hp",
-                "children": []
+                "children": [
+                    {
+                        "name": "HP Zbook",
+                        "url": "https://thinkpro.vn/laptop-hp-zbook",
+                        "children": []
+                    },
+                    {
+                        "name": "HP Pavilion",
+                        "url": "https://thinkpro.vn/laptop-hp-pavilion",
+                        "children": []
+                    }
+                ]
             }
         ]
     },
@@ -148,6 +159,11 @@
                 "children": []
             },
             {
+                "name": "Bàn phím WOB",
+                "url": "https://thinkpro.vn/ban-phim-wob",
+                "children": []
+            },
+            {
                 "name": "Bàn phím SATECHI",
                 "url": "https://thinkpro.vn/ban-phim-satechi",
                 "children": []
@@ -158,18 +174,13 @@
                 "children": []
             },
             {
-                "name": "Bàn phím WOB",
-                "url": "https://thinkpro.vn/ban-phim-wob",
+                "name": "Bàn phím Microsoft",
+                "url": "https://thinkpro.vn/ban-phim-microsoft",
                 "children": []
             },
             {
                 "name": "Bàn phím HyperWork",
                 "url": "https://thinkpro.vn/ban-phim-hyperwork",
-                "children": []
-            },
-            {
-                "name": "Bàn phím XINMENG",
-                "url": "https://thinkpro.vn/ban-phim-xinmeng",
                 "children": []
             },
             {
@@ -188,11 +199,6 @@
                 "children": []
             },
             {
-                "name": "Bàn phím Microsoft",
-                "url": "https://thinkpro.vn/ban-phim-microsoft",
-                "children": []
-            },
-            {
                 "name": "Bàn phím Akko",
                 "url": "https://thinkpro.vn/ban-phim-akko",
                 "children": []
@@ -200,6 +206,11 @@
             {
                 "name": "Bàn phím FL-ESPORT",
                 "url": "https://thinkpro.vn/ban-phim-fl-esport",
+                "children": []
+            },
+            {
+                "name": "Bàn phím XINMENG",
+                "url": "https://thinkpro.vn/ban-phim-xinmeng",
                 "children": []
             },
             {
@@ -254,11 +265,6 @@
                 "children": []
             },
             {
-                "name": "Chuột Razer",
-                "url": "https://thinkpro.vn/chuot-razer",
-                "children": []
-            },
-            {
                 "name": "Chuột AULA",
                 "url": "https://thinkpro.vn/chuot-aula",
                 "children": []
@@ -310,11 +316,6 @@
                 "children": []
             },
             {
-                "name": "Ghế công thái học MerryFair",
-                "url": "https://thinkpro.vn/ghe-cong-thai-hoc-merryfair",
-                "children": []
-            },
-            {
                 "name": "Ghế công thái học HyperWork",
                 "url": "https://thinkpro.vn/ghe-cong-thai-hoc-hyperwork",
                 "children": []
@@ -322,6 +323,11 @@
             {
                 "name": "Ghế công thái học UpGen",
                 "url": "https://thinkpro.vn/ghe-cong-thai-hoc-upgen",
+                "children": []
+            },
+            {
+                "name": "Ghế công thái học MerryFair",
+                "url": "https://thinkpro.vn/ghe-cong-thai-hoc-merryfair",
                 "children": []
             }
         ]
@@ -372,18 +378,23 @@
                 "children": []
             },
             {
-                "name": "Thực tế ảo/ Game Console Microsoft",
-                "url": "https://thinkpro.vn/may-choi-game-microsoft",
-                "children": []
-            },
-            {
                 "name": "Thực tế ảo/ Game Console Rokid",
                 "url": "https://thinkpro.vn/may-choi-game-rokid",
                 "children": []
             },
             {
+                "name": "Thực tế ảo/ Game Console Microsoft",
+                "url": "https://thinkpro.vn/may-choi-game-microsoft",
+                "children": []
+            },
+            {
                 "name": "Thực tế ảo/ Game Console Sony",
                 "url": "https://thinkpro.vn/may-choi-game-sony",
+                "children": []
+            },
+            {
+                "name": "Thực tế ảo/ Game Console Meta",
+                "url": "https://thinkpro.vn/may-choi-game-meta",
                 "children": []
             },
             {
@@ -432,18 +443,7 @@
     {
         "name": "Màn hình",
         "url": "https://thinkpro.vn/man-hinh",
-        "children": [
-            {
-                "name": "Màn hình ARZOPA",
-                "url": "https://thinkpro.vn/man-hinh-arzopa",
-                "children": []
-            },
-            {
-                "name": "Màn hình MSI",
-                "url": "https://thinkpro.vn/man-hinh-msi",
-                "children": []
-            }
-        ]
+        "children": []
     },
     {
         "name": "RAM",
@@ -542,13 +542,13 @@
                 "children": []
             },
             {
-                "name": "Phụ kiện Setup INNOSTYLE",
-                "url": "https://thinkpro.vn/phu-kien-va-setup-innostyle",
+                "name": "Phụ kiện Setup Keychron",
+                "url": "https://thinkpro.vn/phu-kien-va-setup-keychron",
                 "children": []
             },
             {
-                "name": "Phụ kiện Setup Keychron",
-                "url": "https://thinkpro.vn/phu-kien-va-setup-keychron",
+                "name": "Phụ kiện Setup INNOSTYLE",
+                "url": "https://thinkpro.vn/phu-kien-va-setup-innostyle",
                 "children": []
             },
             {
