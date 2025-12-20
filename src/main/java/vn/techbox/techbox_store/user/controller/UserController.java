@@ -68,6 +68,24 @@ public class UserController {
         return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
     }
 
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('USER:READ')")
+    public ResponseEntity<PagedUserResponse> searchUsersByName(
+            @RequestParam String searchTerm,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<User> userPage = userService.searchUsersByName(searchTerm, pageable);
+        Page<UserResponse> userResponsePage = userPage.map(UserResponse::from);
+
+        return ResponseEntity.ok(PagedUserResponse.from(userResponsePage));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('USER:READ') or @userService.isCurrentUser(#userPrincipal, #id)")
     public ResponseEntity<UserResponse> getOne(

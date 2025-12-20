@@ -265,7 +265,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponse> getAllOrdersByStatus(OrderStatus status, Pageable pageable) {
-        Page<Order> orders = orderRepository.findByStatus(status, pageable);
+        Page<Order> orders = orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
         return orders.map(orderMappingService::toOrderResponse);
     }
 
@@ -427,6 +427,13 @@ public class OrderServiceImpl implements OrderService {
             if (spus.size() >= k) break;
         }
         return spus;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderResponse> searchOrdersByCode(String searchTerm, Pageable pageable) {
+        Page<Order> orders = orderRepository.searchByOrderCode(searchTerm, pageable);
+        return orders.map(orderMappingService::toOrderResponse);
     }
 
     private String generateOrderCode() {

@@ -199,4 +199,17 @@ public class OrderController {
 
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('ORDER:READ')")
+    @Operation(summary = "Search orders by order code", description = "Search orders by order code pattern with pagination")
+    public ResponseEntity<Page<OrderResponse>> searchOrdersByCode(
+            @RequestParam String searchTerm,
+            @PageableDefault(size = 20) Pageable pageable) {
+
+        log.info("Searching orders by code with term: {}", searchTerm);
+        Page<OrderResponse> orders = orderService.searchOrdersByCode(searchTerm, pageable);
+
+        return ResponseEntity.ok(orders);
+    }
 }

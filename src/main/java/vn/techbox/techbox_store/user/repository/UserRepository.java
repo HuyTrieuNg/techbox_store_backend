@@ -72,4 +72,11 @@ public interface UserRepository extends JpaRepository<User, Integer>, PagingAndS
             "JOIN u.roles r " +
             "WHERE r.name = :roleName")
     Page<User> findByRoleNameIncludingDeleted(@Param("roleName") String roleName, Pageable pageable);
+
+    @Query("SELECT u FROM User u " +
+            "WHERE u.account.isActive = true " +
+            "AND (LOWER(u.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+            "OR LOWER(CONCAT(u.firstName, ' ', u.lastName)) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    Page<User> searchByName(@Param("searchTerm") String searchTerm, Pageable pageable);
 }

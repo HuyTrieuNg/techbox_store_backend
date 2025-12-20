@@ -25,4 +25,5 @@ public interface UserService {
     void updatePasswordByEmail(String email, String newPassword);
     Page<User> getUsersByRole(String roleName, Pageable pageable);
     Page<User> getUsersByRole(String roleName, Pageable pageable, boolean includeDeleted);
+    Page<User> searchUsersByName(String searchTerm, Pageable pageable);
 }

@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 import vn.techbox.techbox_store.order.model.Order;
 import vn.techbox.techbox_store.order.model.OrderStatus;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,7 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByUser_IdOrderByCreatedAtDesc(Integer userId, Pageable pageable);
 
-    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
+    Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
 
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
@@ -38,4 +37,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.productVariation pv LEFT JOIN FETCH pv.product WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
     Page<Order> findTopOrdersByUserId(@Param("userId") Integer userId, Pageable pageable);
+
+    @Query("SELECT o FROM Order o WHERE LOWER(o.orderCode) LIKE LOWER(CONCAT('%', :searchTerm, '%')) ORDER BY o.createdAt DESC")
+    Page<Order> searchByOrderCode(@Param("searchTerm") String searchTerm, Pageable pageable);
 }

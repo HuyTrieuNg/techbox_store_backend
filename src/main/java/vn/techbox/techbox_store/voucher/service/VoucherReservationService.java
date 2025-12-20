@@ -134,7 +134,7 @@ public class VoucherReservationService {
     }
 
     @Transactional
-    public void releaseReservations(Integer orderId) {
+    public void     releaseReservations(Integer orderId) {
         log.info("Releasing voucher reservations for order: {}", orderId);
 
         List<VoucherReservation> reservations = voucherReservationRepository

@@ -312,4 +312,9 @@ public class UserServiceImpl implements UserService {
         }
         return userRepository.findByRoleName(roleName, pageable);
     }
+
+    @Override
+    public Page<User> searchUsersByName(String searchTerm, Pageable pageable) {
+        return userRepository.searchByName(searchTerm, pageable);
+    }
 }

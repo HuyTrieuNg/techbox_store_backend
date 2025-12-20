@@ -25,4 +25,5 @@ public interface OrderService {
     OrderResponse updateOrderStatus(Long orderId, OrderStatus status);
     OrderResponse cancelOrder(Long orderId, Integer userId);
     List<String> getRecentProductSpus(Integer userId, int k);
+    Page<OrderResponse> searchOrdersByCode(String searchTerm, Pageable pageable);
 }
