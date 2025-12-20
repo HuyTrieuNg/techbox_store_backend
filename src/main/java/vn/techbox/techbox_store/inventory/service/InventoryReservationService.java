@@ -121,6 +121,7 @@ public class InventoryReservationService {
                     .build();
 
             stockExportService.createStockExportFromOrder(orderId, request, order.getUser().getId());
+            log.info("haha");
             log.info("Created stock export for order: {}", orderId);
         }
     }
