@@ -23,7 +23,7 @@ public class AddressSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final UserAddressService userAddressService;
-    @Value("${SEEDERS_ENABLED:true}")
+    @Value("${seeders.enabled:true}")
     private boolean seedersEnabled;
 
     public AddressSeeder(UserRepository userRepository, UserAddressService userAddressService) {

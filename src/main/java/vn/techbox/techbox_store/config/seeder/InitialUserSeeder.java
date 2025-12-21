@@ -25,7 +25,7 @@ public class InitialUserSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${SEEDERS_ENABLED:true}")
+    @Value("${seeders.enabled:true}")
     private boolean seedersEnabled;
 
     public InitialUserSeeder(UserRepository userRepository,

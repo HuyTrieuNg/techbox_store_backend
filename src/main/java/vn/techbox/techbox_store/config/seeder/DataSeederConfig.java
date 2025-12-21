@@ -25,7 +25,7 @@ public class DataSeederConfig {
     private final ProductPriceUpdateService productPriceUpdateService;
     private final ReviewRatingScheduler reviewRatingScheduler;
 
-    @Value("${SEEDERS_ENABLED:true}")
+    @Value("${seeders.enabled:true}")
     private boolean seedersEnabled;
 
     @Bean

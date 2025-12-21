@@ -23,7 +23,7 @@ public class UserDataSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
 
-    @Value("${SEEDERS_ENABLED:true}")
+    @Value("${seeders.enabled:true}")
     private boolean seedersEnabled;
     public UserDataSeeder(RoleRepository roleRepository, PermissionRepository permissionRepository) {
         this.roleRepository = roleRepository;
