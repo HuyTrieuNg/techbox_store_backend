@@ -2,6 +2,7 @@ package vn.techbox.techbox_store.config.seeder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,9 @@ public class InitialUserSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${SEEDERS_ENABLED:true}")
+    private boolean seedersEnabled;
+
     public InitialUserSeeder(UserRepository userRepository,
                              AccountRepository accountRepository,
                              RoleRepository roleRepository,
@@ -36,6 +40,10 @@ public class InitialUserSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (seedersEnabled == false) {
+            log.info("Seeders are disabled. Skipping initial user seeding.");
+            return;
+        }
         if (userRepository.count() > 0) {
             log.info("Users already present, skip initial user seeding");
             return;

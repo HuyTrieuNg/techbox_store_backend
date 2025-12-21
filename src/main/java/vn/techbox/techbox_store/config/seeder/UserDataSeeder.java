@@ -3,6 +3,7 @@ package vn.techbox.techbox_store.config.seeder;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,8 @@ public class UserDataSeeder implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
 
+    @Value("${SEEDERS_ENABLED:true}")
+    private boolean seedersEnabled;
     public UserDataSeeder(RoleRepository roleRepository, PermissionRepository permissionRepository) {
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
@@ -29,6 +32,10 @@ public class UserDataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!seedersEnabled) {
+            logger.info("Seeders are disabled. Skipping user data seeding.");
+            return;
+        }
         try {
             boolean needPermissions = permissionRepository.count() == 0;
             boolean needRoles = roleRepository.count() == 0;

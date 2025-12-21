@@ -2,6 +2,7 @@ package vn.techbox.techbox_store.config.seeder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,8 @@ public class AddressSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final UserAddressService userAddressService;
+    @Value("${SEEDERS_ENABLED:true}")
+    private boolean seedersEnabled;
 
     public AddressSeeder(UserRepository userRepository, UserAddressService userAddressService) {
         this.userRepository = userRepository;
@@ -30,6 +33,10 @@ public class AddressSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!seedersEnabled) {
+            log.info("Seeders are disabled. Skipping address seeding.");
+            return;
+        }
         try {
             seedCustomerAddresses();
         } catch (Exception e) {
