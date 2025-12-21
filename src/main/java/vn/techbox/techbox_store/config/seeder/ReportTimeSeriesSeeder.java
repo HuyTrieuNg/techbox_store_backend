@@ -81,6 +81,8 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        // cap is today at midnight; seeded dates must be strictly before today
+        LocalDateTime cap = now.toLocalDate().atStartOfDay();
         // Seed the last 12 months (one full year)
         LocalDateTime start = now.minusYears(1).withDayOfMonth(1).withHour(8).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime end = now;
@@ -132,7 +134,7 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
                     saved = userRepository.save(saved);
                     
                     // Update created_at via SQL so reports use correct dates
-                    LocalDateTime createdDate = randomDateInMonth(month);
+                    LocalDateTime createdDate = randomDateInMonth(month, cap);
                     jdbcTemplate.update("UPDATE \"accounts\" SET created_at = ? WHERE id = ?", createdDate, account.getId());
                     jdbcTemplate.update("UPDATE \"users\" SET created_at = ? WHERE id = ?", createdDate, saved.getId());
                     
@@ -158,8 +160,8 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
             // 15..60 orders per month
             int ordersInMonth = rand.nextInt(46) + 15; // 15..60
             for (int i = 0; i < ordersInMonth; i++) {
-                LocalDateTime createdAt = randomDateInMonth(month);
-                Order order = createRandomOrder(createdAt, users, variations);
+                LocalDateTime createdAt = randomDateInMonth(month, cap);
+                Order order = createRandomOrder(createdAt, users, variations, cap);
                 Order saved = orderRepository.save(order);
                 // Ensure createdAt persisted (PrePersist may overwrite) -> update via native SQL
                 jdbcTemplate.update("UPDATE orders SET created_at = ?, updated_at = ? WHERE id = ?",
@@ -178,18 +180,38 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
         // (Demo users already seeded above and added into users list)
     }
 
-    private LocalDateTime randomDateInMonth(LocalDateTime monthStart) {
+    private LocalDateTime randomDateInMonth(LocalDateTime monthStart, LocalDateTime cap) {
+        // Cap ensures we never generate a datetime on/after today's midnight
+        LocalDate capDate = cap.toLocalDate();
         LocalDate first = monthStart.toLocalDate();
         LocalDate last = monthStart.plusMonths(1).minusDays(1).toLocalDate();
+
+        // If this month is the current month, constrain last day to yesterday (cap - 1 day)
+        if (first.getMonth() == capDate.getMonth() && first.getYear() == capDate.getYear()) {
+            LocalDate cappedLast = capDate.minusDays(1);
+            if (cappedLast.isBefore(first)) {
+                // cap is earlier than the first day of this month (rare), fall back to first day
+                last = first;
+            } else {
+                last = cappedLast;
+            }
+        }
+
         int startDay = first.getDayOfMonth();
         int endDay = last.getDayOfMonth();
         int randomDay = rand.nextInt(endDay - startDay + 1) + startDay;
         int randomHour = 8 + rand.nextInt(9); // working hours 8..16
         int randomMin = rand.nextInt(60);
-        return LocalDateTime.of(monthStart.getYear(), monthStart.getMonthValue(), randomDay, randomHour, randomMin);
+        LocalDateTime candidate = LocalDateTime.of(monthStart.getYear(), monthStart.getMonthValue(), randomDay, randomHour, randomMin);
+
+        // Just in case candidate moved to or after cap (shouldn't happen due to last calculation), clamp it to cap - 1 second
+        if (!candidate.isBefore(cap)) {
+            candidate = cap.minusSeconds(1);
+        }
+        return candidate;
     }
 
-    private Order createRandomOrder(LocalDateTime createdAt, List<User> users, List<ProductVariation> variations) {
+    private Order createRandomOrder(LocalDateTime createdAt, List<User> users, List<ProductVariation> variations, LocalDateTime cap) {
         // Choose random customer
         User buyer = users.get(rand.nextInt(users.size()));
 
@@ -235,20 +257,26 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
 
         BigDecimal finalAmount = subtotal.add(shippingFee).subtract(discount);
 
+        // Compute max allowed hours between createdAt and cap so we don't set payment dates in the future
+        long maxHoursBetween = java.time.Duration.between(createdAt, cap).toHours();
+        int maxExtraHours = (int)Math.max(0, Math.min(48, maxHoursBetween));
+
         // Payment: randomly choose between COD and VNPAY
         Payment paymentInfo = null;
         double paymentPick = rand.nextDouble();
         if (paymentPick < 0.5) {
+            int addHours = maxExtraHours > 0 ? rand.nextInt(maxExtraHours + 1) : 0;
             CodPayment payment = CodPayment.builder()
                 .paymentMethod(PaymentMethod.COD)
                 .paymentStatus(rand.nextDouble() < 0.95 ? PaymentStatus.PAID : PaymentStatus.PENDING)
                 .totalAmount(subtotal)
                 .finalAmount(finalAmount)
                 .paymentInitiatedAt(createdAt)
-                .paymentCompletedAt(createdAt.plusHours(rand.nextInt(48)))
+                .paymentCompletedAt(createdAt.plusHours(addHours))
                 .build();
             paymentInfo = paymentRepository.save(payment);
         } else {
+            int addHoursForVnp = maxExtraHours > 0 ? rand.nextInt(maxExtraHours + 1) : 0;
             VnpayPayment vnp = VnpayPayment.builder()
                 .paymentMethod(PaymentMethod.VNPAY)
                 .paymentStatus(rand.nextDouble() < 0.95 ? PaymentStatus.PAID : PaymentStatus.PENDING)
@@ -260,9 +288,9 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
                 .vnpBankCode("TESTBANK")
                 .vnpOrderInfo("Seeded vnpay payment")
                 .vnpSecureHash("SEC" + Math.abs(rand.nextInt()))
-                .vnpPaymentDate(createdAt.plusHours(rand.nextInt(48)))
+                .vnpPaymentDate(createdAt.plusHours(addHoursForVnp))
                 .paymentInitiatedAt(createdAt)
-                .paymentCompletedAt(createdAt.plusHours(rand.nextInt(48)))
+                .paymentCompletedAt(createdAt.plusHours(addHoursForVnp))
                 .build();
             paymentInfo = paymentRepository.save(vnp);
         }
