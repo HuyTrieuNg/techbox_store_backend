@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.CreateSupplierRequest;
 import vn.techbox.techbox_store.inventory.dto.SupplierDTO;
 import vn.techbox.techbox_store.inventory.dto.UpdateSupplierRequest;
-import vn.techbox.techbox_store.inventory.service.impl.SupplierService;
+import vn.techbox.techbox_store.inventory.service.SupplierService;
 
 @RestController
 @RequestMapping("/suppliers")
@@ -116,6 +116,7 @@ public class SupplierController {
      * 
      * POST /api/suppliers/{supplierId}/restore
      */
+    @PreAuthorize("hasAuthority('INVENTORY:UPDATE')")
     @PostMapping("/{supplierId}/restore")
     public ResponseEntity<SupplierDTO> restoreSupplier(@PathVariable Integer supplierId) {
         log.info("POST /api/suppliers/{}/restore", supplierId);

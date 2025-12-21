@@ -34,7 +34,7 @@ public class BrandController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
+    @PreAuthorize("hasAuthority('BRAND:WRITE')")
     @PostMapping
     public ResponseEntity<BrandResponse> createBrand(@Valid @RequestBody BrandCreateRequest request) {
         try {
@@ -45,7 +45,7 @@ public class BrandController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
+    @PreAuthorize("hasAuthority('BRAND:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<BrandResponse> updateBrand(
             @PathVariable Integer id,
@@ -58,7 +58,7 @@ public class BrandController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
+    @PreAuthorize("hasAuthority('BRAND:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBrand(@PathVariable Integer id) {
         try {
@@ -72,7 +72,7 @@ public class BrandController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @PreAuthorize("hasAuthority('BRAND:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkBrandNameExists(@RequestParam String name) {
         boolean exists = brandService.existsByName(name);

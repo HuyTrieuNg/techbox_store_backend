@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.inventory.dto.CreateStockImportRequest;
 import vn.techbox.techbox_store.inventory.dto.StockImportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockImportDetailDTO;
-import vn.techbox.techbox_store.inventory.dto.StockImportReportDTO;
 import vn.techbox.techbox_store.inventory.service.StockImportService;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import vn.techbox.techbox_store.user.security.UserPrincipal;
 
@@ -105,30 +105,5 @@ public class StockImportController {
         
         StockImportDetailDTO stockImport = stockImportService.getStockImportByDocumentCode(documentCode);
         return ResponseEntity.ok(stockImport);
-    }
-    
-    /**
-     * Generate stock import report
-     * 
-     * GET /api/stock-imports/report?fromDate=2025-01-01&toDate=2025-12-31&supplierId=1&groupBy=day
-     */
-    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
-    @GetMapping("/report")
-    public ResponseEntity<StockImportReportDTO> generateReport(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(required = false) Integer supplierId,
-            @RequestParam(defaultValue = "day") String groupBy) {
-        
-        log.info("GET /api/stock-imports/report - fromDate: {}, toDate: {}, supplierId: {}, groupBy: {}", 
-                fromDate, toDate, supplierId, groupBy);
-        
-        // Validate groupBy parameter
-        if (!groupBy.matches("(?i)day|month|supplier")) {
-            throw new IllegalArgumentException("Invalid groupBy parameter. Must be 'day', 'month', or 'supplier'");
-        }
-        
-        StockImportReportDTO report = stockImportService.generateReport(fromDate, toDate, supplierId, groupBy);
-        return ResponseEntity.ok(report);
     }
 }

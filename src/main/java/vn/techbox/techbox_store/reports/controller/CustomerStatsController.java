@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.reports.dto.CustomerGrowthDTO;
 import vn.techbox.techbox_store.reports.dto.CustomerStatsDTO;
@@ -25,6 +26,7 @@ public class CustomerStatsController {
 
     private final CustomerStatsService customerStatsService;
 
+    @PreAuthorize("hasAuthority('REPORT:USER')")
     @GetMapping("/overview")
     @Operation(summary = "Get customer overview statistics", 
                description = "Returns overall customer statistics including total count, new customers, growth rate, and top customers")
@@ -34,6 +36,7 @@ public class CustomerStatsController {
         return ResponseEntity.ok(stats);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:USER')")
     @GetMapping("/growth")
     @Operation(summary = "Get customer growth trends",
                description = "Returns customer growth trends for a specific date range, grouped by day, week, or month")
@@ -52,6 +55,7 @@ public class CustomerStatsController {
         return ResponseEntity.ok(growth);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:USER')")
     @GetMapping("/top")
     @Operation(summary = "Get top customers by spending",
                description = "Returns the top customers ranked by total spending amount")

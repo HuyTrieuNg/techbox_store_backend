@@ -16,8 +16,8 @@ import vn.techbox.techbox_store.inventory.dto.CreateStockExportFromOrderRequest;
 import vn.techbox.techbox_store.inventory.dto.CreateStockExportRequest;
 import vn.techbox.techbox_store.inventory.dto.StockExportDTO;
 import vn.techbox.techbox_store.inventory.dto.StockExportDetailDTO;
-import vn.techbox.techbox_store.inventory.dto.StockExportReportDTO;
-import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
+import vn.techbox.techbox_store.inventory.service.StockExportService;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import vn.techbox.techbox_store.user.security.UserPrincipal;
 
@@ -118,27 +118,5 @@ public class StockExportController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdStockExport);
     }
     
-    /**
-     * Generate stock export report
-     * 
-     * GET /api/stock-exports/report?fromDate=2025-01-01&toDate=2025-12-31&groupBy=day
-     */
-    @PreAuthorize("hasAuthority('INVENTORY:REPORT')")
-    @GetMapping("/report")
-    public ResponseEntity<StockExportReportDTO> generateReport(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(defaultValue = "day") String groupBy) {
-        
-        log.info("GET /api/stock-exports/report - fromDate: {}, toDate: {}, groupBy: {}", 
-                fromDate, toDate, groupBy);
-        
-        // Validate groupBy parameter
-        if (!groupBy.matches("(?i)day|month|product")) {
-            throw new IllegalArgumentException("Invalid groupBy parameter. Must be 'day', 'month', or 'product'");
-        }
-        
-        StockExportReportDTO report = stockExportService.generateReport(fromDate, toDate, groupBy);
-        return ResponseEntity.ok(report);
-    }
+
 }

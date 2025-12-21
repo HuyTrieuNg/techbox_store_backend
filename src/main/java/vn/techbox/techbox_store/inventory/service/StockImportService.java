@@ -35,12 +35,5 @@ public interface StockImportService {
      */
     StockImportDetailDTO getStockImportByDocumentCode(String documentCode);
     
-    /**
-     * Generate stock import report
-     */
-    StockImportReportDTO generateReport(
-            LocalDate fromDate,
-            LocalDate toDate,
-            Integer supplierId,
-            String groupBy);
+  
 }

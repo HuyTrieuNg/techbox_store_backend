@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import vn.techbox.techbox_store.product.service.ProductPriceUpdateService;
 import vn.techbox.techbox_store.review.scheduler.ReviewRatingScheduler;
@@ -25,11 +25,19 @@ public class DataSeederConfig {
     private final ProductPriceUpdateService productPriceUpdateService;
     private final ReviewRatingScheduler reviewRatingScheduler;
 
+    @Value("${SEEDERS_ENABLED:true}")
+    private boolean seedersEnabled;
+
     @Bean
     @Order(Integer.MAX_VALUE) // Run after all other beans are initialized
     @org.springframework.context.annotation.DependsOn("entityManagerFactory") // Wait for JPA to create tables
     public CommandLineRunner runSeeders() {
         return args -> {
+            if (!seedersEnabled) {
+                log.info("Data seeding is disabled by environment variable 'SEEDERS_ENABLED' (current value: {}) - skipping all seeders", seedersEnabled);
+                return;
+            }
+
             log.info("=".repeat(80));
             log.info("Starting Data Seeding Process...");
             log.info("=".repeat(80));

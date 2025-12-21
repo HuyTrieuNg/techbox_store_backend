@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -225,12 +226,17 @@ public class ReportTimeSeriesSeeder implements DataSeeder {
             .shippingMethod(shippingMethod)
             .build();
 
-        // Build items
-        int itemsCount = rand.nextInt(3) + 1; // 1..3 items
+        // Build items (choose distinct product variations per order)
+        int itemsCount = Math.min(variations.size(), rand.nextInt(3) + 1); // 1..3 items but not more than available variations
         List<OrderItem> items = new ArrayList<>();
         BigDecimal subtotal = BigDecimal.ZERO;
+
+        // Shuffle variations and pick the first N to avoid duplicates
+        List<ProductVariation> shuffledVars = new ArrayList<>(variations);
+        Collections.shuffle(shuffledVars, rand);
+
         for (int i = 0; i < itemsCount; i++) {
-            ProductVariation pv = variations.get(rand.nextInt(variations.size()));
+            ProductVariation pv = shuffledVars.get(i);
             int qty = rand.nextInt(3) + 1; // 1..3
             BigDecimal unitPrice = pv.getPrice();
             BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(qty));

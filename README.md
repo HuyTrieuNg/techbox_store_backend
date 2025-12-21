@@ -22,6 +22,10 @@ POSTGRES_PORT=5432
 
 # Timezone
 TZ=Asia/Ho_Chi_Minh
+
+# Feature toggles
+# Set to 'false' to disable running data seeders on startup
+SEEDERS_ENABLED=true
 ```
 
 ## 3) Docker

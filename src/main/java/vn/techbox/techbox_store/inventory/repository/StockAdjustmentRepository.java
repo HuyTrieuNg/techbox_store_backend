@@ -29,14 +29,4 @@ public interface StockAdjustmentRepository extends JpaRepository<StockAdjustment
             @Param("checkName") String checkName,
             Pageable pageable);
 
-    /**
-     * Find stock adjustments for report (without pagination)
-     */
-    @Query("SELECT sa FROM StockAdjustment sa WHERE " +
-           "(COALESCE(:fromDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate >= :fromDate) AND " +
-           "(COALESCE(:toDate, sa.adjustmentDate) = sa.adjustmentDate OR sa.adjustmentDate <= :toDate) " +
-           "ORDER BY sa.adjustmentDate")
-    List<StockAdjustment> findForReport(
-            @Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate") LocalDateTime toDate);
 }

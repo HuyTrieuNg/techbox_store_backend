@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.inventory.service;
+package vn.techbox.techbox_store.inventory.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,7 +12,7 @@ import vn.techbox.techbox_store.inventory.dto.UpdateSupplierRequest;
 import vn.techbox.techbox_store.inventory.mapper.SupplierMapper;
 import vn.techbox.techbox_store.inventory.model.Supplier;
 import vn.techbox.techbox_store.inventory.repository.SupplierRepository;
-import vn.techbox.techbox_store.inventory.service.impl.SupplierService;
+import vn.techbox.techbox_store.inventory.service.SupplierService;
 
 @Service
 @RequiredArgsConstructor

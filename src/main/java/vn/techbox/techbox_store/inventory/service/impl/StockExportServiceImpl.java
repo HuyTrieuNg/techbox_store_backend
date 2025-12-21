@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.inventory.service;
+package vn.techbox.techbox_store.inventory.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,16 +11,14 @@ import vn.techbox.techbox_store.inventory.mapper.StockExportMapper;
 import vn.techbox.techbox_store.inventory.model.StockExport;
 import vn.techbox.techbox_store.inventory.model.StockExportItem;
 import vn.techbox.techbox_store.inventory.repository.StockExportRepository;
-import vn.techbox.techbox_store.inventory.service.impl.StockExportService;
+import vn.techbox.techbox_store.inventory.service.StockExportService;
 import vn.techbox.techbox_store.order.repository.OrderRepository;
 import vn.techbox.techbox_store.product.model.ProductVariation;
 import vn.techbox.techbox_store.product.repository.ProductVariationRepository;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -181,41 +179,7 @@ public class StockExportServiceImpl implements StockExportService {
         return createStockExport(exportRequest, currentUserId);
     }
     
-    @Override
-    @Transactional(readOnly = true)
-    public StockExportReportDTO generateReport(
-            LocalDate fromDate,
-            LocalDate toDate,
-            String groupBy) {
-        
-        log.info("Generating stock export report - fromDate: {}, toDate: {}, groupBy: {}", 
-                fromDate, toDate, groupBy);
-        
-        LocalDateTime fromDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
-        LocalDateTime toDateTime = toDate != null ? toDate.plusDays(1).atStartOfDay() : null;
-        
-        List<StockExport> stockExports = stockExportRepository.findForReport(fromDateTime, toDateTime);
-        
-        // Calculate totals
-        int totalDocuments = stockExports.size();
-        int totalQuantity = stockExports.stream()
-                .flatMap(se -> se.getItems().stream())
-                .mapToInt(StockExportItem::getQuantity)
-                .sum();
-        BigDecimal totalCogsValue = stockExports.stream()
-                .map(StockExport::getTotalCogsValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        // Group data based on groupBy parameter
-        List<ReportItemDTO> details = groupReportData(stockExports, groupBy);
-        
-        return StockExportReportDTO.builder()
-                .totalDocuments(totalDocuments)
-                .totalQuantity(totalQuantity)
-                .totalCogsValue(totalCogsValue)
-                .details(details)
-                .build();
-    }
+   
     
     /**
      * Decrease product variation stock when exporting
@@ -229,102 +193,6 @@ public class StockExportServiceImpl implements StockExportService {
         
         log.info("Updated product variation {} - New stock: {}", variation.getId(), newStock);
     }
+ 
     
-    /**
-     * Group report data based on groupBy parameter
-     */
-    private List<ReportItemDTO> groupReportData(List<StockExport> stockExports, String groupBy) {
-        if (stockExports.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        if ("day".equalsIgnoreCase(groupBy)) {
-            return groupByDay(stockExports);
-        } else if ("month".equalsIgnoreCase(groupBy)) {
-            return groupByMonth(stockExports);
-        } else if ("product".equalsIgnoreCase(groupBy)) {
-            return groupByProduct(stockExports);
-        }
-        
-        // Default: return overall summary
-        return Collections.singletonList(createOverallSummary(stockExports));
-    }
-    
-    private List<ReportItemDTO> groupByDay(List<StockExport> stockExports) {
-        Map<String, List<StockExport>> grouped = stockExports.stream()
-                .collect(Collectors.groupingBy(se -> 
-                        se.getExportDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
-        
-        return grouped.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> createReportItem(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-    
-    private List<ReportItemDTO> groupByMonth(List<StockExport> stockExports) {
-        Map<String, List<StockExport>> grouped = stockExports.stream()
-                .collect(Collectors.groupingBy(se -> 
-                        se.getExportDate().format(DateTimeFormatter.ofPattern("yyyy-MM"))));
-        
-        return grouped.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> createReportItem(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-    
-    private List<ReportItemDTO> groupByProduct(List<StockExport> stockExports) {
-        // Group by product variation ID
-        Map<Integer, List<StockExportItem>> itemsByProduct = stockExports.stream()
-                .flatMap(se -> se.getItems().stream())
-                .collect(Collectors.groupingBy(item -> item.getProductVariation().getId()));
-        
-        return itemsByProduct.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> createReportItemForProduct(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-    
-    private ReportItemDTO createReportItem(String groupKey, List<StockExport> exports) {
-        int documentCount = exports.size();
-        int totalQuantity = exports.stream()
-                .flatMap(se -> se.getItems().stream())
-                .mapToInt(StockExportItem::getQuantity)
-                .sum();
-        BigDecimal totalValue = exports.stream()
-                .map(StockExport::getTotalCogsValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        return ReportItemDTO.builder()
-                .groupKey(groupKey)
-                .documentCount(documentCount)
-                .totalQuantity(totalQuantity)
-                .totalValue(totalValue)
-                .build();
-    }
-    
-    private ReportItemDTO createReportItemForProduct(Integer productVariationId, List<StockExportItem> items) {
-        int totalQuantity = items.stream()
-                .mapToInt(StockExportItem::getQuantity)
-                .sum();
-        BigDecimal totalValue = items.stream()
-                .map(StockExportItem::getTotalValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        String productName = items.isEmpty() ? "Unknown" : 
-                items.get(0).getProductVariation().getProduct() != null ?
-                items.get(0).getProductVariation().getProduct().getName() : "Unknown";
-        String variationName = items.isEmpty() ? "" : 
-                items.get(0).getProductVariation().getVariationName();
-        
-        return ReportItemDTO.builder()
-                .groupKey(productName + " - " + variationName)
-                .documentCount(items.size())
-                .totalQuantity(totalQuantity)
-                .totalValue(totalValue)
-                .build();
-    }
-    
-    private ReportItemDTO createOverallSummary(List<StockExport> exports) {
-        return createReportItem("Overall", exports);
-    }
 }

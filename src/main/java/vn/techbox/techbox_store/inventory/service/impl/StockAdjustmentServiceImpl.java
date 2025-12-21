@@ -176,20 +176,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         log.info("Deleted stock adjustment with ID: {}", id);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<StockAdjustmentDTO> getStockAdjustmentsForReport(LocalDate fromDate, LocalDate toDate) {
-        log.info("Getting stock adjustments for report - fromDate: {}, toDate: {}", fromDate, toDate);
 
-        LocalDateTime fromDateTime = fromDate != null ? fromDate.atStartOfDay() : null;
-        LocalDateTime toDateTime = toDate != null ? toDate.plusDays(1).atStartOfDay() : null;
-
-        List<StockAdjustment> stockAdjustments = stockAdjustmentRepository.findForReport(fromDateTime, toDateTime);
-
-        return stockAdjustments.stream()
-                .map(stockAdjustmentMapper::toDTO)
-                .collect(Collectors.toList());
-    }
 
 
 

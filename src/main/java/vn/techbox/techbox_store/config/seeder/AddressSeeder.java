@@ -47,7 +47,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "123 Nguyễn Huệ",
                 "Phường Bến Nghé",
                 "Quận 1",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 true,
                 "HOME"
@@ -56,7 +56,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "456 Lê Lợi",
                 "Phường Phạm Ngũ Lão",
                 "Quận 1",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 false,
                 "WORK"
@@ -69,7 +69,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "789 Trần Hưng Đạo",
                 "Phường Cầu Kho",
                 "Quận 1",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 true,
                 "HOME"
@@ -78,7 +78,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "321 Võ Văn Tần",
                 "Phường 6",
                 "Quận 3",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 false,
                 "WORK"
@@ -87,7 +87,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "654 Nguyễn Thị Minh Khai",
                 "Phường Đa Kao",
                 "Quận 1",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 false,
                 "OTHER"
@@ -100,7 +100,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "147 Pasteur",
                 "Phường Võ Thị Sáu",
                 "Quận 3",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 true,
                 "HOME"
@@ -113,7 +113,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "258 Cách Mạng Tháng 8",
                 "Phường 10",
                 "Quận 3",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 true,
                 "HOME"
@@ -122,7 +122,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "369 Nguyễn Đình Chiểu",
                 "Phường 5",
                 "Quận 3",
-                "TP. Hồ Chí Minh",
+                "Thành phố Hồ Chí Minh",
                 "70000",
                 false,
                 "WORK"
@@ -135,7 +135,7 @@ public class AddressSeeder implements CommandLineRunner {
                 "36 Phố Hàng Trống",
                 "Phường Hàng Trống",
                 "Quận Hoàn Kiếm",
-                "TP. Hà Nội",
+                "Thành phố Hà Nội",
                 "10000",
                 true,
                 "HOME"

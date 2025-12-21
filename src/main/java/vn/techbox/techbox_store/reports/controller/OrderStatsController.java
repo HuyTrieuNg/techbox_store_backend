@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.reports.dto.OrderStatsDTO;
 import vn.techbox.techbox_store.reports.dto.RevenueTrendDTO;
@@ -25,6 +26,7 @@ public class OrderStatsController {
 
     private final OrderStatsService orderStatsService;
 
+    @PreAuthorize("hasAuthority('REPORT:ORDER')")
     @GetMapping("/overview")
     @Operation(summary = "Get order overview statistics",
                description = "Returns overall order statistics including counts by status, total revenue, and average order value")
@@ -34,6 +36,7 @@ public class OrderStatsController {
         return ResponseEntity.ok(stats);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:ORDER')")
     @GetMapping("/revenue")
     @Operation(summary = "Get revenue for a date range",
                description = "Returns total revenue for the specified date range")
@@ -49,6 +52,7 @@ public class OrderStatsController {
         return ResponseEntity.ok(revenue);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:ORDER')")
     @GetMapping("/trends")
     @Operation(summary = "Get revenue trends",
                description = "Returns revenue trends for a specific date range, grouped by day, week, or month")

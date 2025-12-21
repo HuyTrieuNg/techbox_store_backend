@@ -12,6 +12,7 @@ import vn.techbox.techbox_store.user.model.User;
 import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -36,9 +37,9 @@ public class ReviewSeeder implements DataSeeder {
             return;
         }
 
-        // Prefer seeded demo customers if available
+        // Prefer seeded demo customers if available (try up to 50)
         List<User> seedUsers = new ArrayList<>();
-        for (int i = 1; i <= 20; i++) {
+        for (int i = 1; i <= 50; i++) {
             String email = "customer" + i + "@techbox.vn";
             Optional<User> uOpt = userRepository.findByAccountEmail(email);
             uOpt.ifPresent(seedUsers::add);
@@ -46,8 +47,8 @@ public class ReviewSeeder implements DataSeeder {
 
         // Fallback to any users if demo customers not present
         if (seedUsers.isEmpty()) {
-            log.warn("Demo customer accounts not found, falling back to first available users");
-            seedUsers.addAll(userRepository.findAll().stream().limit(5).toList());
+            log.warn("Demo customer accounts not found, falling back to available users");
+            seedUsers.addAll(userRepository.findAll());
         }
 
         if (seedUsers.isEmpty()) {
@@ -56,21 +57,36 @@ public class ReviewSeeder implements DataSeeder {
         }
 
         List<Review> reviews = new ArrayList<>();
-        Random rnd = new Random(12345);
+        Random rnd = new Random();
 
         for (Product p : products) {
-            // create between 1 and 3 reviews per product (capped by available users)
-            int maxPerProduct = Math.min(20, seedUsers.size());
-            int count = 1 + rnd.nextInt(maxPerProduct);
-            for (int i = 0; i < count; i++) {
-                User u = seedUsers.get((p.getId() + i) % seedUsers.size());
+            // create between 3 and 8 reviews per product (cap at available users)
+            int desired = 3 + rnd.nextInt(6); // 3..8
+            int count = Math.min(desired, seedUsers.size());
+
+            // shuffle copy of users to avoid same users every product
+            List<User> shuffled = new ArrayList<>(seedUsers);
+            Collections.shuffle(shuffled, rnd);
+
+            int created = 0;
+            for (int i = 0; i < shuffled.size() && created < count; i++) {
+                User u = shuffled.get(i);
                 // avoid duplicate user for same product
                 boolean already = reviewRepository.findByProductIdAndUserId(p.getId(), u.getId()).isPresent();
                 if (already) continue;
 
-                int rating = 3 + rnd.nextInt(3); // 3..5
-                String content = String.format("Đây là review mẫu cho sản phẩm '%s' của %s %s. Điểm: %d/5 sao.",
-                        p.getName(), u.getFirstName(), u.getLastName(), rating);
+                int rating = 3 + rnd.nextInt(3); // 3..5 to increase variety
+
+                // varied content templates
+                String[] templates = new String[] {
+                        "%s là một sản phẩm tốt, tôi hài lòng. Điểm: %d/5",
+                        "Không tệ, nhưng có thể cải thiện ở một số điểm. Điểm: %d/5",
+                        "Rất ưng ý với %s, sẽ mua lại. Điểm: %d/5",
+                        "Sản phẩm ổn, giao hàng nhanh. Điểm: %d/5",
+                        "Chất lượng tốt so với giá. Điểm: %d/5"
+                };
+                String tmpl = templates[rnd.nextInt(templates.length)];
+                String content = tmpl.contains("%s") ? String.format(tmpl, p.getName(), rating) : String.format(tmpl, rating);
 
                 Review r = Review.builder()
                         .productId(p.getId())
@@ -79,6 +95,7 @@ public class ReviewSeeder implements DataSeeder {
                         .content(content)
                         .build();
                 reviews.add(r);
+                created++;
             }
         }
 

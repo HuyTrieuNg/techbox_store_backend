@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.reports.dto.InventoryStatsDTO;
 import vn.techbox.techbox_store.reports.dto.StockMovementDTO;
@@ -24,6 +25,7 @@ public class InventoryStatsController {
 
     private final InventoryStatsService inventoryStatsService;
 
+    @PreAuthorize("hasAuthority('REPORT:INVENTORY')")
     @GetMapping("/overview")
     @Operation(summary = "Get inventory overview statistics",
                description = "Returns overall inventory statistics including total value, stock counts, and recent movements")
@@ -33,6 +35,7 @@ public class InventoryStatsController {
         return ResponseEntity.ok(stats);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:INVENTORY')")
     @GetMapping("/movements")
     @Operation(summary = "Get stock movements",
                description = "Returns stock import and export movements for a specific date range")

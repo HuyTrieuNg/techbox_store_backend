@@ -42,14 +42,4 @@ public interface StockExportRepository extends JpaRepository<StockExport, Intege
             @Param("documentCode") String documentCode,
             Pageable pageable);
     
-    /**
-     * Find stock exports for report (without pagination)
-     */
-    @Query("SELECT se FROM StockExport se WHERE " +
-           "(COALESCE(:fromDate, se.exportDate) = se.exportDate OR se.exportDate >= :fromDate) AND " +
-           "(COALESCE(:toDate, se.exportDate) = se.exportDate OR se.exportDate <= :toDate) " +
-           "ORDER BY se.exportDate")
-    List<StockExport> findForReport(
-            @Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate") LocalDateTime toDate);
 }

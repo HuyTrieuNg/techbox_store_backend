@@ -17,7 +17,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
@@ -46,95 +48,84 @@ public class InventorySeeder implements DataSeeder {
 
         List<StockImport> imports = new ArrayList<>();
         List<StockImportItem> items = new ArrayList<>();
+        Random rand = new Random();
 
-        // Import 1: Large initial stock for iPhones and Samsungs
-        StockImport import1 = createStockImport(1, suppliers.get(0).getSupplierId(), 
-                LocalDateTime.now().minusDays(30), "Nhập hàng iPhone và Samsung tháng 9");
-        imports.add(import1);
+        // Shuffle variations and partition into chunks of max 10 to ensure every variation is imported at least once
+        List<ProductVariation> variationsShuffled = new ArrayList<>(allVariations);
+        Collections.shuffle(variationsShuffled, rand);
 
-        // Import 2: Xiaomi and accessories
-        StockImport import2 = createStockImport(1, suppliers.get(1).getSupplierId(), 
-                LocalDateTime.now().minusDays(25), "Nhập hàng Xiaomi và phụ kiện");
-        imports.add(import2);
+        int maxPerImport = 10;
+        int totalVariations = variationsShuffled.size();
+        int importsNeeded = (int) Math.ceil((double) totalVariations / maxPerImport);
 
-        // Import 3: Laptops
-        StockImport import3 = createStockImport(1, suppliers.get(2).getSupplierId(), 
-                LocalDateTime.now().minusDays(20), "Nhập hàng laptop");
-        imports.add(import3);
+        // Create imports (one per chunk) with random supplier and dates
+        for (int i = 0; i < importsNeeded; i++) {
+            int supplierIdx = rand.nextInt(suppliers.size());
+            Supplier chosen = suppliers.get(supplierIdx);
+            LocalDateTime importDate = LocalDateTime.now().minusDays(rand.nextInt(60) + 1); // within last 60 days
+            String note = "Seeded import batch " + (i + 1);
+            StockImport imp = createStockImport(1, chosen.getSupplierId(), importDate, note);
+            imports.add(imp);
+        }
 
-        // Import 4: Audio devices
-        StockImport import4 = createStockImport(1, suppliers.get(3).getSupplierId(), 
-                LocalDateTime.now().minusDays(15), "Nhập hàng tai nghe và loa");
-        imports.add(import4);
-
-        // Save imports
+        // Save imports to obtain IDs
         imports = stockImportRepository.saveAll(imports);
 
-        // Create import items and update stock
-        for (ProductVariation variation : allVariations) {
-            StockImport targetImport;
-            int quantity;
-            BigDecimal costPrice;
+        // For each chunk, create up to 10 items with random qty 20..50 and random cost multiplier
+        for (int i = 0; i < imports.size(); i++) {
+            int from = i * maxPerImport;
+            int to = Math.min(from + maxPerImport, variationsShuffled.size());
+            StockImport imp = imports.get(i);
 
-            // Determine which import and quantities based on product category
-            String sku = variation.getSku();
-            if (sku.startsWith("IP15") || sku.startsWith("S24")) {
-                // Premium phones - lower quantity, higher cost
-                targetImport = imports.get(0);
-                quantity = 30;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.75")); // 75% of retail price
-            } else if (sku.startsWith("IP14")) {
-                // Mid-range phones
-                targetImport = imports.get(0);
-                quantity = 50;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.70"));
-            } else if (sku.startsWith("X14P")) {
-                // Xiaomi
-                targetImport = imports.get(1);
-                quantity = 40;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.65"));
-            } else if (sku.startsWith("MBP") || sku.startsWith("XPS")) {
-                // Laptops - lower quantity, premium pricing
-                targetImport = imports.get(2);
-                quantity = 15;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.80"));
-            } else if (sku.startsWith("APP") || sku.startsWith("WH")) {
-                // Audio devices
-                targetImport = imports.get(3);
-                quantity = 60;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.60"));
-            } else {
-                // Default
-                targetImport = imports.get(0);
-                quantity = 25;
-                costPrice = variation.getPrice().multiply(new BigDecimal("0.70"));
-            }
+            for (int idx = from; idx < to; idx++) {
+                ProductVariation variation = variationsShuffled.get(idx);
 
-            // Create import item
-            StockImportItem item = StockImportItem.builder()
-                    .stockImport(targetImport)
-                    .productVariation(variation)
-                    .quantity(quantity)
-                    .costPrice(costPrice.setScale(0, RoundingMode.HALF_UP))
-                    .build();
-            items.add(item);
+                try {
+                    if (variation == null) {
+                        log.warn("Skipping null ProductVariation at index {}", idx);
+                        continue;
+                    }
 
-            // Update product variation stock using weighted average
-            variation.setStockQuantity(variation.getStockQuantity() + quantity);
-            
-            // Calculate weighted average cost price
-            BigDecimal currentAvg = variation.getAvgCostPrice() != null ? 
-                    variation.getAvgCostPrice() : BigDecimal.ZERO;
-            int currentQty = variation.getStockQuantity() - quantity; // Old quantity
-            
-            if (currentQty == 0) {
-                variation.setAvgCostPrice(costPrice);
-            } else {
-                BigDecimal totalOldValue = currentAvg.multiply(BigDecimal.valueOf(currentQty));
-                BigDecimal newValue = costPrice.multiply(BigDecimal.valueOf(quantity));
-                BigDecimal newAvg = totalOldValue.add(newValue)
-                        .divide(BigDecimal.valueOf(variation.getStockQuantity()), 2, RoundingMode.HALF_UP);
-                variation.setAvgCostPrice(newAvg);
+                    if (variation.getPrice() == null) {
+                        log.warn("Skipping variation id={} sku={} because price is null", variation.getId(), variation.getSku());
+                        continue;
+                    }
+
+                    int quantity = 15 + rand.nextInt(30); // 15..44
+                    // cost factor between 0.55 and 0.85
+                    double factor = 0.55 + (rand.nextDouble() * 0.30);
+                    BigDecimal costPrice = variation.getPrice().multiply(BigDecimal.valueOf(factor)).setScale(0, RoundingMode.HALF_UP);
+
+                    StockImportItem item = StockImportItem.builder()
+                            .stockImport(imp)
+                            .productVariation(variation)
+                            .quantity(quantity)
+                            .costPrice(costPrice)
+                            .build();
+                    items.add(item);
+
+                    // Update variation stock safely (handle nulls)
+                    int currentQty = variation.getStockQuantity() != null ? variation.getStockQuantity() : 0;
+                    BigDecimal currentAvg = variation.getAvgCostPrice() != null ? variation.getAvgCostPrice() : BigDecimal.ZERO;
+
+                    // New totals
+                    int newQty = currentQty + quantity;
+                    variation.setStockQuantity(newQty);
+
+                    if (currentQty == 0) {
+                        variation.setAvgCostPrice(costPrice);
+                    } else {
+                        BigDecimal totalOldValue = currentAvg.multiply(BigDecimal.valueOf(currentQty));
+                        BigDecimal newValue = costPrice.multiply(BigDecimal.valueOf(quantity));
+                        BigDecimal newAvg = totalOldValue.add(newValue)
+                                .divide(BigDecimal.valueOf(newQty), 2, RoundingMode.HALF_UP);
+                        variation.setAvgCostPrice(newAvg);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to process variation id={} sku={} for import {}: {}", variation != null ? variation.getId() : null,
+                            variation != null ? variation.getSku() : null, imp.getId(), e.getMessage(), e);
+                    // continue processing remaining variations
+                }
             }
         }
 
@@ -150,7 +141,7 @@ public class InventorySeeder implements DataSeeder {
         stockImportItemRepository.saveAll(items);
         productVariationRepository.saveAll(allVariations);
         stockImportRepository.saveAll(imports);
-        
+
         log.info("✓ Created {} stock imports with {} items", imports.size(), items.size());
         log.info("✓ Updated stock quantities for {} product variations", allVariations.size());
     }

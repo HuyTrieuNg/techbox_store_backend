@@ -46,7 +46,7 @@ public class CategoryController {
         return ResponseEntity.ok(childCategories);
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:WRITE')")
+    @PreAuthorize("hasAuthority('CATEGORY:WRITE')")
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryCreateRequest request) {
         try {
@@ -57,7 +57,7 @@ public class CategoryController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:UPDATE')")
+    @PreAuthorize("hasAuthority('CATEGORY:UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Integer id,
@@ -70,7 +70,7 @@ public class CategoryController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:DELETE')")
+    @PreAuthorize("hasAuthority('CATEGORY:DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
         try {
@@ -84,14 +84,14 @@ public class CategoryController {
         }
     }
     
-    @PreAuthorize("hasAuthority('PRODUCT:READ')")
+    @PreAuthorize("hasAuthority('CATEGORY:READ')")
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkCategoryNameExists(@RequestParam String name) {
         boolean exists = categoryService.existsByName(name);
         return ResponseEntity.ok(exists);
     }
     
-    @PreAuthorize("hasAuthority('BRANCH:READ')")
+    @PreAuthorize("hasAuthority('CATEGORY:READ')")
     @GetMapping("/exists-for-update")
     public ResponseEntity<Boolean> checkCategoryNameExistsForUpdate(@RequestParam String name, @RequestParam Integer id) {
         boolean exists = categoryService.existsByNameAndIdNot(name, id);

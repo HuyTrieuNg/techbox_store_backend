@@ -14,7 +14,10 @@ import vn.techbox.techbox_store.user.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @Component
 @RequiredArgsConstructor
@@ -54,134 +57,55 @@ public class StockAdjustmentSeeder implements DataSeeder {
         }
         
         User adminUser = users.stream()
-                .filter(u -> u.getAccount().getEmail() != null && u.getAccount().getEmail().contains("admin"))
+                .filter(u -> u.getAccount() != null && u.getAccount().getEmail() != null && u.getAccount().getEmail().contains("admin"))
                 .findFirst()
-                .orElse(users.getFirst());
+                .orElse(users.get(0));
         
-        // Stock Adjustment 1: Kiểm kê định kỳ tháng 9
-        StockAdjustment adjustment1 = StockAdjustment.builder()
-                .documentCode("ADJ-20240915-0001")
-                .userId(adminUser.getId())
-                .checkName("Kiểm kê định kỳ tháng 9/2024")
-                .adjustmentDate(LocalDateTime.of(2024, 9, 15, 10, 0))
-                .note("Kiểm kê định kỳ cuối quý 3")
-                .build();
-        
-        // Add items for adjustment 1 (một số sản phẩm có chênh lệch nhỏ)
-        if (!variations.isEmpty()) {
-            ProductVariation v1 = variations.getFirst();
-            StockAdjustmentItem item1 = StockAdjustmentItem.builder()
-                    .productVariation(v1)
-                    .systemQty(v1.getStockQuantity() != null ? v1.getStockQuantity() : 100)
-                    .realQty((v1.getStockQuantity() != null ? v1.getStockQuantity() : 100) - 2)
-                    .costPrice(v1.getAvgCostPrice() != null ? v1.getAvgCostPrice() : v1.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Thiếu 2 sản phẩm do hỏng hóc")
+        // Create multiple random stock adjustments (15) each with a few random items
+        Random rand = new Random();
+        List<StockAdjustment> adjustments = new ArrayList<>();
+        int adjustmentsToCreate = 40;
+
+        for (int i = 0; i < adjustmentsToCreate; i++) {
+            LocalDateTime adjDate = LocalDateTime.now().minusDays(rand.nextInt(120) + 1)
+                    .withHour(8 + rand.nextInt(9))
+                    .withMinute(rand.nextInt(60));
+            String docCode = String.format("ADJ-%s-%04d", adjDate.toLocalDate().toString().replace("-", ""), i + 1);
+            StockAdjustment adj = StockAdjustment.builder()
+                    .documentCode(docCode)
+                    .userId(adminUser.getId())
+                    .checkName("Kiểm kê " + (i + 1))
+                    .adjustmentDate(adjDate)
+                    .note("Auto-generated adjustment #" + (i + 1))
                     .build();
-            adjustment1.addItem(item1);
+
+            // pick 1..min(5, variations.size()) distinct variations
+            int itemCount = Math.min(5, Math.max(1, 1 + rand.nextInt(5)));
+            List<ProductVariation> shuffled = new ArrayList<>(variations);
+            Collections.shuffle(shuffled, rand);
+            for (int j = 0; j < itemCount && j < shuffled.size(); j++) {
+                ProductVariation v = shuffled.get(j);
+                int systemQty = v.getStockQuantity() != null ? v.getStockQuantity() : (20 + rand.nextInt(100));
+                int realQty = systemQty + (rand.nextInt(11) - 5); // -5..+5
+                if (realQty < 0) realQty = 0;
+                BigDecimal cost = v.getAvgCostPrice() != null ? v.getAvgCostPrice() : v.getPrice().multiply(new BigDecimal("0.7"));
+
+                StockAdjustmentItem it = StockAdjustmentItem.builder()
+                        .productVariation(v)
+                        .systemQty(systemQty)
+                        .realQty(realQty)
+                        .costPrice(cost)
+                        .note(realQty == systemQty ? "Khớp" : (realQty > systemQty ? "Thừa" : "Thiếu"))
+                        .build();
+                adj.addItem(it);
+            }
+
+            adjustments.add(adj);
         }
-        
-        if (variations.size() > 1) {
-            ProductVariation v2 = variations.get(1);
-            StockAdjustmentItem item2 = StockAdjustmentItem.builder()
-                    .productVariation(v2)
-                    .systemQty(v2.getStockQuantity() != null ? v2.getStockQuantity() : 50)
-                    .realQty((v2.getStockQuantity() != null ? v2.getStockQuantity() : 50) + 1)
-                    .costPrice(v2.getAvgCostPrice() != null ? v2.getAvgCostPrice() : v2.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Thừa 1 sản phẩm - lỗi nhập liệu trước đó")
-                    .build();
-            adjustment1.addItem(item2);
-        }
-        
-        if (variations.size() > 2) {
-            ProductVariation v3 = variations.get(2);
-            StockAdjustmentItem item3 = StockAdjustmentItem.builder()
-                    .productVariation(v3)
-                    .systemQty(v3.getStockQuantity() != null ? v3.getStockQuantity() : 30)
-                    .realQty(v3.getStockQuantity() != null ? v3.getStockQuantity() : 30)
-                    .costPrice(v3.getAvgCostPrice() != null ? v3.getAvgCostPrice() : v3.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Khớp với hệ thống")
-                    .build();
-            adjustment1.addItem(item3);
-        }
-        
-        stockAdjustmentRepository.save(adjustment1);
-        log.info("✓ Created stock adjustment: {}", adjustment1.getDocumentCode());
-        
-        // Stock Adjustment 2: Kiểm kê sau nhập hàng
-        StockAdjustment adjustment2 = StockAdjustment.builder()
-                .documentCode("ADJ-20241001-0001")
-                .userId(adminUser.getId())
-                .checkName("Kiểm kê sau nhập hàng đầu tháng 10")
-                .adjustmentDate(LocalDateTime.of(2024, 10, 1, 14, 30))
-                .note("Kiểm tra số lượng sau khi nhập hàng lớn")
-                .build();
-        
-        // Add items for adjustment 2
-        if (variations.size() > 3) {
-            ProductVariation v4 = variations.get(3);
-            StockAdjustmentItem item4 = StockAdjustmentItem.builder()
-                    .productVariation(v4)
-                    .systemQty(v4.getStockQuantity() != null ? v4.getStockQuantity() : 80)
-                    .realQty((v4.getStockQuantity() != null ? v4.getStockQuantity() : 80) - 3)
-                    .costPrice(v4.getAvgCostPrice() != null ? v4.getAvgCostPrice() : v4.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Thiếu 3 sản phẩm - đang điều tra")
-                    .build();
-            adjustment2.addItem(item4);
-        }
-        
-        if (variations.size() > 4) {
-            ProductVariation v5 = variations.get(4);
-            StockAdjustmentItem item5 = StockAdjustmentItem.builder()
-                    .productVariation(v5)
-                    .systemQty(v5.getStockQuantity() != null ? v5.getStockQuantity() : 60)
-                    .realQty(v5.getStockQuantity() != null ? v5.getStockQuantity() : 60)
-                    .costPrice(v5.getAvgCostPrice() != null ? v5.getAvgCostPrice() : v5.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Số lượng chính xác")
-                    .build();
-            adjustment2.addItem(item5);
-        }
-        
-        stockAdjustmentRepository.save(adjustment2);
-        log.info("✓ Created stock adjustment: {}", adjustment2.getDocumentCode());
-        
-        // Stock Adjustment 3: Kiểm kê đột xuất
-        StockAdjustment adjustment3 = StockAdjustment.builder()
-                .documentCode("ADJ-20241005-0001")
-                .userId(adminUser.getId())
-                .checkName("Kiểm kê đột xuất - Kiểm tra hàng tồn kho")
-                .adjustmentDate(LocalDateTime.of(2024, 10, 5, 9, 15))
-                .note("Kiểm tra do phát hiện bất thường trong báo cáo")
-                .build();
-        
-        // Add items for adjustment 3
-        if (variations.size() > 5) {
-            ProductVariation v6 = variations.get(5);
-            StockAdjustmentItem item6 = StockAdjustmentItem.builder()
-                    .productVariation(v6)
-                    .systemQty(v6.getStockQuantity() != null ? v6.getStockQuantity() : 40)
-                    .realQty((v6.getStockQuantity() != null ? v6.getStockQuantity() : 40) + 2)
-                    .costPrice(v6.getAvgCostPrice() != null ? v6.getAvgCostPrice() : v6.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Thừa 2 sản phẩm - chưa cập nhật vào hệ thống")
-                    .build();
-            adjustment3.addItem(item6);
-        }
-        
-        if (variations.size() > 6) {
-            ProductVariation v7 = variations.get(6);
-            StockAdjustmentItem item7 = StockAdjustmentItem.builder()
-                    .productVariation(v7)
-                    .systemQty(v7.getStockQuantity() != null ? v7.getStockQuantity() : 25)
-                    .realQty((v7.getStockQuantity() != null ? v7.getStockQuantity() : 25) - 1)
-                    .costPrice(v7.getAvgCostPrice() != null ? v7.getAvgCostPrice() : v7.getPrice().multiply(new BigDecimal("0.7")))
-                    .note("Thiếu 1 sản phẩm - đã báo cáo")
-                    .build();
-            adjustment3.addItem(item7);
-        }
-        
-        stockAdjustmentRepository.save(adjustment3);
-        log.info("✓ Created stock adjustment: {}", adjustment3.getDocumentCode());
-        
-        log.info("Stock Adjustments seeding completed successfully. Created 3 adjustments with {} items", 
-                adjustment1.getItems().size() + adjustment2.getItems().size() + adjustment3.getItems().size());
+
+        stockAdjustmentRepository.saveAll(adjustments);
+        log.info("✓ Created {} stock adjustments (auto-generated)", adjustments.size());
+        int totalItems = adjustments.stream().mapToInt(a -> a.getItems().size()).sum();
+        log.info("Stock Adjustments seeding completed successfully. Created {} adjustments with {} items", adjustments.size(), totalItems);
     }
 }

@@ -87,6 +87,10 @@ user:
 inventory:
   min-stock-threshold: ${INVENTORY_MIN_STOCK_THRESHOLD:30}
 
+# Feature toggle: whether to run data seeders on startup
+# Set SEEDERS_ENABLED=false to skip all seeders (useful for CI, prod, or repeatable dev runs)
+SEEDERS_ENABLED: ${SEEDERS_ENABLED:true}
+
 sync:
   endpoint:
     url: ${SYNC_ENDPOINT_URL:http://localhost:8000}

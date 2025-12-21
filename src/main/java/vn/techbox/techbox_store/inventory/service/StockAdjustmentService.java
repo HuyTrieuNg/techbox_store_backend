@@ -39,8 +39,5 @@ public interface StockAdjustmentService {
      */
     void deleteStockAdjustment(Integer id);
 
-    /**
-     * Get stock adjustments for report
-     */
-    List<StockAdjustmentDTO> getStockAdjustmentsForReport(LocalDate fromDate, LocalDate toDate);
+  
 }

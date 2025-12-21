@@ -188,7 +188,7 @@ public class ProductSeeder implements DataSeeder {
                         .variationName(variantDto.getName())
                         .price(price)
                         .sku(variantDto.getSku())
-                        .stockQuantity(ThreadLocalRandom.current().nextInt(10, 101))
+                        .stockQuantity(0)
                         .reservedQuantity(0)
                         .avgCostPrice(costPrice)
                         .build();

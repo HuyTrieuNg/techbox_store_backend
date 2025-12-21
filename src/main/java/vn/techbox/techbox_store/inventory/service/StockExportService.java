@@ -1,4 +1,4 @@
-package vn.techbox.techbox_store.inventory.service.impl;
+package vn.techbox.techbox_store.inventory.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,11 +37,4 @@ public interface StockExportService {
      */
     StockExportDetailDTO createStockExportFromOrder(Integer orderId, CreateStockExportFromOrderRequest request, Integer currentUserId);
     
-    /**
-     * Generate stock export report
-     */
-    StockExportReportDTO generateReport(
-            LocalDate fromDate,
-            LocalDate toDate,
-            String groupBy);
 }

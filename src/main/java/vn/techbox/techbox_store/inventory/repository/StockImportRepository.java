@@ -37,16 +37,5 @@ public interface StockImportRepository extends JpaRepository<StockImport, Intege
             @Param("documentCode") String documentCode,
             Pageable pageable);
     
-    /**
-     * Find stock imports for report (without pagination)
-     */
-    @Query("SELECT si FROM StockImport si WHERE " +
-           "(:fromDate IS NULL OR si.importDate >= :fromDate) AND " +
-           "(:toDate IS NULL OR si.importDate <= :toDate) AND " +
-           "(:supplierId IS NULL OR si.supplierId = :supplierId) " +
-           "ORDER BY si.importDate")
-    List<StockImport> findForReport(
-            @Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate") LocalDateTime toDate,
-            @Param("supplierId") Integer supplierId);
+   
 }

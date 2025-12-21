@@ -98,7 +98,7 @@ public class UserDataSeeder implements CommandLineRunner {
             case ROLE_ADMIN -> permissions.addAll(permissionRepository.findAll());
             case ROLE_STAFF -> {
                 // Staff có quyền quản lý sản phẩm, đơn hàng, khuyến mãi, voucher, campaign
-                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "PROMOTION", "VOUCHER", "CAMPAIGN", "INVENTORY", "REVIEW")));
+                permissions.addAll(getPermissionsByModules(Set.of("PRODUCT", "ORDER", "VOUCHER", "INVENTORY")));
                 // Không có quyền DELETE và không quản lý USER
             }
             case ROLE_CUSTOMER -> {

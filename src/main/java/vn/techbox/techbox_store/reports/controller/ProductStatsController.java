@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.techbox.techbox_store.reports.dto.InventoryConfigDTO;
 import vn.techbox.techbox_store.reports.dto.LowStockProductDTO;
@@ -26,6 +27,7 @@ public class ProductStatsController {
 
     private final ProductStatsService productStatsService;
 
+    @PreAuthorize("hasAuthority('REPORT:PRODUCT')")
     @GetMapping("/overview")
     @Operation(summary = "Get product overview statistics",
                description = "Returns overall product statistics including counts by status, categories, top sellers, and low stock alerts")
@@ -35,6 +37,7 @@ public class ProductStatsController {
         return ResponseEntity.ok(stats);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:PRODUCT')")
     @GetMapping("/by-category")
     @Operation(summary = "Get products grouped by category",
                description = "Returns the number of products in each category")
@@ -44,6 +47,7 @@ public class ProductStatsController {
         return ResponseEntity.ok(products);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:PRODUCT')")
     @GetMapping("/top-selling")
     @Operation(summary = "Get top selling products",
                description = "Returns the top selling products ranked by total quantity sold")
@@ -62,6 +66,7 @@ public class ProductStatsController {
         return ResponseEntity.ok(topProducts);
     }
 
+    @PreAuthorize("hasAuthority('REPORT:PRODUCT')")
     @GetMapping("/low-stock")
     @Operation(summary = "Get low stock products",
                description = "Returns products with stock quantity below the specified threshold")
