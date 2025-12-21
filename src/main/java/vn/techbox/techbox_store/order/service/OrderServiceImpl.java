@@ -127,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
                     );
                 }
                 if (savedOrder.getVoucherCode() != null && !savedOrder.getVoucherCode().trim().isEmpty()) {
-                    voucherReservationService.reserveVoucherByCode(
+                    voucherReservationService.reserveVoucherPermanent(
                             savedOrder.getId().intValue(),
                             savedOrder.getVoucherCode(),
                             savedOrder.getUserId()
@@ -290,29 +290,6 @@ public class OrderServiceImpl implements OrderService {
 
         orderValidationService.validateStatusTransition(order.getStatus(), status);
 
-        if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.COD) {
-            // Create permanent reservations with null expiry for COD orders
-            try {
-                for (OrderItem orderItem : order.getOrderItems()) {
-                    inventoryReservationService.reserveInventoryPermanent(
-                            order.getId().intValue(),
-                            orderItem.getProductVariation().getId(),
-                            orderItem.getQuantity()
-                    );
-                }
-                if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
-                    voucherReservationService.reserveVoucherByCode(
-                            order.getId().intValue(),
-                            order.getVoucherCode(),
-                            order.getUserId()
-                    );
-                }
-                log.info("Permanent reservations created for COD order {}", orderId);
-            } catch (Exception e) {
-                log.error("Failed to create permanent reservations for COD order {}: {}", orderId, e.getMessage(), e);
-                throw new OrderException("Failed to create reservations: " + e.getMessage());
-            }
-        }
 
         // If status changes to CONFIRMED and VNPAY, set reservations expiry to null
         if (status == OrderStatus.CONFIRMED && order.getPaymentMethod() == PaymentMethod.VNPAY) {

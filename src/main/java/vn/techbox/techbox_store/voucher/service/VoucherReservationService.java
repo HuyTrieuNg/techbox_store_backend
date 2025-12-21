@@ -65,7 +65,20 @@ public class VoucherReservationService {
     @Transactional
     @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     public VoucherReservation reserveVoucherByCode(Integer orderId, String voucherCode, Integer userId) {
-        log.info("Reserving voucher by code for order: {}, voucher code: {}, user: {}", orderId, voucherCode, userId);
+        return reserveVoucherByCodeInternal(orderId, voucherCode, userId, LocalDateTime.now().plusMinutes(15));
+    }
+
+    @Transactional
+    @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    public VoucherReservation reserveVoucherPermanent(Integer orderId, String voucherCode, Integer userId) {
+        return reserveVoucherByCodeInternal(orderId, voucherCode, userId, null);
+    }
+
+    @Transactional
+    @Retryable(retryFor = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    public VoucherReservation reserveVoucherByCodeInternal(Integer orderId, String voucherCode, Integer userId, LocalDateTime expiresAt) {
+        log.info("Reserving voucher by code for order: {}, voucher code: {}, user: {}, permanent: {}",
+                orderId, voucherCode, userId, expiresAt == null);
 
         Voucher voucher = voucherRepository.findByCodeAndNotDeleted(voucherCode)
                 .orElseThrow(() -> new IllegalArgumentException("Voucher not found: " + voucherCode));
@@ -91,7 +104,7 @@ public class VoucherReservationService {
                 .quantity(1)
                 .status(ReservationStatus.RESERVED)
                 .reservedAt(LocalDateTime.now())
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .expiresAt(expiresAt)
                 .build();
 
         return voucherReservationRepository.save(reservation);
